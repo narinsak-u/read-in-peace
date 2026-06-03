@@ -38,8 +38,8 @@ function BookPage() {
           <ArrowLeft className="h-4 w-4" /> Back to feed
         </Link>
 
-        <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
-          <div className="flex justify-center">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:items-start">
+          <div className="flex justify-center md:sticky md:top-24">
             <div className="w-full max-w-sm">
               <div className="aspect-[2/3] overflow-hidden rounded-xl shadow-2xl shadow-black/20">
                 <img src={book.cover} alt={book.title} className="h-full w-full object-cover" />
@@ -47,7 +47,7 @@ function BookPage() {
             </div>
           </div>
 
-          <div className="flex flex-col justify-center">
+          <div className="flex flex-col">
             <p className="mb-2 text-sm uppercase tracking-widest text-muted-foreground">{book.author}</p>
             <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{book.title}</h1>
 
@@ -92,63 +92,64 @@ function BookPage() {
                 <Share2 className="h-4 w-4" />
               </button>
             </div>
-          </div>
-        </div>
 
-        <section className="mt-20 border-t border-border pt-12">
-          <h2 className="text-2xl font-semibold tracking-tight">Reviews</h2>
+            <section className="mt-12 border-t border-border pt-10">
+              <h2 className="text-2xl font-semibold tracking-tight">Reviews</h2>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!draft.trim()) return;
-              setReviews([{ user: "You", avatar: "Y", rating: 5, text: draft.trim() }, ...reviews]);
-              setDraft("");
-            }}
-            className="mt-6 rounded-2xl border border-border bg-card p-4"
-          >
-            <textarea
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder="Leave a review…"
-              rows={3}
-              className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-            />
-            <div className="flex justify-end">
-              <button
-                type="submit"
-                className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!draft.trim()) return;
+                  setReviews([{ user: "You", avatar: "Y", rating: 5, text: draft.trim() }, ...reviews]);
+                  setDraft("");
+                }}
+                className="mt-6 rounded-2xl border border-border bg-card p-4"
               >
-                Post review
-              </button>
-            </div>
-          </form>
-
-          <div className="mt-8 space-y-6">
-            {reviews.map((r, i) => (
-              <div key={i} className="flex gap-4">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                  {r.avatar}
+                <textarea
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                  placeholder="Leave a review…"
+                  rows={3}
+                  className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                  >
+                    Post review
+                  </button>
                 </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">{r.user}</p>
-                    <div className="flex">
-                      {Array.from({ length: 5 }).map((_, idx) => (
-                        <Star
-                          key={idx}
-                          className={`h-3.5 w-3.5 ${idx < r.rating ? "fill-foreground text-foreground" : "text-muted-foreground/30"}`}
-                        />
-                      ))}
+              </form>
+
+              <div className="mt-8 space-y-6">
+                {reviews.map((r, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                      {r.avatar}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">{r.user}</p>
+                        <div className="flex">
+                          {Array.from({ length: 5 }).map((_, idx) => (
+                            <Star
+                              key={idx}
+                              className={`h-3.5 w-3.5 ${idx < r.rating ? "fill-foreground text-foreground" : "text-muted-foreground/30"}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <p className="mt-1 text-sm text-muted-foreground">{r.text}</p>
                     </div>
                   </div>
-                  <p className="mt-1 text-sm text-muted-foreground">{r.text}</p>
-                </div>
+                ))}
               </div>
-            ))}
+            </section>
           </div>
-        </section>
+        </div>
       </main>
+
     </>
   );
 }
