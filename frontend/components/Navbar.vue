@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { Rss, LayoutDashboard, User, LogOut, LogIn, Shield } from 'lucide-vue-next';
-import { useAuthStore } from '~/stores/auth';
+import {
+  Rss,
+  LayoutDashboard,
+  User,
+  LogOut,
+  LogIn,
+  Shield,
+} from "lucide-vue-next";
+import { useAuthStore } from "~/stores/auth";
 
 const auth = useAuthStore();
 const open = ref(false);
@@ -16,7 +23,9 @@ function navigate(path: string) {
   <header
     class="sticky top-0 z-50 border-b border-border/60 bg-background/70 backdrop-blur-xl"
   >
-    <div class="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+    <div
+      class="mx-auto flex h-16 max-w-5xl items-center justify-between px-6 md:px-0"
+    >
       <NuxtLink to="/" class="text-lg font-semibold tracking-tight">
         Read<span class="text-primary"> in </span>Pace
       </NuxtLink>
@@ -43,7 +52,12 @@ function navigate(path: string) {
             aria-label="Profile menu"
           >
             <span v-if="auth.signedIn" class="text-sm font-semibold">
-              {{ auth.username.split(' ').map((n: string) => n[0]).join('') }}
+              {{
+                auth.username
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+              }}
             </span>
             <User v-else class="h-4 w-4" />
           </button>
@@ -67,10 +81,14 @@ function navigate(path: string) {
                 @mousedown="auth.toggleAdmin()"
                 class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-muted"
               >
-                <span class="flex items-center gap-2"><Shield class="h-4 w-4" /> Admin mode</span>
+                <span class="flex items-center gap-2"
+                  ><Shield class="h-4 w-4" /> Admin mode</span
+                >
                 <span
                   class="relative h-4 w-7 rounded-full transition-colors"
-                  :class="auth.adminMode ? 'bg-primary' : 'bg-muted-foreground/30'"
+                  :class="
+                    auth.adminMode ? 'bg-primary' : 'bg-muted-foreground/30'
+                  "
                 >
                   <span
                     class="absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all"

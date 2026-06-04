@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ArrowLeft, Star, Heart, MessageSquare, Share2 } from 'lucide-vue-next';
-import { useBooksStore } from '~/stores/books';
-import { useDashboardStore } from '~/stores/dashboard';
+import { ArrowLeft, Star, Heart, MessageSquare, Share2 } from "lucide-vue-next";
+import { useBooksStore } from "~/stores/books";
+import { useDashboardStore } from "~/stores/dashboard";
 
 const route = useRoute();
 const id = route.params.id as string;
@@ -11,24 +11,29 @@ const dashboard = useDashboardStore();
 
 const book = computed(() => booksStore.getBook(id));
 const reviews = ref(booksStore.getReviews(id));
-const draft = ref('');
+const draft = ref("");
 
 definePageMeta({
-  title: 'Book — Read in Pace',
+  title: "Book — Read in Pace",
 });
 
 function submitReview() {
   if (!draft.value.trim()) return;
-  const newReview = { user: 'You', avatar: 'Y', rating: 5, text: draft.value.trim() };
+  const newReview = {
+    user: "You",
+    avatar: "Y",
+    rating: 5,
+    text: draft.value.trim(),
+  };
   booksStore.addReview(id, newReview);
   reviews.value = booksStore.getReviews(id);
-  draft.value = '';
+  draft.value = "";
 }
 </script>
 
 <template>
   <Navbar />
-  <main class="mx-auto max-w-6xl px-6 py-10">
+  <main class="mx-auto max-w-5xl px-6 md:px-0 py-10">
     <NuxtLink
       to="/feed"
       class="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -38,16 +43,26 @@ function submitReview() {
 
     <template v-if="book">
       <div class="grid grid-cols-1 gap-12 md:grid-cols-2 md:items-start">
+        <!-- Left column: Book cover -->
         <div class="flex justify-center md:sticky md:top-24">
-          <div class="w-full max-w-sm">
-            <div class="aspect-[2/3] overflow-hidden rounded-xl shadow-2xl shadow-black/20">
-              <img :src="book.cover" :alt="book.title" class="h-full w-full object-cover" />
+          <div class="w-full max-w-md">
+            <div
+              class="w-full overflow-hidden rounded-lg shadow-lg shadow-black/20"
+            >
+              <img
+                :src="book.cover"
+                :alt="book.title"
+                class="h-full w-full object-cover"
+              />
             </div>
           </div>
         </div>
 
+        <!-- Right column: Book details -->
         <div class="flex flex-col">
-          <p class="mb-2 text-sm uppercase tracking-widest text-muted-foreground">
+          <p
+            class="mb-2 text-sm uppercase tracking-widest text-muted-foreground"
+          >
             {{ book.author }}
           </p>
           <h1 class="text-4xl font-semibold tracking-tight sm:text-5xl">
@@ -55,7 +70,9 @@ function submitReview() {
           </h1>
 
           <div class="mt-5 flex items-center gap-4">
-            <span class="rounded-full bg-primary-soft px-4 py-1.5 text-sm font-semibold text-primary">
+            <span
+              class="rounded-full bg-primary-soft px-4 py-1.5 text-sm font-semibold text-primary"
+            >
               ${{ book.price.toFixed(2) }}
             </span>
             <div class="flex items-center gap-1 text-sm text-muted-foreground">
@@ -71,13 +88,13 @@ function submitReview() {
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
               @click="dashboard.buy(book.id)"
-              class="flex-1 rounded-xl bg-primary px-6 py-3.5 font-medium text-primary-foreground transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/30"
+              class="flex-1 rounded-lg bg-primary px-6 py-3.5 font-medium text-primary-foreground transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/30"
             >
               Buy Now — ${{ book.price.toFixed(2) }}
             </button>
             <button
               @click="dashboard.borrow(book.id)"
-              class="flex-1 rounded-xl border border-border px-6 py-3.5 font-medium transition-colors hover:bg-muted"
+              class="flex-1 rounded-lg border border-border px-6 py-3.5 font-medium transition-colors hover:bg-muted"
             >
               Borrow
             </button>
@@ -86,7 +103,7 @@ function submitReview() {
           <div class="mt-6 flex items-center gap-2">
             <button
               @click="booksStore.toggleLike(book.id)"
-              class="flex h-11 w-11 items-center justify-center rounded-full border border-border transition-all hover:bg-muted"
+              class="flex h-11 w-11 items-center justify-center rounded-lg border border-border transition-all hover:bg-muted"
               :class="booksStore.liked[book.id] ? 'text-destructive' : ''"
             >
               <Heart
@@ -94,20 +111,25 @@ function submitReview() {
                 :class="booksStore.liked[book.id] ? 'fill-current' : ''"
               />
             </button>
-            <button class="flex h-11 w-11 items-center justify-center rounded-full border border-border transition-colors hover:bg-muted">
+            <button
+              class="flex h-11 w-11 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted"
+            >
               <MessageSquare class="h-4 w-4" />
             </button>
-            <button class="flex h-11 w-11 items-center justify-center rounded-full border border-border transition-colors hover:bg-muted">
+            <button
+              class="flex h-11 w-11 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted"
+            >
               <Share2 class="h-4 w-4" />
             </button>
           </div>
 
+          <!-- Reviews section -->
           <section class="mt-12 border-t border-border pt-10">
             <h2 class="text-2xl font-semibold tracking-tight">Reviews</h2>
 
             <form
               @submit.prevent="submitReview"
-              class="mt-6 rounded-2xl border border-border bg-card p-4"
+              class="mt-6 rounded-lg border border-border bg-card p-4"
             >
               <textarea
                 v-model="draft"
@@ -128,7 +150,7 @@ function submitReview() {
             <div class="mt-8 space-y-6">
               <div v-for="(r, i) in reviews" :key="i" class="flex gap-4">
                 <div
-                  class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
+                  class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
                 >
                   {{ r.avatar }}
                 </div>
@@ -140,7 +162,11 @@ function submitReview() {
                         v-for="idx in 5"
                         :key="idx"
                         class="h-3.5 w-3.5"
-                        :class="idx <= r.rating ? 'fill-foreground text-foreground' : 'text-muted-foreground/30'"
+                        :class="
+                          idx <= r.rating
+                            ? 'fill-foreground text-foreground'
+                            : 'text-muted-foreground/30'
+                        "
                       />
                     </div>
                   </div>

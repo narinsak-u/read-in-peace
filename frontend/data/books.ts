@@ -6,6 +6,7 @@ export interface Book {
   cover: string;
   synopsis: string;
   rating: number;
+  category: string;
   trending?: boolean;
 }
 
@@ -42,6 +43,12 @@ const titles: [string, string][] = [
 const synopsis =
   "A quietly luminous novel about memory, distance, and the small rituals that bind us. Across one slow year, four lives converge on a coastline that refuses to stay still.";
 
+const categories = [
+  "Fiction", "How-to", "Fiction", "How-to", "Fiction",
+  "Fiction", "Fiction", "How-to", "Fiction", "Manga",
+  "Fiction", "Fiction",
+];
+
 export const books: Book[] = titles.map(([title, author], i) => ({
   id: String(i + 1),
   title,
@@ -50,6 +57,7 @@ export const books: Book[] = titles.map(([title, author], i) => ({
   cover: covers[i % covers.length],
   synopsis,
   rating: 3.8 + ((i * 0.13) % 1.2),
+  category: categories[i],
   trending: i < 3,
 }));
 
