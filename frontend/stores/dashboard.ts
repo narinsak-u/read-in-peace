@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
+import { toast } from 'vue-sonner';
 import type { Book } from '~/data/books';
 
 interface BorrowRecord {
@@ -38,18 +39,33 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   async function borrowBook(id: string) {
-    await $fetch(`/api/books/${id}/borrow`, { method: 'POST' });
-    await fetchBorrows();
+    try {
+      await $fetch(`/api/books/${id}/borrow`, { method: 'POST' });
+      await fetchBorrows();
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to borrow a book');
+      throw e;
+    }
   }
 
   async function returnBook(id: string) {
-    await $fetch(`/api/books/${id}/return`, { method: 'POST' });
-    await fetchBorrows();
+    try {
+      await $fetch(`/api/books/${id}/return`, { method: 'POST' });
+      await fetchBorrows();
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to return a book');
+      throw e;
+    }
   }
 
   async function buyBook(id: string) {
-    await $fetch(`/api/books/${id}/buy`, { method: 'POST' });
-    await fetchPurchases();
+    try {
+      await $fetch(`/api/books/${id}/buy`, { method: 'POST' });
+      await fetchPurchases();
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to buy a book');
+      throw e;
+    }
   }
 
   return { borrowed, purchased, fetchBorrows, fetchPurchases, borrowBook, returnBook, buyBook };

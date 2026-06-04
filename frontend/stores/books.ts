@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { toast } from 'vue-sonner';
 import type { Book } from '~/data/books';
 
 export interface BookWithMeta extends Book {
@@ -75,11 +76,12 @@ export const useBooksStore = defineStore('books', () => {
     category: string;
     trending?: boolean;
   }) {
-    const res = await $fetch('/api/books', {
-      method: 'POST',
-      body: data,
-    });
-    return res;
+    try {
+      return await $fetch('/api/books', { method: 'POST', body: data });
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to create a book');
+      throw e;
+    }
   }
 
   async function updateBook(id: string, data: Partial<{
@@ -91,23 +93,34 @@ export const useBooksStore = defineStore('books', () => {
     category: string;
     trending: boolean;
   }>) {
-    const res = await $fetch(`/api/books/${id}`, {
-      method: 'PUT',
-      body: data,
-    });
-    return res;
+    try {
+      return await $fetch(`/api/books/${id}`, { method: 'PUT', body: data });
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to edit a book');
+      throw e;
+    }
   }
 
   async function deleteBook(id: string) {
-    await $fetch(`/api/books/${id}`, { method: 'DELETE' });
+    try {
+      await $fetch(`/api/books/${id}`, { method: 'DELETE' });
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to delete a book');
+      throw e;
+    }
   }
 
   async function toggleLike(id: string) {
-    const res = await $fetch<{ liked: boolean; likeCount: number }>(`/api/books/${id}/like`, {
-      method: 'POST',
-    });
-    liked.value = { ...liked.value, [id]: res.liked };
-    return res;
+    try {
+      const res = await $fetch<{ liked: boolean; likeCount: number }>(`/api/books/${id}/like`, {
+        method: 'POST',
+      });
+      liked.value = { ...liked.value, [id]: res.liked };
+      return res;
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to like a book');
+      throw e;
+    }
   }
 
   async function fetchComments(bookId: string) {
@@ -117,26 +130,40 @@ export const useBooksStore = defineStore('books', () => {
   }
 
   async function createComment(bookId: string, text: string) {
-    const res = await $fetch(`/api/books/${bookId}/comments`, {
-      method: 'POST',
-      body: { text },
-    });
-    return res;
+    try {
+      return await $fetch(`/api/books/${bookId}/comments`, {
+        method: 'POST',
+        body: { text },
+      });
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to comment');
+      throw e;
+    }
   }
 
   async function deleteComment(bookId: string, commentId: string) {
-    await $fetch(`/api/books/${bookId}/comments/${commentId}`, {
-      method: 'DELETE',
-    });
+    try {
+      await $fetch(`/api/books/${bookId}/comments/${commentId}`, {
+        method: 'DELETE',
+      });
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to delete a comment');
+      throw e;
+    }
   }
 
   async function rateBook(bookId: string, rating: number) {
-    const res = await $fetch<{ avgRating: number; userRating: number }>(`/api/books/${bookId}/rate`, {
-      method: 'POST',
-      body: { rating },
-    });
-    userRating.value = { ...userRating.value, [bookId]: res.userRating };
-    return res;
+    try {
+      const res = await $fetch<{ avgRating: number; userRating: number }>(`/api/books/${bookId}/rate`, {
+        method: 'POST',
+        body: { rating },
+      });
+      userRating.value = { ...userRating.value, [bookId]: res.userRating };
+      return res;
+    } catch (e: any) {
+      if (e?.statusCode === 401) toast.error('Please sign in to rate a book');
+      throw e;
+    }
   }
 
   return {
