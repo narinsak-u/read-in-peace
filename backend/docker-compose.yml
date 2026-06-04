@@ -1,0 +1,32 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: readinpace-db
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: readinpace
+      POSTGRES_PASSWORD: readinpace
+      POSTGRES_DB: readinpace
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U readinpace"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build: .
+    container_name: readinpace-api
+    ports:
+      - "4000:4000"
+    environment:
+      DATABASE_URL: postgres://readinpace:readinpace@postgres:5432/readinpace
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-dev-secret-change-in-production}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  pgdata:
