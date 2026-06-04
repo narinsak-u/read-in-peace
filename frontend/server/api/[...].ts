@@ -25,10 +25,15 @@ export default defineEventHandler(async (event) => {
         : undefined,
   });
 
+  const contentType = response.headers.get('content-type') || '';
+  const data = contentType.includes('application/json')
+    ? await response.json()
+    : await response.text();
+
   const setCookie = response.headers.get('set-cookie');
   if (setCookie) {
     setHeader(event, 'set-cookie', setCookie);
   }
 
-  return response.json();
+  return data;
 });
