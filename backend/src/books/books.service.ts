@@ -1,0 +1,148 @@
+import { Injectable, Inject, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { DRIZZLE } from '../db/db.module';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import * as schema from '../db/schema';
+import { desc, eq, sql, and, count } from 'drizzle-orm';
+
+@Injectable()
+export class BooksService {
+  constructor(@Inject(DRIZZLE) private db: NodePgDatabase<typeof schema>) {}
+
+  async findAll(page: number, limit: number, category?: string) {
+    const offset = (page - 1) * limit;
+    const where = category ? eq(schema.books.category, category) : undefined;
+
+    const data = await this.db
+      .select({
+        id: schema.books.id,
+        title: schema.books.title,
+        author: schema.books.author,
+        price: schema.books.price,
+        cover: schema.books.cover,
+        synopsis: schema.books.synopsis,
+        category: schema.books.category,
+        trending: schema.books.trending,
+        createdBy: schema.books.createdBy,
+        createdAt: schema.books.createdAt,
+        updatedAt: schema.books.updatedAt,
+        likeCount: sql<number>`(SELECT COUNT(*) FROM ${schema.likes} WHERE ${schema.likes.bookId} = ${schema.books.id})`,
+        commentCount: sql<number>`(SELECT COUNT(*) FROM ${schema.comments} WHERE ${schema.comments.bookId} = ${schema.books.id})`,
+        avgRating: sql<number>`COALESCE((SELECT AVG(${schema.ratings.rating}) FROM ${schema.ratings} WHERE ${schema.ratings.bookId} = ${schema.books.id}), 0)`,
+      })
+      .from(schema.books)
+      .where(where)
+      .limit(limit)
+      .offset(offset)
+      .orderBy(desc(schema.books.createdAt));
+
+    const totalResult = await this.db
+      .select({ value: count() })
+      .from(schema.books)
+      .where(where);
+
+    const total = Number(totalResult[0].value);
+
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async findOne(id: string) {
+    const [book] = await this.db
+      .select({
+        id: schema.books.id,
+        title: schema.books.title,
+        author: schema.books.author,
+        price: schema.books.price,
+        cover: schema.books.cover,
+        synopsis: schema.books.synopsis,
+        category: schema.books.category,
+        trending: schema.books.trending,
+        createdBy: schema.books.createdBy,
+        createdAt: schema.books.createdAt,
+        updatedAt: schema.books.updatedAt,
+        likeCount: sql<number>`(SELECT COUNT(*) FROM ${schema.likes} WHERE ${schema.likes.bookId} = ${schema.books.id})`,
+        commentCount: sql<number>`(SELECT COUNT(*) FROM ${schema.comments} WHERE ${schema.comments.bookId} = ${schema.books.id})`,
+        avgRating: sql<number>`COALESCE((SELECT AVG(${schema.ratings.rating}) FROM ${schema.ratings} WHERE ${schema.ratings.bookId} = ${schema.books.id}), 0)`,
+      })
+      .from(schema.books)
+      .where(eq(schema.books.id, id));
+
+    if (!book) throw new NotFoundException('Book not found');
+    return book;
+  }
+
+  async create(data: {
+    title: string;
+    author: string;
+    price: string;
+    cover: string;
+    synopsis: string;
+    category: string;
+    trending?: boolean;
+  }, userId: string) {
+    const [book] = await this.db
+      .insert(schema.books)
+      .values({ ...data, createdBy: userId })
+      .returning();
+    return book;
+  }
+
+  async update(id: string, data: Partial<{
+    title: string;
+    author: string;
+    price: string;
+    cover: string;
+    synopsis: string;
+    category: string;
+    trending: boolean;
+  }>, userId: string) {
+    const existing = await this.findOne(id);
+    if (existing.createdBy !== userId) {
+      throw new ForbiddenException('You can only edit your own books');
+    }
+    const [updated] = await this.db
+      .update(schema.books)
+      .set(data)
+      .where(eq(schema.books.id, id))
+      .returning();
+    return updated;
+  }
+
+  async remove(id: string, userId: string) {
+    const existing = await this.findOne(id);
+    if (existing.createdBy !== userId) {
+      throw new ForbiddenException('You can only delete your own books');
+    }
+    await this.db.delete(schema.books).where(eq(schema.books.id, id));
+  }
+
+  async getTrending() {
+    return this.db
+      .select({
+        id: schema.books.id,
+        title: schema.books.title,
+        author: schema.books.author,
+        price: schema.books.price,
+        cover: schema.books.cover,
+        synopsis: schema.books.synopsis,
+        category: schema.books.category,
+        trending: schema.books.trending,
+        createdBy: schema.books.createdBy,
+        createdAt: schema.books.createdAt,
+        updatedAt: schema.books.updatedAt,
+        likeCount: sql<number>`(SELECT COUNT(*) FROM ${schema.likes} WHERE ${schema.likes.bookId} = ${schema.books.id})`,
+        commentCount: sql<number>`(SELECT COUNT(*) FROM ${schema.comments} WHERE ${schema.comments.bookId} = ${schema.books.id})`,
+        avgRating: sql<number>`COALESCE((SELECT AVG(${schema.ratings.rating}) FROM ${schema.ratings} WHERE ${schema.ratings.bookId} = ${schema.books.id}), 0)`,
+      })
+      .from(schema.books)
+      .orderBy(desc(sql`COALESCE((SELECT AVG(${schema.ratings.rating}) FROM ${schema.ratings} WHERE ${schema.ratings.bookId} = ${schema.books.id}), 0)`))
+      .limit(3);
+  }
+}
