@@ -88,7 +88,7 @@ definePageMeta({
           v-for="cat in categories"
           :key="cat"
           @click="activeCategory = cat"
-          class="rounded-lg px-4 py-1.5 text-sm font-medium transition-colors"
+          class="rounded-full cursor-pointer px-4 py-1.5 text-sm font-medium transition-colors"
           :class="
             activeCategory === cat
               ? 'bg-foreground text-background'

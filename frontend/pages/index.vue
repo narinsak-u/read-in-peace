@@ -15,10 +15,6 @@ definePageMeta({
     <div
       class="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background/20"
     />
-    <div class="absolute left-8 top-8 text-base font-semibold tracking-tight">
-      Read<span class="text-primary"> in </span>Pace
-    </div>
-
     <div
       class="relative z-10 flex max-w-2xl flex-col items-center px-6 text-center"
     >

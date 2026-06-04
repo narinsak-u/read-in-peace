@@ -39,7 +39,7 @@ definePageMeta({
     >
       <button
         @click="tab = 'borrowed'"
-        class="flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all"
+        class="flex items-center gap-2 rounded-full cursor-pointer px-5 py-2 text-sm font-medium transition-all"
         :class="
           tab === 'borrowed'
             ? 'bg-foreground text-background shadow'
@@ -50,7 +50,7 @@ definePageMeta({
       </button>
       <button
         @click="tab = 'purchased'"
-        class="flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-all"
+        class="flex items-center gap-2 rounded-full cursor-pointer px-5 py-2 text-sm font-medium transition-all"
         :class="
           tab === 'purchased'
             ? 'bg-foreground text-background shadow'
