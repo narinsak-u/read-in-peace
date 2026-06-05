@@ -16,13 +16,19 @@ const comments = ref<any[]>([]);
 const draft = ref("");
 const showCommentForm = ref(false);
 const showShare = ref(false);
+const hasBorrowed = ref(false);
 
 onMounted(async () => {
   book.value = await booksStore.fetchBook(id);
   comments.value = await booksStore.fetchComments(id);
+
   if (auth.signedIn) {
-    booksStore.fetchLikeStatus(id);
-    booksStore.fetchUserRating(id);
+    await Promise.all([
+      dashboard.fetchBorrows(),
+      booksStore.fetchLikeStatus(id),
+      booksStore.fetchUserRating(id),
+    ]);
+    hasBorrowed.value = dashboard.borrowed.some((b) => b.borrow.bookId === id);
   }
 });
 
@@ -45,10 +51,22 @@ async function handleRate(rating: number) {
 }
 
 async function handleBuy() {
+  if (book.value?.inStock === 1) {
+    toast.error('Only one copy left — this book is borrow-only');
+    return;
+  }
   await dashboard.buyBook(id);
 }
 
 async function handleBorrow() {
+  if (hasBorrowed.value) {
+    toast.error('You have already borrowed this book');
+    return;
+  }
+  if (!book.value?.isAvailable) {
+    toast.error('Book is currently not available for borrowing');
+    return;
+  }
   await dashboard.borrowBook(id);
 }
 
@@ -103,8 +121,14 @@ definePageMeta({
             </span>
             <div class="flex items-center gap-1 text-sm text-muted-foreground">
               <Star class="h-4 w-4 fill-foreground text-foreground" />
-              {{ Number(book.avgRating).toFixed(1) }} · {{ comments.length }} comments
+              {{ Number(book.avgRating).toFixed(1) }}
             </div>
+            <span
+              class="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium"
+              :class="book.inStock >= 1 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-500'"
+            >
+              {{ book.inStock >= 1 ? `In stock: ${book.inStock}` : 'Out of stock' }}
+            </span>
           </div>
 
           <p class="mt-6 text-base leading-relaxed text-muted-foreground">
@@ -113,16 +137,24 @@ definePageMeta({
 
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
             <button
+              v-if="book.inStock > 1"
               @click="handleBuy"
-              class="flex-1 rounded-lg bg-primary px-6 py-3.5 font-medium text-primary-foreground transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/30"
+              class="flex-1 rounded-lg bg-primary cursor-pointer px-6 py-3.5 font-medium text-primary-foreground transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/30"
             >
               Buy Now — ${{ Number(book.price).toFixed(2) }}
             </button>
             <button
               @click="handleBorrow"
-              class="flex-1 rounded-lg border border-border px-6 py-3.5 font-medium transition-colors hover:bg-muted"
+              :disabled="!book.isAvailable || book.inStock < 1 || hasBorrowed"
+              class="flex-1 rounded-lg border px-6 py-3.5 font-medium transition-colors"
+              :class="[
+                book.inStock <= 1 ? 'w-full' : '',
+                book.isAvailable && book.inStock >= 1 && !hasBorrowed
+                  ? 'cursor-pointer border-border hover:bg-muted'
+                  : 'cursor-not-allowed border-dashed border-muted-foreground/30 text-muted-foreground/50',
+              ]"
             >
-              Borrow
+              {{ book.isAvailable && book.inStock >= 1 && !hasBorrowed ? 'Borrow' : 'Unavailable' }}
             </button>
           </div>
 

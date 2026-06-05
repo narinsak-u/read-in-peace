@@ -7,6 +7,8 @@ export interface BookWithMeta extends Book {
   likeCount: number;
   commentCount: number;
   avgRating: number;
+  inStock: number;
+  isAvailable: boolean;
   createdBy: string;
   createdAt: string;
   updatedAt: string;
@@ -77,9 +79,12 @@ export const useBooksStore = defineStore('books', () => {
     trending?: boolean;
   }) {
     try {
-      return await $fetch('/api/books', { method: 'POST', body: data });
+      const res = await $fetch('/api/books', { method: 'POST', body: data });
+      toast.success('Book created');
+      return res;
     } catch (e: any) {
       if (e?.statusCode === 401) toast.error('Please sign in to create a book');
+      else toast.error('Failed to create book');
       throw e;
     }
   }
@@ -94,9 +99,12 @@ export const useBooksStore = defineStore('books', () => {
     trending: boolean;
   }>) {
     try {
-      return await $fetch(`/api/books/${id}`, { method: 'PUT', body: data });
+      const res = await $fetch(`/api/books/${id}`, { method: 'PUT', body: data });
+      toast.success('Book updated');
+      return res;
     } catch (e: any) {
       if (e?.statusCode === 401) toast.error('Please sign in to edit a book');
+      else toast.error('Failed to update book');
       throw e;
     }
   }
@@ -104,8 +112,10 @@ export const useBooksStore = defineStore('books', () => {
   async function deleteBook(id: string) {
     try {
       await $fetch(`/api/books/${id}`, { method: 'DELETE' });
+      toast.success('Book deleted');
     } catch (e: any) {
       if (e?.statusCode === 401) toast.error('Please sign in to delete a book');
+      else toast.error('Failed to delete book');
       throw e;
     }
   }

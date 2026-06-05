@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { BookMarked, Library } from "lucide-vue-next";
+import { toast } from "vue-sonner";
 import { useAuthStore } from "~/stores/auth";
 import { useDashboardStore } from "~/stores/dashboard";
 
 const auth = useAuthStore();
 const dashboard = useDashboardStore();
-const tab = ref<"borrowed" | "purchased">("borrowed");
+const route = useRoute();
+const tab = ref<"borrowed" | "purchased">(
+  (route.query.tab as "borrowed" | "purchased") || "borrowed",
+);
 
 const borrowedBooks = computed(() => dashboard.borrowed);
 const purchasedBooks = computed(() => dashboard.purchased);
@@ -14,6 +18,14 @@ const list = computed(() =>
 );
 
 onMounted(async () => {
+  if (route.query.session_id) {
+    try {
+      await dashboard.confirmPurchase(route.query.session_id as string);
+      toast.success('Purchase complete!');
+    } catch {
+      toast.error('Purchase confirmation failed');
+    }
+  }
   await Promise.all([
     dashboard.fetchBorrows(),
     dashboard.fetchPurchases(),
@@ -71,7 +83,7 @@ definePageMeta({
           to="/feed"
           class="mt-3 inline-block text-sm font-medium text-primary hover:underline"
         >
-          Find something to read \u2192
+          Find something to read
         </NuxtLink>
       </div>
     </template>

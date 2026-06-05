@@ -42,8 +42,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     try {
       await $fetch(`/api/books/${id}/borrow`, { method: 'POST' });
       await fetchBorrows();
+      toast.success('Book borrowed');
     } catch (e: any) {
       if (e?.statusCode === 401) toast.error('Please sign in to borrow a book');
+      else toast.error('Failed to borrow book');
       throw e;
     }
   }
@@ -52,21 +54,34 @@ export const useDashboardStore = defineStore('dashboard', () => {
     try {
       await $fetch(`/api/books/${id}/return`, { method: 'POST' });
       await fetchBorrows();
+      toast.success('Book returned');
     } catch (e: any) {
       if (e?.statusCode === 401) toast.error('Please sign in to return a book');
+      else toast.error('Failed to return book');
       throw e;
     }
   }
 
   async function buyBook(id: string) {
     try {
-      await $fetch(`/api/books/${id}/buy`, { method: 'POST' });
-      await fetchPurchases();
+      const res = await $fetch<{ url: string }>(
+        `/api/books/${id}/create-checkout-session`,
+        { method: 'POST' },
+      );
+      window.location.href = res.url;
     } catch (e: any) {
       if (e?.statusCode === 401) toast.error('Please sign in to buy a book');
+      else toast.error(e?.message || 'Failed to start checkout');
       throw e;
     }
   }
 
-  return { borrowed, purchased, fetchBorrows, fetchPurchases, borrowBook, returnBook, buyBook };
+  async function confirmPurchase(sessionId: string) {
+    await $fetch(`/api/confirm-purchase?session_id=${sessionId}`, {
+      method: 'POST',
+    });
+    await fetchPurchases();
+  }
+
+  return { borrowed, purchased, fetchBorrows, fetchPurchases, borrowBook, returnBook, buyBook, confirmPurchase };
 });

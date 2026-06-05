@@ -114,7 +114,7 @@ definePageMeta({
         <button
           v-if="auth.adminMode"
           @click="showBookForm = true"
-          class="rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          class="rounded-lg bg-foreground cursor-pointer px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
         >
           + New Book
         </button>
@@ -147,7 +147,7 @@ definePageMeta({
         <button
           @click="page = Math.max(1, page - 1)"
           :disabled="page === 1"
-          class="flex h-9 w-9 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted disabled:opacity-40"
+          class="flex h-9 w-9 items-center cursor-pointer justify-center rounded-lg border border-border transition-colors hover:bg-muted disabled:opacity-40"
         >
           <ChevronLeft class="h-4 w-4" />
         </button>
@@ -155,7 +155,7 @@ definePageMeta({
           v-for="n in Math.min(totalPages, 5)"
           :key="n"
           @click="page = n"
-          class="h-9 min-w-9 rounded-lg px-3 text-sm font-medium transition-colors"
+          class="h-9 min-w-9 rounded-lg cursor-pointer px-3 text-sm font-medium transition-colors"
           :class="
             page === n ? 'bg-foreground text-background' : 'hover:bg-muted'
           "
@@ -166,7 +166,7 @@ definePageMeta({
         <button
           v-if="totalPages > 5"
           @click="page = totalPages"
-          class="h-9 min-w-9 rounded-lg px-3 text-sm font-medium transition-colors"
+          class="h-9 min-w-9 rounded-lg cursor-pointer px-3 text-sm font-medium transition-colors"
           :class="
             page === totalPages ? 'bg-foreground text-background' : 'hover:bg-muted'
           "
@@ -176,7 +176,7 @@ definePageMeta({
         <button
           @click="page = Math.min(totalPages, page + 1)"
           :disabled="page === totalPages"
-          class="flex h-9 w-9 items-center justify-center rounded-lg border border-border transition-colors hover:bg-muted disabled:opacity-40"
+          class="flex h-9 w-9 items-center cursor-pointer justify-center rounded-lg border border-border transition-colors hover:bg-muted disabled:opacity-40"
         >
           <ChevronRight class="h-4 w-4" />
         </button>

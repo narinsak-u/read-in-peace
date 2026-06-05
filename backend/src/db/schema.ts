@@ -81,6 +81,8 @@ export const books = pgTable('books', {
   synopsis: text('synopsis').notNull(),
   category: text('category').notNull(),
   trending: boolean('trending').notNull().default(false),
+  inStock: integer('in_stock').notNull().default(5),
+  isAvailable: boolean('is_available').notNull().default(true),
   createdBy: text('created_by')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),

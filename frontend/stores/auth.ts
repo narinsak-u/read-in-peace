@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
+import { toast } from 'vue-sonner';
 import { authClient, signIn, signUp, signOut } from '~/lib/auth-client';
 
 export interface User {
@@ -33,10 +34,12 @@ export const useAuthStore = defineStore('auth', () => {
       if (data?.user) {
         user.value = data.user;
         signedIn.value = true;
+        toast.success('Signed in successfully');
       }
     } catch {
       signedIn.value = false;
       user.value = null;
+      toast.error('Failed to sign in');
     } finally {
       loading.value = false;
     }
@@ -50,10 +53,12 @@ export const useAuthStore = defineStore('auth', () => {
       if (data?.user) {
         user.value = data.user;
         signedIn.value = true;
+        toast.success('Account created successfully');
       }
     } catch {
       signedIn.value = false;
       user.value = null;
+      toast.error('Failed to create account');
     } finally {
       loading.value = false;
     }
@@ -63,6 +68,7 @@ export const useAuthStore = defineStore('auth', () => {
     await signOut();
     signedIn.value = false;
     user.value = null;
+    toast.success('Signed out');
   }
 
   function toggleAdmin() {

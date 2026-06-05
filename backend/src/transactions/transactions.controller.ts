@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Param, Query, UseGuards } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -19,10 +19,22 @@ export class TransactionsController {
     return this.transactionsService.returnBook(id, user.id);
   }
 
-  @Post('api/books/:id/buy')
+  @Post('api/books/:id/create-checkout-session')
   @UseGuards(AuthGuard)
-  buy(@Param('id') id: string, @CurrentUser() user: { id: string }) {
-    return this.transactionsService.buy(id, user.id);
+  createCheckoutSession(
+    @Param('id') id: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.transactionsService.createCheckoutSession(id, user.id);
+  }
+
+  @Post('api/confirm-purchase')
+  @UseGuards(AuthGuard)
+  confirmPurchase(
+    @Query('session_id') sessionId: string,
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.transactionsService.confirmPurchase(sessionId, user.id);
   }
 
   @Get('api/user/borrows')

@@ -49,7 +49,7 @@ function navigate(path: string) {
           <button
             @click="open = !open"
             @blur="setTimeout(() => (open = false), 150)"
-            class="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-border transition-transform hover:scale-105"
+            class="flex h-9 w-9 items-center cursor-pointer justify-center rounded-full bg-primary/10 text-primary ring-1 ring-border transition-transform hover:scale-105"
             aria-label="Profile menu"
           >
             <span v-if="auth.signedIn && auth.user" class="text-sm font-semibold">
@@ -74,13 +74,13 @@ function navigate(path: string) {
               <div class="my-1 h-px bg-border" />
               <button
                 @mousedown="navigate('/dashboard')"
-                class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted"
+                class="flex w-full items-center cursor-pointer gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted"
               >
                 <LayoutDashboard class="h-4 w-4" /> Dashboard
               </button>
               <button
                 @mousedown="auth.toggleAdmin()"
-                class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm hover:bg-muted"
+                class="flex w-full items-center cursor-pointer justify-between rounded-lg px-3 py-2 text-sm hover:bg-muted"
               >
                 <span class="flex items-center gap-2"
                   >
@@ -100,7 +100,7 @@ function navigate(path: string) {
               </button>
               <button
                 @mousedown="auth.signOut()"
-                class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-muted"
+                class="flex w-full items-center cursor-pointer gap-2 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-muted"
               >
                 <LogOut class="h-4 w-4" /> Sign out
               </button>
@@ -108,7 +108,7 @@ function navigate(path: string) {
             <template v-else>
               <button
                 @mousedown="showAuthModal = true"
-                class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm hover:bg-muted"
+                class="flex w-full items-center gap-2 cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-muted"
               >
                 Sign in
               </button>

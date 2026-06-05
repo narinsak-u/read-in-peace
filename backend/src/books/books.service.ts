@@ -7,7 +7,7 @@ import {
 import { DRIZZLE } from '../db/db.module';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../db/schema';
-import { desc, eq, sql, count } from 'drizzle-orm';
+import { desc, eq, sql, count, gt } from 'drizzle-orm';
 
 @Injectable()
 export class BooksService {
@@ -22,6 +22,8 @@ export class BooksService {
     synopsis: schema.books.synopsis,
     category: schema.books.category,
     trending: schema.books.trending,
+    inStock: schema.books.inStock,
+    isAvailable: schema.books.isAvailable,
     createdBy: schema.books.createdBy,
     createdAt: schema.books.createdAt,
     updatedAt: schema.books.updatedAt,
@@ -133,6 +135,15 @@ export class BooksService {
       throw new ForbiddenException('You can only delete your own books');
     }
     await this.db.delete(schema.books).where(eq(schema.books.id, id));
+  }
+
+  async decrementStock(id: string) {
+    const [updated] = await this.db
+      .update(schema.books)
+      .set({ inStock: sql`${schema.books.inStock} - 1` })
+      .where(gt(schema.books.inStock, 1))
+      .returning();
+    return updated;
   }
 
   async getTrending() {
