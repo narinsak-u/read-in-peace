@@ -4,7 +4,14 @@ export default defineNuxtConfig({
   ssr: true,
   devtools: true,
   css: ["~/assets/css/main.css"],
-  modules: ["@pinia/nuxt", "shadcn-nuxt"],
+  modules: [
+   "@pinia/nuxt",
+   "shadcn-nuxt",
+   "@stefanobartoletti/nuxt-social-share",
+  ],
+  socialShare: {
+    baseUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
+  },
   devServer: {
     port: 3000,
   },
