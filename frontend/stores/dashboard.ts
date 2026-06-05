@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { shallowRef } from 'vue';
 import { toast } from 'vue-sonner';
 import type { Book } from '~/data/books';
 
@@ -25,8 +25,8 @@ interface PurchaseRecord {
 }
 
 export const useDashboardStore = defineStore('dashboard', () => {
-  const borrowed = ref<BorrowRecord[]>([]);
-  const purchased = ref<PurchaseRecord[]>([]);
+  const borrowed = shallowRef<BorrowRecord[]>([]);
+  const purchased = shallowRef<PurchaseRecord[]>([]);
 
   async function fetchBorrows() {
     const res = await $fetch<BorrowRecord[]>('/api/user/borrows');

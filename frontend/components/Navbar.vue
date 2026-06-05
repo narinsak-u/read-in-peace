@@ -6,12 +6,21 @@ import {
   LogOut,
   Shield,
 } from "lucide-vue-next";
+import { computed } from "vue";
 import { useAuthStore } from "~/stores/auth";
 
 const auth = useAuthStore();
-const open = ref(false);
+const open = shallowRef(false);
 const router = useRouter();
-const showAuthModal = ref(false);
+const showAuthModal = shallowRef(false);
+
+const userInitials = computed(() => {
+  if (!auth.user) return "";
+  return auth.user.name
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("");
+});
 
 function navigate(path: string) {
   open.value = false;
@@ -53,12 +62,7 @@ function navigate(path: string) {
             aria-label="Profile menu"
           >
             <span v-if="auth.signedIn && auth.user" class="text-sm font-semibold">
-              {{
-                auth.user.name
-                  .split(' ')
-                  .map((n: string) => n[0])
-                  .join('')
-              }}
+              {{ userInitials }}
             </span>
             <User v-else class="h-4 w-4" />
           </button>

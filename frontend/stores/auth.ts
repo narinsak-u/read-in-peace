@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, watch } from 'vue';
+import { shallowRef, watch } from 'vue';
 import { toast } from 'vue-sonner';
 import { authClient, signIn, signUp, signOut } from '~/lib/auth-client';
 
@@ -9,10 +9,10 @@ export interface User {
 }
 
 export const useAuthStore = defineStore('auth', () => {
-  const signedIn = ref(false);
-  const user = ref<User | null>(null);
-  const adminMode = ref(false);
-  const loading = ref(false);
+  const signedIn = shallowRef(false);
+  const user = shallowRef<User | null>(null);
+  const adminMode = shallowRef(false);
+  const loading = shallowRef(false);
 
   const session = authClient.useSession();
 

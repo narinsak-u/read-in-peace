@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { Pencil, Trash2, RotateCcw, BookOpen } from "lucide-vue-next";
 import type { Book } from "~/data/books";
 import { useDashboardStore } from "~/stores/dashboard";
@@ -20,6 +21,24 @@ const emit = defineEmits<{
 const dashboard = useDashboardStore();
 const booksStore = useBooksStore();
 const auth = useAuthStore();
+
+const borrowBtnClass = computed(() => {
+  return props.book.isAvailable && props.book.inStock >= 1
+    ? "cursor-pointer border-border hover:bg-muted"
+    : "cursor-not-allowed border-dashed border-muted-foreground/30 text-muted-foreground/50";
+});
+
+const borrowLabel = computed(() => {
+  return props.book.isAvailable && props.book.inStock >= 1 ? "Borrow" : "Unavailable";
+});
+
+const stockClass = computed(() => {
+  return props.book.inStock >= 1 ? "bg-green-500/10 text-green-600" : "bg-red-500/10 text-red-500";
+});
+
+const stockLabel = computed(() => {
+  return props.book.inStock >= 1 ? `In stock: ${props.book.inStock}` : "Out of stock";
+});
 
 async function handleDelete() {
   if (confirm("Delete this book?")) {
@@ -69,9 +88,9 @@ async function handleDelete() {
         <p class="text-sm text-muted-foreground">{{ book.author }}</p>
         <p
           class="inline-block rounded-full mt-2 px-2 py-0.5 text-xs font-medium"
-          :class="book.inStock >= 1 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-500'"
+          :class="stockClass"
         >
-          {{ book.inStock >= 1 ? `In stock: ${book.inStock}` : 'Out of stock' }}
+          {{ stockLabel }}
         </p>
       </NuxtLink>
 
@@ -104,11 +123,9 @@ async function handleDelete() {
             @click="dashboard.borrowBook(book.id)"
             :disabled="!book.isAvailable || book.inStock < 1"
             class="flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors"
-            :class="book.isAvailable && book.inStock >= 1
-              ? 'cursor-pointer border-border hover:bg-muted'
-              : 'cursor-not-allowed border-dashed border-muted-foreground/30 text-muted-foreground/50'"
+            :class="borrowBtnClass"
           >
-            {{ book.isAvailable && book.inStock >= 1 ? 'Borrow' : 'Unavailable' }}
+            {{ borrowLabel }}
           </button>
         </template>
       </div>

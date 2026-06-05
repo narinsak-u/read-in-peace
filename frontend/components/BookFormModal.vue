@@ -24,8 +24,8 @@ const emit = defineEmits<{
 }>();
 
 const booksStore = useBooksStore();
-const saving = ref(false);
-const error = ref("");
+const saving = shallowRef(false);
+const error = shallowRef("");
 
 const form = reactive({
   title: props.book?.title ?? "",

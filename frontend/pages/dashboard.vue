@@ -7,7 +7,7 @@ import { useDashboardStore } from "~/stores/dashboard";
 const auth = useAuthStore();
 const dashboard = useDashboardStore();
 const route = useRoute();
-const tab = ref<"borrowed" | "purchased">(
+const tab = shallowRef<"borrowed" | "purchased">(
   (route.query.tab as "borrowed" | "purchased") || "borrowed",
 );
 

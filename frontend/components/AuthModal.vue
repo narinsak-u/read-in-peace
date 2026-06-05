@@ -8,12 +8,12 @@ const emit = defineEmits<{
 const auth = useAuthStore();
 const router = useRouter();
 
-const tab = ref<'sign-in' | 'sign-up'>('sign-in');
-const email = ref('');
-const password = ref('');
-const name = ref('');
-const error = ref('');
-const submitting = ref(false);
+const tab = shallowRef<'sign-in' | 'sign-up'>('sign-in');
+const email = shallowRef('');
+const password = shallowRef('');
+const name = shallowRef('');
+const error = shallowRef('');
+const submitting = shallowRef(false);
 
 async function handleSubmit() {
   error.value = '';
@@ -32,11 +32,6 @@ async function handleSubmit() {
     submitting.value = false;
   }
 }
-
-onMounted(() => {
-  email.value = 'admin@gmail.com';
-  password.value = '123456789';
-});
 
 function switchTab(t: 'sign-in' | 'sign-up') {
   tab.value = t;

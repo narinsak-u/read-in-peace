@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref, shallowRef, computed } from 'vue';
 import { toast } from 'vue-sonner';
 import type { Book } from '~/data/books';
 
@@ -21,7 +21,7 @@ export interface PaginationMeta {
   totalPages: number;
 }
 
-interface Comment {
+export interface Comment {
   id: string;
   bookId: string;
   userId: string;
@@ -42,7 +42,7 @@ export const useBooksStore = defineStore('books', () => {
   const liked = ref<Record<string, boolean>>({});
   const userRating = ref<Record<string, number>>({});
   const meta = ref<PaginationMeta>({ page: 1, limit: 12, total: 0, totalPages: 0 });
-  const loading = ref(false);
+  const loading = shallowRef(false);
 
   async function fetchBooks(page = 1, limit = 12, category?: string) {
     loading.value = true;
