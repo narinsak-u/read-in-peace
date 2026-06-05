@@ -29,43 +29,61 @@ definePageMeta({
     </NuxtLink>
 
     <template v-if="book">
-      <BookDetails :book="book" />
+      <div class="grid grid-cols-1 gap-12 md:grid-cols-2 md:items-start">
+        <!-- Left column: Book cover (sticky) -->
+        <div class="flex justify-center md:sticky md:top-24">
+          <div class="w-full max-w-md">
+            <div class="w-full overflow-hidden rounded-lg shadow-lg shadow-black/20">
+              <img
+                :src="book.cover"
+                :alt="book.title"
+                class="h-full w-full object-cover"
+              />
+            </div>
+          </div>
+        </div>
 
-      <BookActions :book="book" :has-borrowed="hasBorrowed" @buy="handleBuy" @borrow="handleBorrow" />
+        <!-- Right column: metadata, actions, comments (scrollable) -->
+        <div class="flex flex-col">
+          <BookDetails :book="book" />
 
-      <div class="mt-6 flex items-center gap-2">
-        <button
-          @click="handleLike"
-          class="flex h-11 w-11 items-center cursor-pointer justify-center rounded-lg border border-border transition-all hover:bg-muted"
-          :class="booksStore.liked[book.id] ? 'text-destructive' : ''"
-        >
-          <Heart
-            class="h-4 w-4"
-            :class="booksStore.liked[book.id] ? 'fill-current' : ''"
+          <BookActions :book="book" :has-borrowed="hasBorrowed" @buy="handleBuy" @borrow="handleBorrow" />
+
+          <div class="mt-6 flex items-center gap-2">
+            <button
+              @click="handleLike"
+              class="flex h-11 w-11 items-center cursor-pointer justify-center rounded-lg border border-border transition-all hover:bg-muted"
+              :class="booksStore.liked[book.id] ? 'text-destructive' : ''"
+            >
+              <Heart
+                class="h-4 w-4"
+                :class="booksStore.liked[book.id] ? 'fill-current' : ''"
+              />
+            </button>
+            <button
+              @click="showCommentForm = !showCommentForm"
+              class="flex h-11 w-11 items-center justify-center cursor-pointer rounded-lg border border-border transition-colors hover:bg-muted"
+              :class="showCommentForm ? 'bg-muted' : ''"
+            >
+              <MessageSquare class="h-4 w-4" />
+            </button>
+            <BookShare />
+          </div>
+
+          <BookRating
+            :avg-rating="Number(book.avgRating)"
+            :user-rating="booksStore.userRating[id] ?? null"
+            @rate="handleRate"
           />
-        </button>
-        <button
-          @click="showCommentForm = !showCommentForm"
-          class="flex h-11 w-11 items-center justify-center cursor-pointer rounded-lg border border-border transition-colors hover:bg-muted"
-          :class="showCommentForm ? 'bg-muted' : ''"
-        >
-          <MessageSquare class="h-4 w-4" />
-        </button>
-        <BookShare />
+
+          <BookComments
+            :comments="comments"
+            :signed-in="auth.signedIn"
+            :show-comment-form="showCommentForm"
+            @submit="submitReview"
+          />
+        </div>
       </div>
-
-      <BookRating
-        :avg-rating="Number(book.avgRating)"
-        :user-rating="booksStore.userRating[id] ?? null"
-        @rate="handleRate"
-      />
-
-      <BookComments
-        :comments="comments"
-        :signed-in="auth.signedIn"
-        :show-comment-form="showCommentForm"
-        @submit="submitReview"
-      />
     </template>
     <template v-else>
       <div class="mx-auto max-w-xl px-6 py-24 text-center">
