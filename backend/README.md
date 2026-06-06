@@ -1,98 +1,85 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Read in Pace — Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+NestJS v11 REST API with Better Auth, Drizzle ORM, and PostgreSQL.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Tech stack
 
-## Description
+- **Framework:** NestJS v11 (Express platform)
+- **Auth:** Better Auth (email/password, scrypt hashing)
+- **Database:** PostgreSQL + Drizzle ORM (schema + migrations via `drizzle-kit`)
+- **Payments:** Stripe Checkout Sessions
+- **Testing:** Jest
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
+## Commands
 
 ```bash
-$ npm install
+npm run build          # nest build
+npm run lint           # ESLint + Prettier
+npm run format         # Prettier (singleQuote, trailingComma)
+npm run test           # Jest unit tests
+npm run test:watch     # Jest watch mode
+npm run test:cov       # Jest with coverage
+npm run test:e2e       # E2E tests
+npm run db:push        # Push Drizzle schema to DB
+npm run db:seed        # Seed database (2 users, 15 books, comments, ratings)
 ```
 
-## Compile and run the project
+## Project structure
 
-```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+```
+backend/src/
+├── main.ts                 # Entry point, mounts Better Auth at /api/auth
+├── app.module.ts           # Root module
+├── auth/
+│   ├── better-auth.ts      # Better Auth config (scrypt, Drizzle adapter)
+│   ├── auth.guard.ts       # @UseGuards(AuthGuard) for protected routes
+│   └── current-user.decorator.ts  # @CurrentUser() parameter decorator
+├── books/
+│   ├── books.controller.ts
+│   ├── books.service.ts
+│   ├── likes.controller.ts + likes.service.ts
+│   ├── ratings.controller.ts + ratings.service.ts
+│   └── comments.controller.ts + comments.service.ts
+├── transactions/
+│   ├── transactions.controller.ts
+│   └── transactions.service.ts  # borrow, return, Stripe checkout, confirm purchase
+├── db/
+│   ├── schema.ts            # All tables (users, books, likes, ratings, comments, borrows, purchases)
+│   └── seed.ts              # Seed data with scrypt password hashing
+└── drizzle/                 # Generated migration files
 ```
 
-## Run tests
+## API endpoints
 
-```bash
-# unit tests
-$ npm run test
+### Books
+- `GET /api/books?page=&limit=&category=` — Paginated book list
+- `GET /api/books/trending` — Trending books
+- `GET /api/books/:id` — Book detail with meta (likes, comments, rating, stock)
+- `POST /api/books` — Create book (auth required)
+- `PUT /api/books/:id` — Update book (auth required)
+- `DELETE /api/books/:id` — Delete book (auth required)
 
-# e2e tests
-$ npm run test:e2e
+### Social
+- `GET/POST /api/books/:id/like` — Get/ Toggle like status
+- `GET/POST /api/books/:id/rate` — Get/Submit rating (1-5)
+- `GET /api/books/:id/comments` — List comments
+- `POST /api/books/:id/comments` — Add comment (auth required)
 
-# test coverage
-$ npm run test:cov
+### Transactions
+- `POST /api/books/:id/borrow` — Borrow a book (decrements stock)
+- `POST /api/books/:id/return` — Return a book (increments stock)
+- `POST /api/books/:id/create-checkout-session` — Stripe Checkout Session
+- `POST /api/confirm-purchase?session_id=` — Confirm purchase after Stripe redirect
+- `GET /api/user/borrows` — Current user's borrowed books
+- `GET /api/user/purchases` — Current user's purchased books
+
+### Auth
+- `GET/POST /api/auth/*` — Better Auth API (sign-in, sign-up, session, etc.)
+
+## Environment
+
+```env
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/readinpace
+BETTER_AUTH_SECRET=<your-secret>
+STRIPE_SECRET_KEY=<your-stripe-secret>
 ```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).

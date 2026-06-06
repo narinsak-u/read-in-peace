@@ -1,192 +1,102 @@
-# Frontend Improvement Plan
+# Frontend Improvement Plan — Execution Log
 
 Audited against [Vue Best Practices](https://github.com/anomalyco/opencode/tree/main/skills/vue-best-practices)
-guidelines on 2026-06-05.
+guidelines on 2026-06-05. All phases executed on 2026-06-06.
 
-## Phase 1: Component Splitting
+## Execution status
 
-### 1.1 Split `pages/book/[id].vue` (274 lines)
+| Phase | Status | Commit |
+|---|---|---|
+| 1.1 Split `book/[id].vue` | ✅ Done | `57256af` |
+| 1.2 Split `feed.vue` | ✅ Done | `57256af` |
+| 2.1 `useBookDetail` composable | ✅ Done (rolled into Phase 1.1) | `57256af` |
+| 2.2 `useCommentForm` composable | ⏭️ Skipped — form state kept in `BookComments.vue` | — |
+| 2.3 `useShelf` composable | ✅ Done (rolled into Phase 1.2) | `57256af` |
+| 3.1 `shallowRef` for primitives | ✅ Done | `57256af` |
+| 3.2 Async cleanup in shelf watcher | ✅ Done | `57256af` |
+| 3.3 `readonly` store exposure | ⏭️ Skipped — would break template reactivity expectations | — |
+| 4.1 Inline expressions to computed | ✅ Done | `57256af` |
+| 4.2 Remove redundant computed | ✅ Done (`filteredBooks` removed) | `57256af` |
+| 5.1 Hardcoded credentials | ✅ Done (removed) | `57256af` |
+| 5.2 `@blur` + `setTimeout` dropdown | ⏭️ Skipped — established pattern, low impact | — |
+| 5.3 `any` types | ✅ Done (resolved in composable extraction) | `57256af` |
+| 5.4 `getInitials` utility | ✅ Done (in `BookComments.vue`) | `57256af` |
+| Layout fix (cover sticky) | ✅ Done | `4b8e736` |
 
-**Problem:** Route view owns 6 distinct UI sections + full orchestration. Violates
-the "route views are composition surfaces" principle.
+## 1.1 Split `pages/book/[id].vue`
 
-**Plan:**
+**Original:** 274 lines, 6 UI sections, full orchestration in route view.
+
+**Result:** 79 lines, thin container with child components.
+
+| New component | File | Responsibility |
+|---|---|---|
+| `useBookDetail` | `composables/useBookDetail.ts` | Fetch book, comments, like/rate status; handle buy/borrow/like/rate/comment |
+| BookDetails | `components/BookDetails.vue` | Author, title, price, stock badge, synopsis |
+| BookActions | `components/BookActions.vue` | Buy/borrow buttons with computed disabled state |
+| BookRating | `components/BookRating.vue` | 5-star rating input with `isStarActive` helper |
+| BookShare | `components/BookShare.vue` | Social share popup (self-contained) |
+| BookComments | `components/BookComments.vue` | Comment form + comment list with `getInitials` |
+
+## 1.2 Split `pages/feed.vue`
+
+**Original:** 193 lines, 4 sections.
+
+**Result:** 45 lines, thin container.
+
+| New component | File | Responsibility |
+|---|---|---|
+| `useShelf` | `composables/useShelf.ts` | Page tracking, category filter, initial fetch with cleanup |
+| TrendingSection | `components/TrendingSection.vue` | "Trending Now" header + featured grid |
+| BookShelf | `components/BookShelf.vue` | Category filters, book grid, pagination |
+
+## 3. Reactivity fixes
+
+- `shallowRef` for all primitive state across 7 components, 3 stores (auth, books, dashboard), and 2 composables
+- Async cleanup guard (`cancelled` flag) in `useShelf` watcher
+
+## 4. Template quality
+
+- `Navbar.vue`: extracted `userInitials` computed
+- `BookCard.vue`: extracted `borrowBtnClass`, `borrowLabel`, `stockClass`, `stockLabel` computeds
+- `BookDetails.vue`: extracted `formattedPrice`, `formattedAvgRating`, `stockBadgeClass`, `stockLabel`
+- `BookActions.vue`: extracted `borrowBtnClass`, `borrowLabel`, `buyFullWidth`
+- `BookRating.vue`: extracted `isStarActive()` function
+- Removed redundant `filteredBooks` computed from feed.vue
+
+## Original plan
+
+### Phase 1: Component Splitting
 
 | New component | Responsibility | Props | Emits |
 |---|---|---|---|
-| `components/BookDetails.vue` | Cover, title, author, price, synopsis, stock badge | `book: BookWithMeta` | — |
-| `components/BookActions.vue` | Buy button, borrow button, stock-aware disabled state | `book: BookWithMeta`, `hasBorrowed: boolean` | `buy`, `borrow` |
-| `components/BookRating.vue` | Star rating display + input (5 stars) | `bookId: string`, `avgRating: number`, `userRating: number` | `rate: [rating: number]` |
-| `components/BookShare.vue` | Share popup with social network buttons | — | — |
-| `components/BookComments.vue` | Comment form + comment list | `bookId: string`, `comments: Comment[]` | `submit: [text: string]` |
-| `composables/useBookDetail.ts` | Fetch book, like/rate status, comment CRUD orchestration | — (returns state + actions) | — |
+| BookDetails | Cover, title, author, price, synopsis, stock badge | `book: BookWithMeta` | — |
+| BookActions | Buy/borrow buttons, stock-aware disabled | `book: BookWithMeta`, `hasBorrowed: boolean` | `buy`, `borrow` |
+| BookRating | Star rating display + input | `avgRating: number`, `userRating: number` | `rate: [rating: number]` |
+| BookShare | Share popup with social buttons | — | — |
+| BookComments | Comment form + comment list | `comments: Comment[]`, `signedIn: boolean`, `showCommentForm: boolean` | `submit: [text: string]` |
+| TrendsingSection | Trending hero grid | `trending: BookWithMeta[]` | — |
+| BookShelf | Category filters, book grid, pagination | `books`, `categories`, `activeCategory`, `page`, `totalPages`, `adminMode` | `edit`, `addBook`, `categoryChange`, `pageChange` |
 
-**Result:** `book/[id].vue` becomes a thin container:
-```vue
-<script setup lang="ts">
-const { book, comments, hasBorrowed, handleLike, handleRate, submitReview } = useBookDetail(id)
-</script>
-<template>
-  <Navbar />
-  <main>
-    <BookDetails :book="book" />
-    <BookActions :book="book" :hasBorrowed @buy @borrow />
-    <div class="flex gap-2">
-      <button @click="handleLike">Like</button>
-      <BookRating :bookId @rate="handleRate" />
-      <BookShare />
-    </div>
-    <BookComments :bookId :comments @submit="submitReview" />
-  </main>
-</template>
-```
+### Phase 2: Composables
 
-### 1.2 Split `pages/feed.vue` (193 lines)
-
-**Problem:** Route view owns trending section, shelf, category filters, and
-pagination. 4 distinct sections.
-
-**Plan:**
-
-| New component | Responsibility |
+| Composable | Responsibility |
 |---|---|
-| `components/TrendingSection.vue` | "Trending Now" header + grid of trending book cards |
-| `components/BookShelf.vue` | "Full shelf" header, category filter buttons, book grid, pagination |
-| `composables/useShelf.ts` | Page tracking, active category, book fetching with async cleanup |
+| `useBookDetail` | Fetch book, like/rate/comment/buy/borrow orchestration |
+| `useShelf` | Page tracking, category filtering, initial data fetch |
 
-**Result:** `feed.vue` becomes:
-```vue
-<script setup lang="ts">
-const { page, activeCategory, totalPages, handlePageChange } = useShelf()
-</script>
-<template>
-  <Navbar />
-  <main>
-    <TrendingSection :books="booksStore.trending" />
-    <BookShelf
-      :books="booksStore.books"
-      :categories :activeCategory
-      :page :totalPages
-      @category-change @page-change
-    />
-  </main>
-</template>
-```
+### Phase 3: Reactivity
 
-## Phase 2: Composables
+- `shallowRef` for all primitives
+- Async cleanup in shelf watcher
 
-### 2.1 Create `composables/useBookDetail.ts`
+### Phase 4: Template Quality
 
-Extract from `book/[id].vue`:
-- `book`, `comments`, `hasBorrowed` state
-- `submitReview()`, `handleLike()`, `handleRate()`, `handleBuy()`, `handleBorrow()`
-- `onMounted` orchestration (fetch book + comments + like/rate status + borrows)
+- Move inline expressions to computed
+- Remove redundant `filteredBooks` computed
 
-### 2.2 Create `composables/useCommentForm.ts`
+### Phase 5: Minor Cleanup
 
-Extract from `book/[id].vue`:
-- `draft`, `showCommentForm` state
-- `submitReview()` with guard clause
-- Returns `{ draft, showCommentForm, submitReview }`
-
-### 2.3 Create `composables/useShelf.ts`
-
-Extract from `feed.vue`:
-- `page`, `activeCategory` state
-- Watcher with `onCleanup` / AbortController for race-condition safety
-- Category derivation from fetched books
-
-## Phase 3: Reactivity Fixes
-
-### 3.1 Use `shallowRef` for all primitives
-
-Replace `ref()` → `shallowRef()` for these (non-exhaustive):
-
-| File | Current | Fix |
-|---|---|---|
-| `stores/auth.ts:12-15` | `ref(false)`, `ref(null)`, `ref(false)`, `ref(false)` | `shallowRef(...)` |
-| `stores/books.ts:45` | `ref(false)` | `shallowRef(false)` |
-| `book/[id].vue:14-19` | `ref(null)`, `ref([])`, `ref('')`, `ref(false)`, `ref(false)`, `ref(false)` | `shallowRef(...)` |
-| `feed.vue:8-12` | `ref(1)`, `ref('All')`, `ref([])`, `ref(false)`, `ref(null)` | `shallowRef(...)` |
-| `dashboard.vue:10` | `ref<'borrowed' \| 'purchased'>('borrowed')` | `shallowRef(...)` |
-| `AuthModal.vue:12-16` | `ref(...)` | `shallowRef(...)` |
-| `Navbar.vue:12` | `ref(false)` | `shallowRef(false)` |
-| `BookFormModal.vue:27-28` | `ref(false)`, `ref('')` | `shallowRef(...)` |
-
-### 3.2 Add async cleanup to shelf watcher
-
-`feed.vue:18-20` — the watcher on `[page, activeCategory]` should use
-`onCleanup` to abort in-flight requests on rapid page changes.
-
-```ts
-watch([page, activeCategory], async ([p, cat], _prev, onCleanup) => {
-  const controller = new AbortController()
-  onCleanup(() => controller.abort())
-  await booksStore.fetchBooks(p, 12, cat === 'All' ? undefined : cat)
-})
-```
-
-Requires `$fetch` to accept a signal or pass it through the proxy. If the
-backend doesn't support cancellation, wrap with a local flag instead.
-
-### 3.3 Return `readonly` state from stores
-
-Pinia store consumers should not be able to mutate state directly. Wrap exposed
-refs with `readonly()`:
-
-```ts
-// stores/dashboard.ts
-return {
-  borrowed: readonly(borrowed),
-  purchased: readonly(purchased),
-  fetchBorrows, fetchPurchases, borrowBook, returnBook, buyBook, confirmPurchase,
-}
-```
-
-Same pattern for `stores/books.ts` and `stores/auth.ts`.
-
-## Phase 4: Template Quality
-
-### 4.1 Move inline expressions to computed
-
-| Location | Expression | Fix |
-|---|---|---|
-| `Navbar.vue:57-61` | `auth.user.name.split(' ').map(...).join('')` | Extract to `userInitials` computed |
-| `book/[id].vue:150-155` | Complex ternary for borrow button class | `borrowBtnClass` computed |
-| `BookCard.vue:107-109` | Borrow button class ternary | `borrowBtnClass` computed |
-| `book/[id].vue:124, 216` | `Number(book.avgRating).toFixed(1)` repeated | `formattedAvgRating` computed |
-| `book/[id].vue:211-213` | `(booksStore.userRating[id] ?? 0) >= star` repeated | `isStarActive(star)` function |
-
-### 4.2 Remove unnecessary computed
-
-`feed.vue:14` — `filteredBooks` is `computed(() => booksStore.books)` which is
-redundant. Use `booksStore.books` directly in template.
-
-## Phase 5: Minor Cleanup
-
-| Issue | Fix |
-|---|---|
-| `AuthModal.vue:37-38` hardcoded credentials | Move to env var or remove for production |
-| `Navbar.vue:51` `@blur` + `setTimeout` for dropdown | Create `useClickOutside` composable |
-| `book/[id].vue:14-15` `ref<any>` | Type with `BookWithMeta` and `Comment` |
-| `feed.vue:12, 31` `ref<any>`, `book: any` | Type with proper interfaces |
-| `book/[id].vue:247` `c.user.name.charAt(0)` | Extract to component or `getInitials` utility |
-
-## Execution Order
-
-```
-Phase 1 (splitting) ----► Phase 2 (composables) ----► Phase 3 (reactivity) ----► Phase 4 (templates) ----► Phase 5 (cleanup)
-       │                          │
-       ▼                          ▼
-  BookDetails.vue           useBookDetail.ts
-  BookActions.vue           useCommentForm.ts
-  BookRating.vue            useShelf.ts
-  BookShare.vue
-  BookComments.vue
-  TrendingSection.vue
-  BookShelf.vue
-```
-
-Phases are sequential — each depends on the previous. Splitting first makes
-the composable extraction targets obvious; reactivity and template fixes go
-last to avoid rework.
+- Remove hardcoded credentials from AuthModal
+- Type `any` refs (resolved via composable extraction)
+- `getInitials` utility in BookComments

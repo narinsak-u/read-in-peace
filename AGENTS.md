@@ -96,9 +96,12 @@ npx jest -t "should return Hello World"
 
 ## Project conventions
 
-- `tailwind.config.ts` in `frontend/` uses OKLCH color tokens via CSS custom properties in `main.css`
-- Dark mode via `.dark` class on `<html>` (handled by `darkMode: "class"` in tailwind config)
+- Tailwind v4 CSS-first configuration via `main.css` with `@theme` tokens (OKLCH colors)
+- Dark mode via `.dark` class on `<html>`
 - shadcn-vue components go in `components/ui/`
 - `backendUrl` is configured via `runtimeConfig.public.backendUrl` in `nuxt.config.ts`
-- Server API proxy in `server/api/auth/[...].ts` proxies `/api/auth/*` to NestJS backend
-- No database yet — backend uses in-memory mock data; frontend uses mock data in `data/books.ts`
+- Server API proxy in `server/api/[...].ts` forwards all `/api/*` to NestJS backend
+- Database: PostgreSQL via Docker Compose, Drizzle ORM, Better Auth
+- Stripe Checkout Sessions for book purchases
+- Pinia stores use `shallowRef` for primitive state values
+- Composables (`useBookDetail`, `useShelf`) live in `frontend/composables/` and are auto-imported by Nuxt
