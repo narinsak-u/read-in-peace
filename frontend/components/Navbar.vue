@@ -12,7 +12,6 @@ import { useAuthStore } from "~/stores/auth";
 const auth = useAuthStore();
 const open = shallowRef(false);
 const router = useRouter();
-const showAuthModal = shallowRef(false);
 
 const userInitials = computed(() => {
   if (!auth.user) return "";
@@ -112,7 +111,7 @@ function navigate(path: string) {
             </template>
             <template v-else>
               <button
-                @mousedown="showAuthModal = true"
+                @mousedown="auth.openAuthModal()"
                 class="flex w-full items-center gap-2 cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-muted"
               >
                 Sign in
@@ -123,5 +122,5 @@ function navigate(path: string) {
       </nav>
     </div>
   </header>
-  <AuthModal v-if="showAuthModal" @close="showAuthModal = false" />
+  <AuthModal v-if="auth.showAuthModal" @close="auth.closeAuthModal()" />
 </template>

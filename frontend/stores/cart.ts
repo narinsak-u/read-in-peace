@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { shallowRef, watch } from 'vue';
 import { toast } from 'vue-sonner';
+import { useAuthStore } from '~/stores/auth';
 
 const STORAGE_KEY = 'read-in-pace-cart';
 
@@ -63,6 +64,11 @@ export const useCartStore = defineStore('cart', () => {
   function toggleDrawer() { drawerOpen.value = !drawerOpen.value; }
 
   async function checkout() {
+    const auth = useAuthStore();
+    if (!auth.signedIn) {
+      auth.openAuthModal(() => checkout());
+      return;
+    }
     try {
       const res = await $fetch<{ url: string }>('/api/cart/checkout', {
         method: 'POST',
