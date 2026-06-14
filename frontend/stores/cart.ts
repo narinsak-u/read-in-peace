@@ -66,7 +66,11 @@ export const useCartStore = defineStore('cart', () => {
   async function checkout() {
     const auth = useAuthStore();
     if (!auth.signedIn) {
-      auth.openAuthModal(() => checkout());
+      drawerOpen.value = false;
+      auth.openAuthModal(() => {
+        drawerOpen.value = true;
+        checkout();
+      });
       return;
     }
     try {
