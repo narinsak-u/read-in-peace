@@ -7,29 +7,19 @@ const auth = useAuthStore();
 
 const { page, activeCategory, categories, totalPages, setPage, setCategory } = useShelf();
 
-const showBookForm = shallowRef(false);
-const editingBook = shallowRef<import('~/stores/books').BookWithMeta | null>(null);
-
 function handleEdit(book: import('~/stores/books').BookWithMeta) {
-  editingBook.value = book;
-  showBookForm.value = true;
+  booksStore.openEditForm(book);
 }
 
 function handleAddBook() {
-  editingBook.value = null;
-  showBookForm.value = true;
+  booksStore.openCreateForm();
 }
 
-function handleFormSaved() {
-  showBookForm.value = false;
-  editingBook.value = null;
-  booksStore.fetchBooks(page.value, 12, activeCategory.value === 'All' ? undefined : activeCategory.value);
-}
-
-function handleFormClosed() {
-  showBookForm.value = false;
-  editingBook.value = null;
-}
+watch(() => booksStore.showForm, (showing) => {
+  if (!showing) {
+    booksStore.fetchBooks(page.value, 12, activeCategory.value === 'All' ? undefined : activeCategory.value);
+  }
+});
 
 definePageMeta({
   title: 'Feed — Read in Pace',
@@ -53,13 +43,6 @@ definePageMeta({
       @add-book="handleAddBook"
       @category-change="setCategory"
       @page-change="setPage"
-    />
-
-    <BookFormModal
-      v-if="showBookForm"
-      :book="editingBook"
-      @close="handleFormClosed"
-      @saved="handleFormSaved"
     />
   </main>
 </template>

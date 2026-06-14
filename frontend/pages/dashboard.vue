@@ -14,22 +14,19 @@ const tab = shallowRef<"borrowed" | "purchased">(
 const borrowedBooks = computed(() => dashboard.borrowed);
 const purchasedBooks = computed(() => dashboard.purchased);
 const list = computed(() =>
-  tab.value === "borrowed" ? dashboard.borrowed : dashboard.purchased
+  tab.value === "borrowed" ? dashboard.borrowed : dashboard.purchased,
 );
 
 onMounted(async () => {
   if (route.query.session_id) {
     try {
       await dashboard.confirmPurchase(route.query.session_id as string);
-      toast.success('Purchase complete!');
+      toast.success("Purchase complete!");
     } catch {
-      toast.error('Purchase confirmation failed');
+      toast.error("Purchase confirmation failed");
     }
   }
-  await Promise.all([
-    dashboard.fetchBorrows(),
-    dashboard.fetchPurchases(),
-  ]);
+  await Promise.all([dashboard.fetchBorrows(), dashboard.fetchPurchases()]);
 });
 
 definePageMeta({
@@ -50,7 +47,7 @@ definePageMeta({
     <div class="mb-8 flex gap-6 border-b border-border/60">
       <button
         @click="tab = 'borrowed'"
-        class="flex items-center gap-2 pb-3 cursor-pointer text-sm font-medium transition-all duration-200 border-b-2 -mb-[1px]"
+        class="flex items-center gap-2 pb-3 cursor-pointer text-sm font-medium transition-all duration-200 border-b-2 -mb-px"
         :class="
           tab === 'borrowed'
             ? 'border-primary text-foreground'
@@ -61,7 +58,7 @@ definePageMeta({
       </button>
       <button
         @click="tab = 'purchased'"
-        class="flex items-center gap-2 pb-3 cursor-pointer text-sm font-medium transition-all duration-200 border-b-2 -mb-[1px]"
+        class="flex items-center gap-2 pb-3 cursor-pointer text-sm font-medium transition-all duration-200 border-b-2 -mb-px"
         :class="
           tab === 'purchased'
             ? 'border-primary text-foreground'

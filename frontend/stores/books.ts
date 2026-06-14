@@ -43,6 +43,23 @@ export const useBooksStore = defineStore('books', () => {
   const userRating = shallowRef<Record<string, number>>({});
   const meta = shallowRef<PaginationMeta>({ page: 1, limit: 12, total: 0, totalPages: 0 });
   const loading = shallowRef(false);
+  const showForm = ref(false);
+  const editingBook = ref<BookWithMeta | null>(null);
+
+  function openCreateForm() {
+    editingBook.value = null;
+    showForm.value = true;
+  }
+
+  function openEditForm(book: BookWithMeta) {
+    editingBook.value = book;
+    showForm.value = true;
+  }
+
+  function closeForm() {
+    showForm.value = false;
+    editingBook.value = null;
+  }
 
   async function fetchBooks(page = 1, limit = 12, category?: string) {
     loading.value = true;
@@ -209,6 +226,9 @@ export const useBooksStore = defineStore('books', () => {
     userRating: readonly(userRating),
     meta: readonly(meta),
     loading: readonly(loading),
+    showForm,
+    editingBook,
+    openCreateForm, openEditForm, closeForm,
     fetchBooks, fetchTrending, fetchBook, createBook, updateBook, deleteBook,
     toggleLike, fetchLikeStatus, fetchUserRating, fetchComments, createComment, deleteComment, rateBook,
   };

@@ -44,7 +44,7 @@ definePageMeta({
 
       <NuxtLink
         to="/feed"
-        class="group mt-10 inline-flex items-center gap-3 rounded-lg bg-primary px-7 py-4 text-base font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:translate-y-[-1px] hover:shadow-md"
+        class="group mt-10 inline-flex items-center gap-3 rounded-lg bg-primary px-7 py-4 text-base font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md"
       >
         Explore the Library
         <ArrowRight
