@@ -17,6 +17,66 @@ import { eq, and, isNull, sql, gt } from 'drizzle-orm';
 
 type StripeClient = ReturnType<typeof StripeConstructor>;
 
+export interface DiscountResult {
+  subtotal: number;
+  tierPercent: number;
+  tierDiscount: number;
+  categoryBonus: number;
+  every100Discount: number;
+  total: number;
+}
+
+export function applyDiscounts(
+  books: { price: string; category: string }[],
+): DiscountResult {
+  const subtotal = books.reduce(
+    (sum, b) => sum + Math.round(Number(b.price) * 100),
+    0,
+  );
+
+  // Stage 1 — Quantity Tier
+  const count = books.length;
+  const tierPercent = count >= 4 ? 30 : count === 3 ? 20 : count === 2 ? 10 : 0;
+  const tierDiscount = Math.round(subtotal * (tierPercent / 100));
+  let runningTotal = subtotal - tierDiscount;
+
+  // Stage 2 — Category Bonus (on original prices)
+  const catSubtotals = new Map<string, { subtotal: number; count: number }>();
+  for (const book of books) {
+    const price = Math.round(Number(book.price) * 100);
+    const existing = catSubtotals.get(book.category) ?? { subtotal: 0, count: 0 };
+    existing.subtotal += price;
+    existing.count += 1;
+    catSubtotals.set(book.category, existing);
+  }
+
+  let categoryBonus = 0;
+  for (const { subtotal: catSubtotal, count } of catSubtotals.values()) {
+    if (count >= 2) {
+      categoryBonus += Math.round(catSubtotal * 0.1);
+    }
+  }
+  runningTotal -= categoryBonus;
+
+  // Stage 3 — Every $100 (10000 cents)
+  const EVERY_X = 10000;
+  const DISCOUNT_Y = 100;
+  const every100Discount = Math.floor(runningTotal / EVERY_X) * DISCOUNT_Y;
+  runningTotal -= every100Discount;
+
+  // Clamp to zero
+  const total = Math.max(0, runningTotal);
+
+  return {
+    subtotal,
+    tierPercent,
+    tierDiscount,
+    categoryBonus,
+    every100Discount,
+    total,
+  };
+}
+
 @Injectable()
 export class TransactionsService {
   constructor(
@@ -32,6 +92,7 @@ export class TransactionsService {
         price: schema.books.price,
         inStock: schema.books.inStock,
         isAvailable: schema.books.isAvailable,
+        category: schema.books.category,
       })
       .from(schema.books)
       .where(eq(schema.books.id, bookId));
