@@ -10,6 +10,9 @@ export default defineNuxtConfig({
    "@stefanobartoletti/nuxt-social-share",
    "pinia-plugin-persistedstate/nuxt",
   ],
+  piniaPluginPersistedstate: {
+    storage: "localStorage",
+  },
   socialShare: {
     baseUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
   },
