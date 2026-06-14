@@ -44,14 +44,6 @@ export function useBookDetail(id: string) {
     }
   }
 
-  async function handleBuy() {
-    if (book.value?.inStock === 1) {
-      toast.error('Only one copy left — this book is borrow-only');
-      return;
-    }
-    await dashboard.buyBook(id);
-  }
-
   async function handleBorrow() {
     if (hasBorrowed.value) {
       toast.error('You have already borrowed this book');
@@ -70,7 +62,6 @@ export function useBookDetail(id: string) {
     hasBorrowed,
     handleLike,
     handleRate,
-    handleBuy,
     handleBorrow,
     submitReview,
   };

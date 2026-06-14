@@ -1,7 +1,15 @@
 // REST controller for borrow/return, Stripe checkout, and user transaction history.
 // All endpoints are auth-guarded. Maps to api/books/:id/borrow|return|create-checkout-session,
 // api/confirm-purchase, api/user/borrows, and api/user/purchases.
-import { Controller, Post, Get, Param, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Query,
+  UseGuards,
+  Body,
+} from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -29,6 +37,18 @@ export class TransactionsController {
     @CurrentUser() user: { id: string },
   ) {
     return this.transactionsService.createCheckoutSession(id, user.id);
+  }
+
+  @Post('api/cart/checkout')
+  @UseGuards(AuthGuard)
+  cartCheckout(
+    @Body() body: { bookIds: string[] },
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.transactionsService.createCartCheckoutSession(
+      body.bookIds,
+      user.id,
+    );
   }
 
   @Post('api/confirm-purchase')

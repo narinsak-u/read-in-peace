@@ -74,22 +74,22 @@ async function handleSubmit() {
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
               <label class="text-sm font-medium">Title</label>
-              <input v-model="form.title" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+              <input v-model="form.title" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
             </div>
             <div class="space-y-1.5">
               <label class="text-sm font-medium">Author</label>
-              <input v-model="form.author" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+              <input v-model="form.author" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
             </div>
           </div>
 
           <div class="grid grid-cols-2 gap-4">
             <div class="space-y-1.5">
               <label class="text-sm font-medium">Price</label>
-              <input v-model="form.price" type="number" step="0.01" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+              <input v-model="form.price" type="number" step="0.01" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
             </div>
             <div class="space-y-1.5">
               <label class="text-sm font-medium">Category</label>
-              <select v-model="form.category" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground">
+              <select v-model="form.category" class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary">
                 <option>Fiction</option>
                 <option>How-to</option>
                 <option>Manga</option>
@@ -99,12 +99,12 @@ async function handleSubmit() {
 
           <div class="space-y-1.5">
             <label class="text-sm font-medium">Cover URL</label>
-            <input v-model="form.cover" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+            <input v-model="form.cover" required class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
           </div>
 
           <div class="space-y-1.5">
             <label class="text-sm font-medium">Synopsis</label>
-            <textarea v-model="form.synopsis" rows="3" required class="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground" />
+            <textarea v-model="form.synopsis" rows="3" required class="w-full resize-none rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary" />
           </div>
 
           <label class="flex items-center gap-2 text-sm">
@@ -125,7 +125,7 @@ async function handleSubmit() {
             <button
               type="submit"
               :disabled="saving"
-              class="rounded-lg bg-foreground cursor-pointer px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+              class="rounded-lg bg-primary cursor-pointer px-4 py-2 text-sm font-medium text-primary-foreground transition-all duration-200 hover:translate-y-[-1px] disabled:opacity-50"
             >
               {{ saving ? "Saving" : book ? "Save Changes" : "Create Book" }}
             </button>

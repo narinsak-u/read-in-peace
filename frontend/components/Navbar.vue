@@ -12,7 +12,6 @@ import { useAuthStore } from "~/stores/auth";
 const auth = useAuthStore();
 const open = shallowRef(false);
 const router = useRouter();
-const showAuthModal = shallowRef(false);
 
 const userInitials = computed(() => {
   if (!auth.user) return "";
@@ -52,13 +51,14 @@ function navigate(path: string) {
         >
           <LayoutDashboard class="h-4 w-4" /> My Dashboard
         </NuxtLink>
+        <CartIcon class="ml-2" />
 
         <!-- Profile -->
         <div class="relative ml-2">
           <button
             @click="open = !open"
             @blur="setTimeout(() => (open = false), 150)"
-            class="flex h-9 w-9 items-center cursor-pointer justify-center rounded-full bg-primary/10 text-primary ring-1 ring-border transition-transform hover:scale-105"
+            class="flex h-9 w-9 items-center cursor-pointer justify-center rounded-full bg-primary/10 text-primary ring-1 ring-border transition-all duration-200 hover:scale-105 hover:ring-primary/30"
             aria-label="Profile menu"
           >
             <span v-if="auth.signedIn && auth.user" class="text-sm font-semibold">
@@ -68,7 +68,7 @@ function navigate(path: string) {
           </button>
           <div
             v-if="open"
-            class="absolute right-0 mt-2 w-60 origin-top-right rounded-xl border border-border bg-popover p-2 shadow-lg"
+            class="absolute right-0 mt-2 w-60 origin-top-right rounded-xl border border-border bg-card p-2 shadow-md"
           >
             <template v-if="auth.signedIn">
               <div class="px-3 py-2">
@@ -111,7 +111,7 @@ function navigate(path: string) {
             </template>
             <template v-else>
               <button
-                @mousedown="showAuthModal = true"
+                @mousedown="auth.openAuthModal()"
                 class="flex w-full items-center gap-2 cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-muted"
               >
                 Sign in
@@ -122,5 +122,5 @@ function navigate(path: string) {
       </nav>
     </div>
   </header>
-  <AuthModal v-if="showAuthModal" @close="showAuthModal = false" />
+  <AuthModal v-if="auth.showAuthModal" @close="auth.closeAuthModal()" />
 </template>

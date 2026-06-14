@@ -3,9 +3,11 @@ import { BookMarked, Library } from "lucide-vue-next";
 import { toast } from "vue-sonner";
 import { useAuthStore } from "~/stores/auth";
 import { useDashboardStore } from "~/stores/dashboard";
+import { useCartStore } from "~/stores/cart";
 
 const auth = useAuthStore();
 const dashboard = useDashboardStore();
+const cartStore = useCartStore();
 const route = useRoute();
 const tab = shallowRef<"borrowed" | "purchased">(
   (route.query.tab as "borrowed" | "purchased") || "borrowed",
@@ -14,22 +16,20 @@ const tab = shallowRef<"borrowed" | "purchased">(
 const borrowedBooks = computed(() => dashboard.borrowed);
 const purchasedBooks = computed(() => dashboard.purchased);
 const list = computed(() =>
-  tab.value === "borrowed" ? dashboard.borrowed : dashboard.purchased
+  tab.value === "borrowed" ? dashboard.borrowed : dashboard.purchased,
 );
 
 onMounted(async () => {
   if (route.query.session_id) {
     try {
       await dashboard.confirmPurchase(route.query.session_id as string);
-      toast.success('Purchase complete!');
+      cartStore.clear();
+      toast.success("Purchase complete!");
     } catch {
-      toast.error('Purchase confirmation failed');
+      toast.error("Purchase confirmation failed");
     }
   }
-  await Promise.all([
-    dashboard.fetchBorrows(),
-    dashboard.fetchPurchases(),
-  ]);
+  await Promise.all([dashboard.fetchBorrows(), dashboard.fetchPurchases()]);
 });
 
 definePageMeta({
@@ -47,27 +47,25 @@ definePageMeta({
       </h1>
     </div>
 
-    <div
-      class="mb-8 inline-flex gap-1 rounded-full border border-border bg-card p-1"
-    >
+    <div class="mb-8 flex gap-6 border-b border-border/60">
       <button
         @click="tab = 'borrowed'"
-        class="flex items-center gap-2 rounded-full cursor-pointer px-5 py-2 text-sm font-medium transition-all"
+        class="flex items-center gap-2 pb-3 cursor-pointer text-sm font-medium transition-all duration-200 border-b-2 -mb-px"
         :class="
           tab === 'borrowed'
-            ? 'bg-foreground text-background shadow'
-            : 'text-muted-foreground hover:text-foreground'
+            ? 'border-primary text-foreground'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
         "
       >
         <BookMarked class="h-4 w-4" /> Borrowed {{ borrowedBooks.length }}
       </button>
       <button
         @click="tab = 'purchased'"
-        class="flex items-center gap-2 rounded-full cursor-pointer px-5 py-2 text-sm font-medium transition-all"
+        class="flex items-center gap-2 pb-3 cursor-pointer text-sm font-medium transition-all duration-200 border-b-2 -mb-px"
         :class="
           tab === 'purchased'
-            ? 'bg-foreground text-background shadow'
-            : 'text-muted-foreground hover:text-foreground'
+            ? 'border-primary text-foreground'
+            : 'border-transparent text-muted-foreground hover:text-foreground'
         "
       >
         <Library class="h-4 w-4" /> Purchased {{ purchasedBooks.length }}
@@ -76,7 +74,7 @@ definePageMeta({
 
     <template v-if="list.length === 0">
       <div
-        class="rounded-2xl border border-dashed border-border py-20 text-center"
+        class="rounded-2xl border border-dashed border-border/60 py-20 text-center"
       >
         <p class="text-muted-foreground">Nothing here yet.</p>
         <NuxtLink

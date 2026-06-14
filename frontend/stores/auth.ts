@@ -13,6 +13,8 @@ export const useAuthStore = defineStore('auth', () => {
   const user = shallowRef<User | null>(null);
   const adminMode = shallowRef(false);
   const loading = shallowRef(false);
+  const showAuthModal = ref(false);
+  const onAuthSuccess = shallowRef<(() => void) | null>(null);
 
   const session = authClient.useSession();
 
@@ -26,6 +28,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }, { immediate: true });
 
+  function openAuthModal(onSuccess?: () => void) {
+    if (onSuccess) onAuthSuccess.value = onSuccess;
+    showAuthModal.value = true;
+  }
+
+  function closeAuthModal() {
+    showAuthModal.value = false;
+    onAuthSuccess.value = null;
+  }
+
   async function authSignIn(email: string, password: string) {
     loading.value = true;
     try {
@@ -35,6 +47,9 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = data.user;
         signedIn.value = true;
         toast.success('Signed in successfully');
+        const callback = onAuthSuccess.value;
+        closeAuthModal();
+        callback?.();
       }
     } catch {
       signedIn.value = false;
@@ -54,6 +69,9 @@ export const useAuthStore = defineStore('auth', () => {
         user.value = data.user;
         signedIn.value = true;
         toast.success('Account created successfully');
+        const callback = onAuthSuccess.value;
+        closeAuthModal();
+        callback?.();
       }
     } catch {
       signedIn.value = false;
@@ -80,9 +98,12 @@ export const useAuthStore = defineStore('auth', () => {
     user: readonly(user),
     adminMode: readonly(adminMode),
     loading: readonly(loading),
+    showAuthModal,
     signIn: authSignIn,
     signUp: authSignUp,
     signOut: authSignOut,
     toggleAdmin,
+    openAuthModal,
+    closeAuthModal,
   };
 });

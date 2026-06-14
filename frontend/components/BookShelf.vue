@@ -37,11 +37,11 @@ const emit = defineEmits<{
         v-for="cat in categories"
         :key="cat"
         @click="emit('categoryChange', cat)"
-        class="rounded-full cursor-pointer px-4 py-1.5 text-sm font-medium transition-colors"
+        class="rounded-full cursor-pointer px-4 py-1.5 text-sm font-medium transition-all duration-200"
         :class="
           activeCategory === cat
-            ? 'bg-foreground text-background'
-            : 'border border-border text-muted-foreground hover:text-foreground'
+            ? 'bg-primary text-primary-foreground shadow-sm'
+            : 'border border-border/60 text-muted-foreground hover:text-foreground hover:border-border'
         "
       >
         {{ cat }}
@@ -71,7 +71,7 @@ const emit = defineEmits<{
         @click="emit('pageChange', n)"
         class="h-9 min-w-9 rounded-lg cursor-pointer px-3 text-sm font-medium transition-colors"
         :class="
-          page === n ? 'bg-foreground text-background' : 'hover:bg-muted'
+          page === n ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted'
         "
       >
         {{ n }}
@@ -81,7 +81,7 @@ const emit = defineEmits<{
         @click="emit('pageChange', totalPages)"
         class="h-9 min-w-9 rounded-lg cursor-pointer px-3 text-sm font-medium transition-colors"
         :class="
-          page === totalPages ? 'bg-foreground text-background' : 'hover:bg-muted'
+          page === totalPages ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-muted'
         "
       >
         {{ totalPages }}

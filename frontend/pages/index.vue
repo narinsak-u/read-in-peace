@@ -22,13 +22,13 @@ definePageMeta({
       <source src="~/assets/background/landing-bg.mp4" type="video/mp4" />
     </video>
     <div
-      class="absolute inset-0 bg-linear-to-b from-transparent via-transparent to-background/20"
+      class="absolute inset-0 bg-linear-to-b from-amber-900/30 via-transparent to-background"
     />
     <div
       class="relative z-10 flex max-w-5xl flex-col items-center px-6 text-center"
     >
       <span
-        class="mb-6 rounded-full glass px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-foreground/70"
+        class="mb-6 rounded-full bg-amber-50 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
       >
         A quieter library
       </span>
@@ -44,7 +44,7 @@ definePageMeta({
 
       <NuxtLink
         to="/feed"
-        class="group mt-10 inline-flex items-center gap-3 rounded-lg glass px-7 py-4 text-base font-medium text-foreground shadow-xl shadow-black/5 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-primary/20"
+        class="group mt-10 inline-flex items-center gap-3 rounded-lg bg-primary px-7 py-4 text-base font-medium text-primary-foreground shadow-sm transition-all duration-200 hover:-translate-y-px hover:shadow-md"
       >
         Explore the Library
         <ArrowRight

@@ -6,6 +6,8 @@ A quiet library to review, borrow, return, and buy books — built with Nuxt 3 +
 
 - **Frontend:** Nuxt 3 (SSR), Vue 3 Composition API, Pinia, Tailwind CSS v4, shadcn-vue
 - **Backend:** NestJS v11 (Express), Better Auth, Drizzle ORM, PostgreSQL
+- **Cart:** Client-side Pinia store persisted to localStorage
+- **Discounts:** 3-stage pipeline (quantity tier, category bonus, every $100)
 - **Payments:** Stripe Checkout Sessions
 
 ## Quick start

@@ -25,8 +25,8 @@ defineProps<{
         v-for="(b, i) in trending"
         :key="b.id"
         :to="'/book/' + b.id"
-        class="group relative overflow-hidden max-h-117.5 rounded-lg border border-border bg-card transition-all hover:shadow-2xl hover:shadow-black/5"
-        :class="i === 0 ? 'md:col-span-2 md:row-span-2' : ''"
+        class="group relative overflow-hidden max-h-117.5 rounded-lg border bg-card transition-all duration-200 hover:shadow-md"
+        :class="[i === 0 ? 'md:col-span-2 md:row-span-2 border-primary/20 shadow-sm' : 'border-border/60 shadow-sm']"
       >
         <div
           class="relative overflow-hidden"

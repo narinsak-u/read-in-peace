@@ -7,13 +7,19 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { auth } from './better-auth';
 import { fromNodeHeaders } from 'better-auth/node';
+import * as schema from '../db/schema';
+
+type DatabaseUser = typeof schema.user.$inferSelect;
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
+    const request = context
+      .switchToHttp()
+      .getRequest<Request & { user?: DatabaseUser }>();
     const headers = fromNodeHeaders(request.headers);
 
     const result = await auth.api.getSession({
@@ -24,7 +30,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException();
     }
 
-    request.user = result.user;
+    request.user = result.user as DatabaseUser;
     return true;
   }
 }

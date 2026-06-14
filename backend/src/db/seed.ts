@@ -168,7 +168,7 @@ async function seed() {
   // --- Books ---
 
   const bookIds = Array.from({ length: 15 }, () => crypto.randomUUID());
-  const stockValues = [5, 3, 0, 2, 1, 1, 4, 2, 0, 3, 1, 5, 2, 1, 3];
+  const stockValues = [5, 3, 10, 9, 1, 8, 4, 7, 10, 3, 1, 5, 2, 0, 10];
   const booksData = titles.map(([title, author], i) => ({
     id: bookIds[i],
     title,

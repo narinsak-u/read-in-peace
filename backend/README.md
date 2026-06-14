@@ -8,6 +8,7 @@ NestJS v11 REST API with Better Auth, Drizzle ORM, and PostgreSQL.
 - **Auth:** Better Auth (email/password, scrypt hashing)
 - **Database:** PostgreSQL + Drizzle ORM (schema + migrations via `drizzle-kit`)
 - **Payments:** Stripe Checkout Sessions
+- **Discounts:** 3-stage pipeline (quantity tier, category bonus, every $100)
 - **Testing:** Jest
 
 ## Commands
@@ -42,7 +43,8 @@ backend/src/
 │   └── comments.controller.ts + comments.service.ts
 ├── transactions/
 │   ├── transactions.controller.ts
-│   └── transactions.service.ts  # borrow, return, Stripe checkout, confirm purchase
+│   ├── transactions.service.ts  # borrow, return, cart checkout, confirm purchase, discount pipeline
+│   └── discount.spec.ts         # unit tests for applyDiscounts()
 ├── db/
 │   ├── schema.ts            # All tables (users, books, likes, ratings, comments, borrows, purchases)
 │   └── seed.ts              # Seed data with scrypt password hashing
@@ -68,7 +70,8 @@ backend/src/
 ### Transactions
 - `POST /api/books/:id/borrow` — Borrow a book (decrements stock)
 - `POST /api/books/:id/return` — Return a book (increments stock)
-- `POST /api/books/:id/create-checkout-session` — Stripe Checkout Session
+- `POST /api/books/:id/create-checkout-session` — Stripe Checkout Session (single book, legacy)
+- `POST /api/cart/checkout` — Cart checkout (batch books, with discounts)
 - `POST /api/confirm-purchase?session_id=` — Confirm purchase after Stripe redirect
 - `GET /api/user/borrows` — Current user's borrowed books
 - `GET /api/user/purchases` — Current user's purchased books

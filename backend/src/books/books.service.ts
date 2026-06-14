@@ -10,7 +10,7 @@ import {
 import { DRIZZLE } from '../db/db.module';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../db/schema';
-import { desc, eq, sql, count, gt } from 'drizzle-orm';
+import { desc, eq, sql, count, gt, and } from 'drizzle-orm';
 import { CreateBookDto } from './dto/create-book.dto';
 import { UpdateBookDto } from './dto/update-book.dto';
 
@@ -123,7 +123,7 @@ export class BooksService {
     const [updated] = await this.db
       .update(schema.books)
       .set({ inStock: sql`${schema.books.inStock} - 1` })
-      .where(gt(schema.books.inStock, 1))
+      .where(and(eq(schema.books.id, id), gt(schema.books.inStock, 0)))
       .returning();
     return updated;
   }

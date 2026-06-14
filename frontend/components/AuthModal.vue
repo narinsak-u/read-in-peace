@@ -116,7 +116,7 @@ function switchTab(t: 'sign-in' | 'sign-up') {
       <button
         @click="handleSubmit"
         :disabled="submitting"
-        class="w-full rounded-lg bg-foreground px-4 py-2 cursor-pointer text-sm font-semibold text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+        class="w-full rounded-lg bg-primary px-4 py-2 cursor-pointer text-sm font-semibold text-primary-foreground transition-all duration-200 hover:translate-y-[-1px] hover:shadow-md disabled:opacity-50"
       >
         {{ submitting ? 'Please wait...' : tab === 'sign-in' ? 'Sign in' : 'Create account' }}
       </button>

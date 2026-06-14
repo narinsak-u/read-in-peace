@@ -17,6 +17,69 @@ import { eq, and, isNull, sql, gt } from 'drizzle-orm';
 
 type StripeClient = ReturnType<typeof StripeConstructor>;
 
+export interface DiscountResult {
+  subtotal: number;
+  tierPercent: number;
+  tierDiscount: number;
+  categoryBonus: number;
+  every100Discount: number;
+  total: number;
+}
+
+export function applyDiscounts(
+  books: { price: string; category: string }[],
+): DiscountResult {
+  const subtotal = books.reduce(
+    (sum, b) => sum + Math.round(Number(b.price) * 100),
+    0,
+  );
+
+  // Stage 1 — Quantity Tier
+  const count = books.length;
+  const tierPercent = count >= 4 ? 30 : count === 3 ? 20 : count === 2 ? 10 : 0;
+  const tierDiscount = Math.round(subtotal * (tierPercent / 100));
+  let runningTotal = subtotal - tierDiscount;
+
+  // Stage 2 — Category Bonus (on original prices)
+  const catSubtotals = new Map<string, { subtotal: number; count: number }>();
+  for (const book of books) {
+    const price = Math.round(Number(book.price) * 100);
+    const existing = catSubtotals.get(book.category) ?? {
+      subtotal: 0,
+      count: 0,
+    };
+    existing.subtotal += price;
+    existing.count += 1;
+    catSubtotals.set(book.category, existing);
+  }
+
+  let categoryBonus = 0;
+  for (const { subtotal: catSubtotal, count } of catSubtotals.values()) {
+    if (count >= 2) {
+      categoryBonus += Math.round(catSubtotal * 0.1);
+    }
+  }
+  runningTotal -= categoryBonus;
+
+  // Stage 3 — Every $100 (10000 cents)
+  const EVERY_X = 10000;
+  const DISCOUNT_Y = 100;
+  const every100Discount = Math.floor(runningTotal / EVERY_X) * DISCOUNT_Y;
+  runningTotal -= every100Discount;
+
+  // Clamp to zero
+  const total = Math.max(0, runningTotal);
+
+  return {
+    subtotal,
+    tierPercent,
+    tierDiscount,
+    categoryBonus,
+    every100Discount,
+    total,
+  };
+}
+
 @Injectable()
 export class TransactionsService {
   constructor(
@@ -32,6 +95,7 @@ export class TransactionsService {
         price: schema.books.price,
         inStock: schema.books.inStock,
         isAvailable: schema.books.isAvailable,
+        category: schema.books.category,
       })
       .from(schema.books)
       .where(eq(schema.books.id, bookId));
@@ -152,6 +216,50 @@ export class TransactionsService {
     return { url: session.url };
   }
 
+  async createCartCheckoutSession(bookIds: string[], userId: string) {
+    if (!bookIds || bookIds.length === 0) {
+      throw new BadRequestException('Cart is empty');
+    }
+
+    const books = await Promise.all(bookIds.map((id) => this.getBook(id)));
+
+    const badBooks = books.filter((b) => b.inStock <= 1);
+    if (badBooks.length > 0) {
+      throw new BadRequestException(
+        `Some books are no longer available for purchase: ${badBooks.map((b) => b.title).join(', ')}`,
+      );
+    }
+
+    const discount = applyDiscounts(
+      books.map((b) => ({ price: b.price, category: b.category })),
+    );
+
+    const session = await this.stripe.checkout.sessions.create({
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: `Read in Pace — ${bookIds.length} book${bookIds.length > 1 ? 's' : ''}`,
+            },
+            unit_amount: discount.total,
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        userId,
+        bc: String(bookIds.length),
+        ...Object.fromEntries(bookIds.map((id, i) => [`b${i}`, id])),
+      },
+      success_url: `${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/dashboard?tab=purchased&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/feed`,
+    });
+
+    return { url: session.url };
+  }
+
   async confirmPurchase(sessionId: string, userId: string) {
     const session = await this.stripe.checkout.sessions.retrieve(sessionId);
     if (
@@ -161,8 +269,23 @@ export class TransactionsService {
       throw new BadRequestException('Invalid purchase confirmation');
     }
 
-    const bookId = session.metadata!.bookId;
+    const bookCount = Number(session.metadata.bc);
+    if (bookCount > 0) {
+      const bookIds: string[] = [];
+      for (let i = 0; i < bookCount; i++) {
+        bookIds.push(session.metadata[`b${i}`]);
+      }
+      return this.recordBatchPurchases(bookIds, userId);
+    }
 
+    const bookId = session.metadata.bookId;
+    if (!bookId) {
+      throw new BadRequestException('No book IDs found in session metadata');
+    }
+    return this.recordSinglePurchase(bookId, userId);
+  }
+
+  private async recordSinglePurchase(bookId: string, userId: string) {
     return this.db.transaction(async (tx) => {
       const [existing] = await tx
         .select({ id: schema.purchases.id })
@@ -184,9 +307,40 @@ export class TransactionsService {
       await tx
         .update(schema.books)
         .set({ inStock: sql`${schema.books.inStock} - 1` })
-        .where(gt(schema.books.inStock, 1));
+        .where(and(eq(schema.books.id, bookId), gt(schema.books.inStock, 1)));
 
       return purchase;
+    });
+  }
+
+  private async recordBatchPurchases(bookIds: string[], userId: string) {
+    return this.db.transaction(async (tx) => {
+      const insertedBookIds: string[] = [];
+      for (const bookId of bookIds) {
+        const [existing] = await tx
+          .select({ id: schema.purchases.id })
+          .from(schema.purchases)
+          .where(
+            and(
+              eq(schema.purchases.bookId, bookId),
+              eq(schema.purchases.userId, userId),
+            ),
+          );
+
+        if (existing) continue;
+
+        await tx.insert(schema.purchases).values({ bookId, userId });
+        insertedBookIds.push(bookId);
+      }
+
+      for (const bookId of insertedBookIds) {
+        await tx
+          .update(schema.books)
+          .set({ inStock: sql`${schema.books.inStock} - 1` })
+          .where(and(eq(schema.books.id, bookId), gt(schema.books.inStock, 1)));
+      }
+
+      return insertedBookIds;
     });
   }
 

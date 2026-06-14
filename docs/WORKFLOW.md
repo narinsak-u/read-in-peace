@@ -311,8 +311,8 @@ Template renders 2-column grid:
   └─ Right (scrollable):
        ├─ <BookDetails :book="book" />
        │    author, title, price, avg rating, stock badge, synopsis
-       ├─ <BookActions :book :hasBorrowed @buy @borrow />
-       │    Buy button (hidden if stock ≤ 1)
+       ├─ <BookActions :book :hasBorrowed @borrow />
+       │    Buy button → cartStore.addItem(book) (hidden if stock ≤ 1)
        │    Borrow button (disabled if unavailable, out of stock, or already borrowed)
        ├─ Social row: Like button, Comment toggle, <BookShare />
        ├─ <BookRating /> with 5 stars
@@ -560,82 +560,236 @@ Template renders:
 
 ---
 
-## 5. Buy (Stripe Purchase)
+## 5. Cart & Checkout
 
-### 5.1 Initiate Checkout
+A client-side cart (localStorage-persisted) replaces the old single-item Stripe purchase.
+Discounts are computed client-side for display and re-verified server-side at checkout.
+
+### 5.1 Add to Cart
 
 ```
-User clicks "Buy Now — $XX.XX" button
+User clicks "Buy Now — $XX.XX" button (BookCard or BookActions)
   │
   ▼
-Frontend guard:
-  │  If book.inStock === 1: toast("Only one copy left — borrow-only") → return
-  │  If not signed in: toast.error("Please sign in to buy a book") → return
+BookCard / BookActions → cartStore.addItem({
+  bookId, title, author, cover, price, category
+})
   │
   ▼
-dashboard.buyBook(id)
+stores/cart.ts → addItem(book)
+  │
+  ├─ Duplicate (bookId already in items):
+  │    toast.info("This book is already in your cart") → return
+  │
+  └─ New item:
+       items.value = [...items.value, book]
+       drawerOpen.value = true  (auto-opens drawer)
   │
   ▼
-POST /api/books/:id/create-checkout-session
-  │
-  ▼
-TransactionsService.createCheckoutSession(bookId, userId)
-  │  1. Get book, check inStock > 1 (else BadRequestException)
-  │  2. Initialize Stripe with STRIPE_SECRET_KEY
-  │  3. Create Stripe Checkout Session:
-  │     - mode: "payment"
-  │     - line_item: book title, price (in cents)
-  │     - metadata: { bookId, userId }
-  │     - success_url: /dashboard?tab=purchased&session_id={CHECKOUT_SESSION_ID}
-  │     - cancel_url: /book/{bookId}
-  │
-  ▼
-Response: { url: "https://checkout.stripe.com/..." }
-  │
-  ▼
-window.location.href = url  → Redirects to Stripe Checkout
+watch(items) → localStorage.setItem("read-in-pace-cart", JSON.stringify(items))
+  │  Cart survives page reloads via localStorage
 ```
 
-### 5.2 Confirm Purchase (Stripe Redirect)
+### 5.2 Checkout Drawer
+
+```
+CartIcon (navbar, with item count badge) + "Proceed to Checkout" triggers
+  │
+  ▼
+CheckoutDrawer slides in from right (TranslateX animation, Teleported to body)
+  │
+  ├─ Header: "Cart (N items)" + close button
+  │
+  ├─ Empty state:
+  │    ShoppingBag icon + "Your cart is empty" + "Browse books and click Buy to add them"
+  │
+  └─ With items:
+       ├─ For each item:
+       │    Cover thumb (48×64, NuxtLink to /book/:id)
+       │    Title, author, category, price, Remove button
+       │
+       ├─ Discount breakdown (via useDiscount/computeDiscount composable):
+       │    computed(() => computeDiscount(cartStore.items))
+       │    Pipeline: Subtotal → Qty Tier → Cat Bonus → Every $100 → Total
+       │    ┌─────────────────────────────────────┐
+       │    │ Order Summary                        │
+       │    │ Subtotal (3 items)          $37.00   │
+       │    │ − 20% bundle discount       −$7.40   │
+       │    │ − Category bonus            −$3.70   │
+       │    │ − Every $100 discount        $0.00   │
+       │    │ ───────────────────────────────────  │
+       │    │ Total                       $25.90   │
+       │    └─────────────────────────────────────┘
+       │
+       └─ "Proceed to Checkout — $25.90" button
+            (disabled when cart isEmpty)
+```
+
+### 5.3 Initiate Checkout
+
+```
+User clicks "Proceed to Checkout"
+  │
+  ▼
+cartStore.checkout()
+  │
+  ├─ Not signed in:
+  │    drawerOpen.value = false
+  │    auth.openAuthModal(() => {      ← opens AuthModal
+  │      drawerOpen.value = true        ← reopens drawer after sign-in
+  │      checkout()                     ← retries checkout
+  │    })
+  │    return
+  │
+  └─ Signed in:
+       │
+       ▼
+       POST /api/cart/checkout  { bookIds: string[] }
+       │
+       ▼
+       TransactionsService.createCartCheckoutSession(bookIds, userId)
+       │  1. Fetch all books from DB
+       │  2. Validate all exist + inStock > 1
+       │  3. Compute discount: applyDiscounts(books)
+       │     → Pure function exported from transactions.service.ts
+       │     Works in cents (Stripe convention):
+       │
+       │     a. Quantity Tier:
+       │        1 item  → 0%
+       │        2 items → 10% off subtotal
+       │        3 items → 20% off subtotal
+       │        4+      → 30% off subtotal (max)
+       │
+       │     b. Category Bonus:
+       │        For each category with ≥2 items:
+       │        discount += original category subtotal × 0.10
+       │        Applied to running total after tier discount
+       │
+       │     c. Every $100:
+       │        floor(runningTotalInCents / 10000) × 100
+       │        = $1 off per $100 of remaining total
+       │
+       │     d. Clamp final to ≥ $0
+       │
+       │  4. Create Stripe Checkout Session:
+       │     - mode: "payment"
+       │     - line_item: "Read in Pace — N books" at computed total
+       │     - metadata: { bookIds: JSON.stringify(bookIds), userId }
+       │     - success_url: /dashboard?tab=purchased&session_id=...
+       │     - cancel_url: /feed?cart=preserved
+       │
+       ▼
+       Response: { url: "https://checkout.stripe.com/..." }
+       │
+       ▼
+       navigateTo(url, { external: true })  → Stripe Checkout
+```
+
+### 5.4 Confirm Purchase (Stripe Redirect)
 
 ```
 Stripe redirects to /dashboard?tab=purchased&session_id=cs_test_...
   │
   ▼
-pages/dashboard.vue mounts
+pages/dashboard.vue → onMounted()
   │  Detects session_id in query
   │
   ▼
 dashboard.confirmPurchase(sessionId)
   │
   ▼
-POST /api/confirm-purchase?session_id=cs_test_...
-  │
-  ▼
 TransactionsService.confirmPurchase(sessionId, userId)
   │  1. Retrieve Stripe Checkout Session
   │  2. Verify payment_status === "paid"
   │  3. Verify metadata.userId matches current user
-  │  4. Check if purchase already recorded (idempotency)
-  │  5. INSERT into purchases (bookId, userId)
-  │  6. UPDATE books SET inStock = inStock - 1 (if > 1)
+  │
+  ├─ Metadata has bookIds (JSON array, from cart):
+  │    recordBatchPurchases(bookIds, userId)
+  │    DB transaction:
+  │      For each bookId (skip if already purchased):
+  │        INSERT into purchases (bookId, userId)
+  │        UPDATE books SET inStock = inStock - 1
+  │          WHERE id = bookId AND inStock > 1
+  │      If any fail: transaction rolls back all inserts/decrements
+  │
+  └─ Metadata has bookId (single, legacy from old buy flow):
+       recordSinglePurchase(bookId, userId)
+       Same as old flow with WHERE filter per-bookId
   │
   ▼
-On success:
-  │  Toast: "Purchase complete!"
-  │  dashboard.fetchPurchases() refetches
-  │  Dashboard shows "Purchased" tab with BookCard(variant="purchased")
+cartStore.clear()  ← clears in-memory items; watch() persists empty to localStorage
+Toast: "Purchase complete!"
+dashboard.fetchPurchases() refetches
+  │
+  ▼
+Dashboard shows "Purchased" tab with BookCard(variant="purchased")
   │  Each card shows "Read Now" button
   │
   ▼
 On failure:
   │  Toast: "Purchase confirmation failed"
-  │  Dashboard still loads normally
+  │  Cart preserved (user can retry from Stripe)
 ```
 
 ---
 
-## 6. Admin Operations
+## 6. Cart & Discount Model
+
+### 6.1 Cart State Lifecycle
+
+| Event | Effect on cart |
+|---|---|
+| User adds item | `items.value` appends; `watch` persists to localStorage |
+| User removes item | `items.value` filters; `watch` persists to localStorage |
+| Page reload (client) | `plugins/cart-persist.client.ts` → `cartStore.hydrateFromStorage()` reads localStorage |
+| Auth required (guest checkout) | Drawer closes → AuthModal opens → on sign-in success: drawer reopens → checkout retries |
+| Stripe cancel (user returns) | Cart preserved (no clear happens) |
+| Purchase confirmed | `cartStore.clear()` called from `dashboard.vue` after `confirmPurchase` |
+| Sign out | Cart persists (stays in localStorage; not connected to auth state) |
+
+### 6.2 Discount Pipeline
+
+```
+Subtotal  →  Quantity Tier  →  Category Bonus  →  Every $100  →  Final Price
+```
+
+Each stage receives the running total from the previous stage. Final price clamped ≥ $0.
+
+| Stage | Condition | Discount formula |
+|---|---|---|
+| **Quantity Tier** | 2 items | 10% off subtotal |
+| | 3 items | 20% off subtotal |
+| | 4+ items | 30% off subtotal (max) |
+| | 1 item | 0% |
+| **Category Bonus** | Each category with ≥2 items | `+ originalCategorySubtotal × 0.10` (on original prices, not post-tier) |
+| **Every $100** | Running total ≥ $100 | `floor(runningTotalInCents / 10000) × 100` cents |
+
+### 6.3 Discount Computation Runs On Both Sides
+
+**Frontend** (`composables/useDiscount.ts`):
+- `computeDiscount(items: CartItem[]) → DiscountBreakdown`
+- Used live in CheckoutDrawer via `computed(() => computeDiscount(cartStore.items))`
+- Previews discounts before checkout
+
+**Backend** (`transactions.service.ts`):
+- `applyDiscounts(books: {price, category}[]) → DiscountResult` (exported pure function)
+- Re-verifies during `POST /api/cart/checkout` (authoritative source)
+
+### 6.4 Worked Example
+
+Cart: Book A (Fiction, $20) + Book B (Fiction, $15) + Book C (Science, $30) + Book D (Science, $25)
+
+| Step | Calculation | Running total |
+|---|---|---|
+| Subtotal | 20 + 15 + 30 + 25 | $90.00 |
+| Qty tier (4 items → 30%) | −$27.00 | $63.00 |
+| Cat bonus (Fiction $35×10%) | −$3.50 | $59.50 |
+| Cat bonus (Science $55×10%) | −$5.50 | $54.00 |
+| Every $100 (floor(54/100)×$1) | −$0.00 | **$54.00** |
+
+---
+
+## 7. Admin Operations
 
 ### 6.1 Toggle Admin Mode
 
@@ -760,7 +914,7 @@ Toast: "Book deleted"
 
 ---
 
-## 7. Data Flow Architecture
+## 8. Data Flow Architecture
 
 ### Request Lifecycle (typical authenticated request)
 
@@ -829,7 +983,7 @@ Store catches:
 
 ---
 
-## 8. Stock / Inventory Model
+## 9. Stock / Inventory Model
 
 | Condition | Buy button | Borrow button | Stock badge |
 |---|---|---|---|

@@ -11,7 +11,7 @@ const formattedPrice = computed(() => Number(props.book.price).toFixed(2));
 const formattedAvgRating = computed(() => Number(props.book.avgRating).toFixed(1));
 
 const stockBadgeClass = computed(() => 
-  props.book.inStock >= 1 ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-500'
+  props.book.inStock >= 1 ? 'bg-primary-soft text-primary' : 'bg-red-500/10 text-red-500'
 );
 
 const stockLabel = computed(() => 
@@ -32,7 +32,7 @@ const stockLabel = computed(() =>
       ${{ formattedPrice }}
     </span>
     <div class="flex items-center gap-1 text-sm text-muted-foreground">
-      <Star class="h-4 w-4 fill-foreground text-foreground" />
+      <Star class="h-4 w-4 fill-amber-400 text-amber-400" />
       {{ formattedAvgRating }}
     </div>
     <span

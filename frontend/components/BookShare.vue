@@ -15,7 +15,7 @@ const showShare = shallowRef(false);
     </button>
     <div
       v-if="showShare"
-      class="absolute left-full top-0 ml-3 flex flex-col gap-1 rounded-lg border border-border bg-card p-2 shadow-lg whitespace-nowrap"
+      class="absolute left-full top-0 ml-3 flex flex-col gap-1 rounded-lg border border-border/60 bg-card p-2 shadow-md whitespace-nowrap"
     >
       <SocialShare
         v-for="network in ['facebook', 'x', 'linkedin', 'reddit', 'threads', 'whatsapp']"

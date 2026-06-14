@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { Toaster } from 'vue-sonner';
+import { Toaster } from "vue-sonner";
+import { useBooksStore } from "~/stores/books";
 
 const route = useRoute();
+const booksStore = useBooksStore();
 </script>
 
 <template>
@@ -10,7 +12,14 @@ const route = useRoute();
       <slot />
     </main>
     <Footer v-if="route.name !== 'index'" />
-    <AdminFab />
+    <AdminFab v-if="route.name !== 'index'" />
+    <BookFormModal
+      v-if="route.name !== 'index' && booksStore.showForm"
+      :book="booksStore.editingBook"
+      @close="booksStore.closeForm()"
+      @saved="booksStore.closeForm()"
+    />
+    <CheckoutDrawer v-if="route.name !== 'index'" />
     <Toaster richColors position="top-center" />
   </div>
 </template>
