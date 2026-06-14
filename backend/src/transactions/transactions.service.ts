@@ -249,8 +249,9 @@ export class TransactionsService {
         },
       ],
       metadata: {
-        bookIds: JSON.stringify(bookIds),
         userId,
+        bc: String(bookIds.length),
+        ...Object.fromEntries(bookIds.map((id, i) => [`b${i}`, id])),
       },
       success_url: `${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/dashboard?tab=purchased&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${process.env.BETTER_AUTH_URL || 'http://localhost:3000'}/feed`,
@@ -268,17 +269,20 @@ export class TransactionsService {
       throw new BadRequestException('Invalid purchase confirmation');
     }
 
-    const bookIdsRaw = session.metadata.bookIds;
-    if (!bookIdsRaw) {
-      const bookId = session.metadata.bookId;
-      if (!bookId) {
-        throw new BadRequestException('No book IDs found in session metadata');
+    const bookCount = Number(session.metadata.bc);
+    if (bookCount > 0) {
+      const bookIds: string[] = [];
+      for (let i = 0; i < bookCount; i++) {
+        bookIds.push(session.metadata[`b${i}`]);
       }
-      return this.recordSinglePurchase(bookId, userId);
+      return this.recordBatchPurchases(bookIds, userId);
     }
 
-    const bookIds = JSON.parse(bookIdsRaw) as string[];
-    return this.recordBatchPurchases(bookIds, userId);
+    const bookId = session.metadata.bookId;
+    if (!bookId) {
+      throw new BadRequestException('No book IDs found in session metadata');
+    }
+    return this.recordSinglePurchase(bookId, userId);
   }
 
   private async recordSinglePurchase(bookId: string, userId: string) {
@@ -311,7 +315,7 @@ export class TransactionsService {
 
   private async recordBatchPurchases(bookIds: string[], userId: string) {
     return this.db.transaction(async (tx) => {
-      const inserts: Promise<unknown>[] = [];
+      const insertedBookIds: string[] = [];
       for (const bookId of bookIds) {
         const [existing] = await tx
           .select({ id: schema.purchases.id })
@@ -325,20 +329,18 @@ export class TransactionsService {
 
         if (existing) continue;
 
-        inserts.push(
-          tx.insert(schema.purchases).values({ bookId, userId }).returning(),
-        );
+        await tx.insert(schema.purchases).values({ bookId, userId });
+        insertedBookIds.push(bookId);
       }
 
-      for (const bookId of bookIds) {
+      for (const bookId of insertedBookIds) {
         await tx
           .update(schema.books)
           .set({ inStock: sql`${schema.books.inStock} - 1` })
           .where(and(eq(schema.books.id, bookId), gt(schema.books.inStock, 1)));
       }
 
-      const results = await Promise.all(inserts);
-      return results.flat();
+      return insertedBookIds;
     });
   }
 

@@ -8,7 +8,7 @@ const cartStore = useCartStore();
 const breakdown = computed(() => computeDiscount(cartStore.items));
 
 function formatPrice(amount: number): string {
-  return '$' + amount.toFixed(2);
+  return '$' + (amount / 100).toFixed(2);
 }
 </script>
 
