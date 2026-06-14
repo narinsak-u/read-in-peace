@@ -8,6 +8,7 @@ export default defineNuxtConfig({
    "@pinia/nuxt",
    "shadcn-nuxt",
    "@stefanobartoletti/nuxt-social-share",
+   "pinia-plugin-persistedstate/nuxt",
   ],
   socialShare: {
     baseUrl: process.env.NUXT_PUBLIC_SITE_URL || 'http://localhost:3000',
