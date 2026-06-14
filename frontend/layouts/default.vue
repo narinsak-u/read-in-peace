@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { Toaster } from 'vue-sonner';
-import { useBooksStore } from '~/stores/books';
+import { Toaster } from "vue-sonner";
+import { useBooksStore } from "~/stores/books";
 
 const route = useRoute();
 const booksStore = useBooksStore();
@@ -12,9 +12,9 @@ const booksStore = useBooksStore();
       <slot />
     </main>
     <Footer v-if="route.name !== 'index'" />
-    <AdminFab />
+    <AdminFab v-if="route.name !== 'index'" />
     <BookFormModal
-      v-if="booksStore.showForm"
+      v-if="route.name !== 'index' && booksStore.showForm"
       :book="booksStore.editingBook"
       @close="booksStore.closeForm()"
       @saved="booksStore.closeForm()"
