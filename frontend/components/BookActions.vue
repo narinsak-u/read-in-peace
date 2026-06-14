@@ -15,7 +15,7 @@ const emit = defineEmits<{
 const borrowBtnClass = computed(() => {
   const canBorrow = props.book.isAvailable && props.book.inStock >= 1 && !props.hasBorrowed;
   return canBorrow
-    ? 'cursor-pointer border-border hover:bg-muted'
+    ? 'cursor-pointer border-primary/30 text-primary hover:bg-primary-soft hover:border-primary'
     : 'cursor-not-allowed border-dashed border-muted-foreground/30 text-muted-foreground/50';
 });
 
@@ -33,7 +33,7 @@ const buyFullWidth = computed(() => props.book.inStock <= 1);
     <button
       v-if="book.inStock > 1"
       @click="emit('buy')"
-      class="flex-1 rounded-lg bg-primary cursor-pointer px-6 py-3.5 font-medium text-primary-foreground transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-primary/30"
+      class="flex-1 rounded-lg bg-primary cursor-pointer px-6 py-3.5 font-medium text-primary-foreground transition-all duration-200 hover:translate-y-[-1px] hover:shadow-md"
     >
       Buy Now — ${{ Number(book.price).toFixed(2) }}
     </button>
