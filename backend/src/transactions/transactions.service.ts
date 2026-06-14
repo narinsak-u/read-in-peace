@@ -44,7 +44,10 @@ export function applyDiscounts(
   const catSubtotals = new Map<string, { subtotal: number; count: number }>();
   for (const book of books) {
     const price = Math.round(Number(book.price) * 100);
-    const existing = catSubtotals.get(book.category) ?? { subtotal: 0, count: 0 };
+    const existing = catSubtotals.get(book.category) ?? {
+      subtotal: 0,
+      count: 0,
+    };
     existing.subtotal += price;
     existing.count += 1;
     catSubtotals.set(book.category, existing);
@@ -218,9 +221,7 @@ export class TransactionsService {
       throw new BadRequestException('Cart is empty');
     }
 
-    const books = await Promise.all(
-      bookIds.map((id) => this.getBook(id)),
-    );
+    const books = await Promise.all(bookIds.map((id) => this.getBook(id)));
 
     const badBooks = books.filter((b) => b.inStock <= 1);
     if (badBooks.length > 0) {
@@ -267,16 +268,16 @@ export class TransactionsService {
       throw new BadRequestException('Invalid purchase confirmation');
     }
 
-    const bookIdsRaw = session.metadata!.bookIds;
+    const bookIdsRaw = session.metadata.bookIds;
     if (!bookIdsRaw) {
-      const bookId = session.metadata!.bookId;
+      const bookId = session.metadata.bookId;
       if (!bookId) {
         throw new BadRequestException('No book IDs found in session metadata');
       }
       return this.recordSinglePurchase(bookId, userId);
     }
 
-    const bookIds: string[] = JSON.parse(bookIdsRaw);
+    const bookIds = JSON.parse(bookIdsRaw) as string[];
     return this.recordBatchPurchases(bookIds, userId);
   }
 
@@ -302,7 +303,7 @@ export class TransactionsService {
       await tx
         .update(schema.books)
         .set({ inStock: sql`${schema.books.inStock} - 1` })
-        .where(gt(schema.books.inStock, 1));
+        .where(and(eq(schema.books.id, bookId), gt(schema.books.inStock, 1)));
 
       return purchase;
     });
@@ -310,7 +311,7 @@ export class TransactionsService {
 
   private async recordBatchPurchases(bookIds: string[], userId: string) {
     return this.db.transaction(async (tx) => {
-      const inserts: Promise<any>[] = [];
+      const inserts: Promise<unknown>[] = [];
       for (const bookId of bookIds) {
         const [existing] = await tx
           .select({ id: schema.purchases.id })
@@ -325,10 +326,7 @@ export class TransactionsService {
         if (existing) continue;
 
         inserts.push(
-          tx
-            .insert(schema.purchases)
-            .values({ bookId, userId })
-            .returning(),
+          tx.insert(schema.purchases).values({ bookId, userId }).returning(),
         );
       }
 
@@ -336,7 +334,7 @@ export class TransactionsService {
         await tx
           .update(schema.books)
           .set({ inStock: sql`${schema.books.inStock} - 1` })
-          .where(gt(schema.books.inStock, 1));
+          .where(and(eq(schema.books.id, bookId), gt(schema.books.inStock, 1)));
       }
 
       const results = await Promise.all(inserts);
