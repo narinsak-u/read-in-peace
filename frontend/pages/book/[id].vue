@@ -14,12 +14,12 @@ const auth = useAuthStore();
 const showCommentForm = shallowRef(false);
 
 definePageMeta({
+  layout: 'app',
   title: 'Book — Read in Pace',
 });
 </script>
 
 <template>
-  <Navbar />
   <main class="mx-auto max-w-5xl px-6 md:px-0 py-10">
     <div class="animate-enter">
       <NuxtLink

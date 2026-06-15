@@ -2,6 +2,7 @@
 import { ArrowRight } from 'lucide-vue-next';
 
 definePageMeta({
+  layout: 'default',
   title: "Read in Pace — A calmer way to read",
   description:
     "A quiet library to review, borrow, return, and buy books at your own pace.",
