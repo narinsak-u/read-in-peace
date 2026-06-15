@@ -101,7 +101,11 @@ export class BooksService {
   async create(data: CreateBookDto, userId: string) {
     const [book] = await this.db
       .insert(schema.books)
-      .values({ ...data, createdBy: userId })
+      .values({
+        ...data,
+        totalPages: data.totalPages ?? 300,
+        createdBy: userId,
+      })
       .returning();
     return book;
   }

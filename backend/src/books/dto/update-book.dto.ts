@@ -42,4 +42,8 @@ export class UpdateBookDto {
   @IsOptional()
   @IsBoolean()
   trending?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  totalPages?: number;
 }

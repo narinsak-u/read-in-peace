@@ -36,4 +36,8 @@ export class CreateBookDto {
   @IsOptional()
   @IsBoolean()
   trending?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  totalPages?: number;
 }
