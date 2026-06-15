@@ -81,7 +81,12 @@ function formatPrice(amount: number): string {
                   <p class="text-xs text-muted-foreground truncate">{{ item.author }}</p>
                   <p class="text-xs text-muted-foreground">{{ item.category }}</p>
                   <div class="flex items-center justify-between mt-1.5">
-                    <span class="text-sm font-semibold">{{ formatPrice(item.price) }}</span>
+                    <div class="flex items-center gap-2">
+                      <span class="text-sm font-semibold">{{ formatPrice(item.price) }}</span>
+                      <span v-if="item.quantity > 1" class="text-xs text-muted-foreground">
+                        ×{{ item.quantity }}
+                      </span>
+                    </div>
                     <Button
                       variant="archivalGhost"
                       size="sm"
@@ -121,6 +126,17 @@ function formatPrice(amount: number): string {
                 <span>Total</span>
                 <span>{{ formatPrice(breakdown.total) }}</span>
               </div>
+            </div>
+
+            <!-- View full cart -->
+            <div class="px-4 pb-1">
+              <NuxtLink
+                to="/cart"
+                class="text-xs text-muted-foreground hover:text-primary transition-colors"
+                @click="cartStore.closeDrawer()"
+              >
+                View full cart
+              </NuxtLink>
             </div>
 
             <!-- Checkout button -->
