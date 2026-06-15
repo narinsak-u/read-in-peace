@@ -37,6 +37,7 @@ export interface Comment {
 export const useBooksStore = defineStore('books', () => {
   const books = shallowRef<BookWithMeta[]>([]);
   const trending = shallowRef<BookWithMeta[]>([]);
+  const newArrivals = shallowRef<BookWithMeta[]>([]);
   const currentBook = shallowRef<BookWithMeta | null>(null);
   const comments = shallowRef<Comment[]>([]);
   const liked = shallowRef<Record<string, boolean>>({});
@@ -78,6 +79,11 @@ export const useBooksStore = defineStore('books', () => {
   async function fetchTrending() {
     const res = await $fetch<BookWithMeta[]>('/api/books/trending');
     trending.value = res;
+  }
+
+  async function fetchNewArrivals() {
+    const res = await $fetch<BookWithMeta[]>('/api/books/new-arrivals');
+    newArrivals.value = res;
   }
 
   async function fetchBook(id: string) {
@@ -220,6 +226,7 @@ export const useBooksStore = defineStore('books', () => {
   return {
     books: readonly(books),
     trending: readonly(trending),
+    newArrivals: readonly(newArrivals),
     currentBook: readonly(currentBook),
     comments: readonly(comments),
     liked: readonly(liked),
@@ -229,7 +236,7 @@ export const useBooksStore = defineStore('books', () => {
     showForm: readonly(showForm),
     editingBook: readonly(editingBook),
     openCreateForm, openEditForm, closeForm,
-    fetchBooks, fetchTrending, fetchBook, createBook, updateBook, deleteBook,
+    fetchBooks, fetchTrending, fetchNewArrivals, fetchBook, createBook, updateBook, deleteBook,
     toggleLike, fetchLikeStatus, fetchUserRating, fetchComments, createComment, deleteComment, rateBook,
   };
 });
