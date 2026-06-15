@@ -8,6 +8,7 @@ export interface Book {
   rating: number;
   category: string;
   crop: number;
+  totalPages?: number;
   trending?: boolean;
 }
 

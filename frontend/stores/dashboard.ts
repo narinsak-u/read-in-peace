@@ -10,6 +10,9 @@ interface BorrowRecord {
     userId: string;
     borrowedAt: string;
     returnedAt: string | null;
+    dueAt: string;
+    currentPage: number;
+    totalPages: number;
   };
   book: Book;
 }
