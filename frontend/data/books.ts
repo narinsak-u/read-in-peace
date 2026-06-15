@@ -7,6 +7,7 @@ export interface Book {
   synopsis: string;
   rating: number;
   category: string;
+  crop: number;
   trending?: boolean;
 }
 
@@ -58,6 +59,7 @@ export const books: Book[] = titles.map(([title, author], i) => ({
   synopsis,
   rating: 3.8 + ((i * 0.13) % 1.2),
   category: categories[i],
+  crop: i % 6,
   trending: i < 3,
 }));
 

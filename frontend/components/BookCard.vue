@@ -52,6 +52,7 @@ function handleBuy() {
     cover: props.book.cover,
     price: Number(props.book.price),
     category: props.book.category,
+    crop: props.book.crop,
   });
 }
 
