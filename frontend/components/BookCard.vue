@@ -86,12 +86,15 @@ async function handleDelete() {
     </div>
 
     <NuxtLink :to="`/book/${book.id}`" class="block overflow-hidden bg-muted">
-      <div class="aspect-2/3 w-full overflow-hidden">
+      <div
+        :class="`cover-crop cover-${book.crop}`"
+        class="aspect-2/3 w-full overflow-hidden"
+      >
         <img
           :src="book.cover"
           :alt="book.title"
           loading="lazy"
-          class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          class="transition-transform duration-500 group-hover:scale-105"
         />
       </div>
     </NuxtLink>

@@ -59,7 +59,10 @@ function formatPrice(amount: number): string {
                 class="flex gap-3 p-4"
               >
                 <NuxtLink :to="`/book/${item.bookId}`" class="shrink-0">
-                  <div class="w-12 h-16 overflow-hidden rounded border border-border/60 bg-muted">
+                  <div
+                    :class="`cover-crop cover-${item.crop}`"
+                    class="w-12 h-16 overflow-hidden rounded border border-border/60 bg-muted"
+                  >
                     <img
                       :src="item.cover"
                       :alt="item.title"
