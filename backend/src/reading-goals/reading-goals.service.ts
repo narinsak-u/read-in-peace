@@ -14,7 +14,12 @@ export class ReadingGoalsService {
     const [goal] = await this.db
       .select()
       .from(schema.readingGoals)
-      .where(and(eq(schema.readingGoals.userId, userId), eq(schema.readingGoals.year, year)));
+      .where(
+        and(
+          eq(schema.readingGoals.userId, userId),
+          eq(schema.readingGoals.year, year),
+        ),
+      );
 
     const [completed] = await this.db
       .select({ count: sql<number>`count(*)::int` })
@@ -53,7 +58,12 @@ export class ReadingGoalsService {
     const [existing] = await this.db
       .select()
       .from(schema.readingGoals)
-      .where(and(eq(schema.readingGoals.userId, userId), eq(schema.readingGoals.year, year)));
+      .where(
+        and(
+          eq(schema.readingGoals.userId, userId),
+          eq(schema.readingGoals.year, year),
+        ),
+      );
 
     if (existing) {
       const [updated] = await this.db
