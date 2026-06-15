@@ -13,13 +13,16 @@ export interface CartItem {
   price: number;
   category: string;
   crop: number;
+  quantity: number;
 }
 
 export const useCartStore = defineStore('cart', () => {
   const items = shallowRef<CartItem[]>([]);
   const drawerOpen = ref(false);
 
-  const itemCount = computed(() => items.value.length);
+  const itemCount = computed(() =>
+    items.value.reduce((sum, i) => sum + i.quantity, 0),
+  );
   const subtotal = computed(() =>
     items.value.reduce((sum, item) => sum + item.price, 0),
   );
@@ -43,13 +46,49 @@ export const useCartStore = defineStore('cart', () => {
     } catch {}
   }, { deep: true });
 
-  function addItem(book: CartItem) {
-    if (items.value.some((i) => i.bookId === book.bookId)) {
-      toast.info('This book is already in your cart');
-      return;
+  function updateLocalStorage(): void {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(items.value));
+    } catch {}
+  }
+
+  function addItem(item: Omit<CartItem, 'quantity'>) {
+    const existing = items.value.find((i) => i.bookId === item.bookId);
+    if (existing) {
+      existing.quantity += 1;
+    } else {
+      items.value = [...items.value, { ...item, quantity: 1 }];
     }
-    items.value = [...items.value, book];
-    drawerOpen.value = true;
+    updateLocalStorage();
+  }
+
+  function setQuantity(bookId: string, quantity: number) {
+    if (quantity <= 0) {
+      items.value = items.value.filter((i) => i.bookId !== bookId);
+    } else {
+      const item = items.value.find((i) => i.bookId === bookId);
+      if (item) item.quantity = quantity;
+    }
+    updateLocalStorage();
+  }
+
+  function incrementQuantity(bookId: string) {
+    const item = items.value.find((i) => i.bookId === bookId);
+    if (item) {
+      item.quantity += 1;
+      updateLocalStorage();
+    }
+  }
+
+  function decrementQuantity(bookId: string) {
+    const item = items.value.find((i) => i.bookId === bookId);
+    if (item && item.quantity > 1) {
+      item.quantity -= 1;
+      updateLocalStorage();
+    } else {
+      items.value = items.value.filter((i) => i.bookId !== bookId);
+      updateLocalStorage();
+    }
   }
 
   function removeItem(bookId: string) {
@@ -99,6 +138,9 @@ export const useCartStore = defineStore('cart', () => {
     drawerOpen: readonly(drawerOpen),
     addItem,
     removeItem,
+    setQuantity,
+    incrementQuantity,
+    decrementQuantity,
     clear,
     checkout,
     openDrawer,
