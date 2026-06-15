@@ -21,15 +21,17 @@ definePageMeta({
 <template>
   <Navbar />
   <main class="mx-auto max-w-5xl px-6 md:px-0 py-10">
-    <NuxtLink
-      to="/feed"
-      class="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-    >
-      <ArrowLeft class="h-4 w-4" /> Back to feed
-    </NuxtLink>
+    <div class="animate-enter">
+      <NuxtLink
+        to="/feed"
+        class="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+      >
+        <ArrowLeft class="h-4 w-4" /> Back to feed
+      </NuxtLink>
+    </div>
 
     <template v-if="book">
-      <div class="grid grid-cols-1 gap-12 md:grid-cols-2 md:items-start">
+      <div class="animate-enter [animation-delay:100ms] grid grid-cols-1 gap-12 md:grid-cols-2 md:items-start">
         <!-- Left column: Book cover (sticky) -->
         <div class="flex justify-center md:sticky md:top-24">
           <div class="w-full max-w-md">

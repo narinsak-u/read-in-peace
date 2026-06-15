@@ -33,19 +33,23 @@ definePageMeta({
 <template>
   <Navbar />
   <main class="mx-auto max-w-5xl px-6 md:px-0 py-10">
-    <TrendingSection :trending="trendingList" />
+    <div class="animate-enter">
+      <TrendingSection :trending="trendingList" />
+    </div>
 
-    <BookShelf
-      :books="booksList"
-      :categories="categories"
-      :active-category="activeCategory"
-      :page="page"
-      :total-pages="totalPages"
-      :admin-mode="auth.adminMode"
-      @edit="handleEdit"
-      @add-book="handleAddBook"
-      @category-change="setCategory"
-      @page-change="setPage"
-    />
+    <div class="animate-enter [animation-delay:150ms]">
+      <BookShelf
+        :books="booksList"
+        :categories="categories"
+        :active-category="activeCategory"
+        :page="page"
+        :total-pages="totalPages"
+        :admin-mode="auth.adminMode"
+        @edit="handleEdit"
+        @add-book="handleAddBook"
+        @category-change="setCategory"
+        @page-change="setPage"
+      />
+    </div>
   </main>
 </template>

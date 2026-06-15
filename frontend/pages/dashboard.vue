@@ -46,14 +46,14 @@ definePageMeta({
 <template>
   <Navbar />
   <main class="mx-auto max-w-5xl px-6 md:px-0 py-10">
-    <div class="mb-10">
+    <div class="animate-enter mb-10">
       <p class="text-sm text-muted-foreground">Welcome back</p>
       <h1 class="mt-1 text-4xl font-semibold tracking-tight">
         {{ auth.user?.name || 'Reader' }}
       </h1>
     </div>
 
-    <div class="mb-8 flex gap-6 border-b border-border/60">
+    <div class="animate-enter [animation-delay:100ms] mb-8 flex gap-6 border-b border-border/60">
       <button
         @click="setTab('borrowed')"
         class="flex items-center gap-2 pb-3 cursor-pointer text-sm font-medium transition-all duration-200 border-b-2 -mb-px"
@@ -78,30 +78,32 @@ definePageMeta({
       </button>
     </div>
 
-    <template v-if="list.length === 0">
-      <div
-        class="rounded-2xl border border-dashed border-border/60 py-20 text-center"
-      >
-        <p class="text-muted-foreground">Nothing here yet.</p>
-        <NuxtLink
-          to="/feed"
-          class="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+    <div class="animate-enter [animation-delay:200ms]">
+      <template v-if="list.length === 0">
+        <div
+          class="rounded-2xl border border-dashed border-border/60 py-20 text-center"
         >
-          Find something to read
-        </NuxtLink>
-      </div>
-    </template>
-    <template v-else>
-      <div
-        class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-      >
-        <BookCard
-          v-for="item in list"
-          :key="'borrow' in item ? item.borrow.id : item.purchase.id"
-          :book="item.book as BookWithMeta"
-          :variant="tab"
-        />
-      </div>
-    </template>
+          <p class="text-muted-foreground">Nothing here yet.</p>
+          <NuxtLink
+            to="/feed"
+            class="mt-3 inline-block text-sm font-medium text-primary hover:underline"
+          >
+            Find something to read
+          </NuxtLink>
+        </div>
+      </template>
+      <template v-else>
+        <div
+          class="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+        >
+          <BookCard
+            v-for="item in list"
+            :key="'borrow' in item ? item.borrow.id : item.purchase.id"
+            :book="item.book as BookWithMeta"
+            :variant="tab"
+          />
+        </div>
+      </template>
+    </div>
   </main>
 </template>
