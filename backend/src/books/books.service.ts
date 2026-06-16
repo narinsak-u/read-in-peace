@@ -81,6 +81,14 @@ export class BooksService {
     return book;
   }
 
+  async findNewArrivals() {
+    return this.db
+      .select(this.bookWithMeta)
+      .from(schema.books)
+      .limit(4)
+      .orderBy(desc(schema.books.createdAt));
+  }
+
   private async findOwner(id: string) {
     const [book] = await this.db
       .select({ createdBy: schema.books.createdBy })
@@ -93,7 +101,11 @@ export class BooksService {
   async create(data: CreateBookDto, userId: string) {
     const [book] = await this.db
       .insert(schema.books)
-      .values({ ...data, createdBy: userId })
+      .values({
+        ...data,
+        totalPages: data.totalPages ?? 300,
+        createdBy: userId,
+      })
       .returning();
     return book;
   }

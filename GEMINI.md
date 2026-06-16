@@ -1,10 +1,10 @@
-# Read in Pace — GEMINI.md
+# Read in Peace — GEMINI.md
 
 This file provides instructional context for Gemini CLI and other AI agents. It outlines project architecture, tech stack, commands, and development conventions.
 
 ## Project Overview
 
-"Read in Pace" is a web application for book enthusiasts to read reviews, borrow, return, and purchase books. The project was recently migrated from a React monolith to a monorepo using Nuxt 3 and NestJS.
+"Read in Peace" is a web application for book enthusiasts to read reviews, borrow, return, and purchase books. The project was recently migrated from a React monolith to a monorepo using Nuxt 3 and NestJS.
 
 ### Architecture
 - **Structure:** Monorepo with `frontend/` and `backend/` packages.

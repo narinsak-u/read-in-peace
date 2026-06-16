@@ -1436,7 +1436,7 @@ In `backend/src/transactions/transactions.service.ts`, add the new method:
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `Read in Pace — ${bookIds.length} book${bookIds.length > 1 ? 's' : ''}`,
+              name: `Read in Peace — ${bookIds.length} book${bookIds.length > 1 ? 's' : ''}`,
             },
             unit_amount: discount.total,
           },

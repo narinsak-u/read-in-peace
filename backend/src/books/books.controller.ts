@@ -40,6 +40,11 @@ export class BooksController {
     return this.booksService.getTrending();
   }
 
+  @Get('new-arrivals')
+  getNewArrivals() {
+    return this.booksService.findNewArrivals();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.booksService.findOne(id);

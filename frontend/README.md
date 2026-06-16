@@ -1,4 +1,4 @@
-# Read in Pace — Frontend
+# Read in Peace — Frontend
 
 Nuxt 3 SSR application with Vue 3 Composition API, Pinia, Tailwind CSS v4, and shadcn-vue.
 

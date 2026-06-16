@@ -1,4 +1,4 @@
-# Read in Pace — Nuxt/Nest Migration Implementation Plan
+# Read in Peace — Nuxt/Nest Migration Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -1053,7 +1053,7 @@ git commit -m "feat: create AdminFab component"
 import { ArrowRight } from "lucide-vue-next";
 
 definePageMeta({
-  title: "Read in Pace — A calmer way to read",
+  title: "Read in Peace — A calmer way to read",
   description: "A quiet library to review, borrow, return, and buy books at your own pace.",
 });
 </script>
@@ -1137,8 +1137,8 @@ const page = ref(1);
 const totalPages = 10;
 
 definePageMeta({
-  title: "Feed — Read in Pace",
-  description: "Browse trending books and the full library on Read in Pace.",
+  title: "Feed — Read in Peace",
+  description: "Browse trending books and the full library on Read in Peace.",
 });
 </script>
 
@@ -1278,7 +1278,7 @@ const reviews = ref(booksStore.getReviews(id));
 const draft = ref("");
 
 definePageMeta({
-  title: "Book — Read in Pace",
+  title: "Book — Read in Peace",
 });
 
 function submitReview() {
@@ -1476,7 +1476,7 @@ const list = computed(() =>
 );
 
 definePageMeta({
-  title: "My Dashboard — Read in Pace",
+  title: "My Dashboard — Read in Peace",
 });
 </script>
 

@@ -39,30 +39,30 @@ function switchTab(t: 'sign-in' | 'sign-up') {
 
 <template>
   <div
-    class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm"
     @click.self="emit('close')"
   >
     <div
-      class="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-2xl"
+      class="w-full max-w-sm rounded-sm border border-border bg-background p-8"
     >
       <div class="mb-6 text-center">
-        <p class="text-lg font-semibold tracking-tight">
+        <h2 class="text-lg font-semibold tracking-tight">
           Read<span class="text-primary"> in </span>Pace
-        </p>
+        </h2>
       </div>
 
       <!-- Tabs -->
-      <div class="mb-6 flex rounded-lg border border-border bg-muted p-1">
+      <div class="mb-6 flex rounded-sm border border-border bg-muted p-1">
         <button
           @click="switchTab('sign-in')"
-          class="flex-1 rounded-md px-4 py-2 cursor-pointer text-sm font-medium transition-colors"
+          class="flex-1 rounded-sm px-4 py-2 cursor-pointer text-sm font-medium transition-colors"
           :class="tab === 'sign-in' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'"
         >
           Sign In
         </button>
         <button
           @click="switchTab('sign-up')"
-          class="flex-1 rounded-md px-4 py-2 cursor-pointer text-sm font-medium transition-colors"
+          class="flex-1 rounded-sm px-4 py-2 cursor-pointer text-sm font-medium transition-colors"
           :class="tab === 'sign-up' ? 'bg-card text-foreground shadow' : 'text-muted-foreground hover:text-foreground'"
         >
           Sign Up
@@ -72,66 +72,67 @@ function switchTab(t: 'sign-in' | 'sign-up') {
       <!-- Error -->
       <p
         v-if="error"
-        class="mb-4 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        class="mb-4 rounded-sm bg-destructive/10 px-3 py-2 text-sm text-destructive"
       >
         {{ error }}
       </p>
 
       <!-- Name field (sign-up only) -->
       <div v-if="tab === 'sign-up'" class="mb-4">
-        <label class="mb-1 block text-sm font-medium text-muted-foreground">Name</label>
+        <label class="mb-1 block font-mono text-sm font-medium text-muted-foreground">Name</label>
         <input
           v-model="name"
           type="text"
           placeholder="Alex Rivera"
-          class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+          class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
 
       <!-- Email -->
       <div class="mb-4">
-        <label class="mb-1 block text-sm font-medium text-muted-foreground">Email</label>
+        <label class="mb-1 block font-mono text-sm font-medium text-muted-foreground">Email</label>
         <input
           v-model="email"
           type="email"
           placeholder="alex@example.com"
-          class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+          class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
 
       <!-- Password -->
       <div class="mb-6">
-        <label class="mb-1 block text-sm font-medium text-muted-foreground">Password</label>
+        <label class="mb-1 block font-mono text-sm font-medium text-muted-foreground">Password</label>
         <input
           v-model="password"
           type="password"
           placeholder="At least 8 characters"
-          class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary"
+          class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
         />
       </div>
 
       <!-- Submit -->
-      <button
-        @click="handleSubmit"
+      <Button
+        variant="archival"
+        class="w-full"
         :disabled="submitting"
-        class="w-full rounded-lg bg-primary px-4 py-2 cursor-pointer text-sm font-semibold text-primary-foreground transition-all duration-200 hover:translate-y-[-1px] hover:shadow-md disabled:opacity-50"
+        @click="handleSubmit"
       >
         {{ submitting ? 'Please wait...' : tab === 'sign-in' ? 'Sign in' : 'Create account' }}
-      </button>
+      </Button>
 
       <!-- Switch tab -->
       <p class="mt-4 text-center text-sm text-muted-foreground">
         <template v-if="tab === 'sign-in'">
           Don't have an account?
-          <button @click="switchTab('sign-up')" class="font-medium cursor-pointer text-primary hover:underline">
+          <Button variant="archivalGhost" size="sm" @click="switchTab('sign-up')">
             Sign up
-          </button>
+          </Button>
         </template>
         <template v-else>
           Already have an account?
-          <button @click="switchTab('sign-in')" class="font-medium text-primary cursor-pointer hover:underline">
+          <Button variant="archivalGhost" size="sm" @click="switchTab('sign-in')">
             Sign in
-          </button>
+          </Button>
         </template>
       </p>
     </div>

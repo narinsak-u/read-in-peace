@@ -1,26 +1,29 @@
 <script setup lang="ts">
-import { Toaster } from 'vue-sonner';
-import { useBooksStore } from '~/stores/books';
+import { Toaster } from "vue-sonner";
 
-const route = useRoute();
-const booksStore = useBooksStore();
-const isNotIndex = computed(() => route.name !== 'index');
+const { notice, flash } = useFlash();
 </script>
 
 <template>
   <div class="flex min-h-screen flex-col">
-    <main class="flex-1">
+    <div class="flex-1">
       <slot />
-    </main>
-    <Footer v-if="isNotIndex" />
-    <AdminFab v-if="isNotIndex" />
-    <BookFormModal
-      v-if="isNotIndex && booksStore.showForm"
-      :book="booksStore.editingBook"
-      @close="booksStore.closeForm()"
-      @saved="booksStore.closeForm()"
-    />
-    <CheckoutDrawer v-if="isNotIndex" />
-    <Toaster richColors position="top-center" />
+    </div>
+    <!-- <footer class="border-t border-border py-6 text-center">
+      <p class="text-[11px] text-muted-foreground">&copy; 2026 Read in Peace</p>
+    </footer> -->
   </div>
+  <BottomDock :flash="flash" />
+  <Toaster richColors position="top-center" />
+
+  <!-- Toast Notification -->
+  <Teleport to="body">
+    <div
+      v-if="notice"
+      role="status"
+      class="fixed right-5 top-20 z-50 border border-border bg-foreground px-4 py-3 text-sm text-background shadow-xl"
+    >
+      {{ notice }}
+    </div>
+  </Teleport>
 </template>

@@ -217,7 +217,7 @@ git commit -m "feat: update landing page with warm amber palette"
   <footer
     class="border-t border-border/60 py-8 text-center text-xs text-muted-foreground"
   >
-    <p>&copy; 2026 Read in Pace &middot; Built with 💚 Nuxt &amp; Nest</p>
+    <p>&copy; 2026 Read in Peace &middot; Built with 💚 Nuxt &amp; Nest</p>
   </footer>
 </template>
 ```

@@ -83,6 +83,7 @@ export const books = pgTable('books', {
   trending: boolean('trending').notNull().default(false),
   inStock: integer('in_stock').notNull().default(5),
   isAvailable: boolean('is_available').notNull().default(true),
+  totalPages: integer('total_pages').notNull().default(300),
   createdBy: text('created_by')
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
@@ -152,6 +153,9 @@ export const borrows = pgTable('borrows', {
     .references(() => user.id, { onDelete: 'cascade' }),
   borrowedAt: timestamp('borrowed_at').notNull().defaultNow(),
   returnedAt: timestamp('returned_at'),
+  dueAt: timestamp('due_at').notNull(),
+  currentPage: integer('current_page').notNull().default(0),
+  totalPages: integer('total_pages').notNull().default(300),
 });
 
 export const purchases = pgTable('purchases', {
@@ -165,4 +169,68 @@ export const purchases = pgTable('purchases', {
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
   purchasedAt: timestamp('purchased_at').notNull().defaultNow(),
+});
+
+export const readingGoals = pgTable('reading_goals', {
+  id: text('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  year: integer('year').notNull(),
+  goal: integer('goal').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const posts = pgTable('posts', {
+  id: text('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  text: text('text').notNull(),
+  rating: integer('rating'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const postLikes = pgTable(
+  'post_likes',
+  {
+    postId: text('post_id')
+      .notNull()
+      .references(() => posts.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => [primaryKey({ columns: [table.postId, table.userId] })],
+);
+
+export const postReplies = pgTable('post_replies', {
+  id: text('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  postId: text('post_id')
+    .notNull()
+    .references(() => posts.id, { onDelete: 'cascade' }),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  text: text('text').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
 });

@@ -169,6 +169,10 @@ async function seed() {
 
   const bookIds = Array.from({ length: 15 }, () => crypto.randomUUID());
   const stockValues = [5, 3, 10, 9, 1, 8, 4, 7, 10, 3, 1, 5, 2, 0, 10];
+  const totalPagesValues = [
+    340, 280, 420, 310, 256, 380, 440, 290, 360, 200, 320, 400, 270, 350, 190,
+  ];
+
   const booksData = titles.map(([title, author], i) => ({
     id: bookIds[i],
     title,
@@ -180,6 +184,7 @@ async function seed() {
     trending: i < 3,
     inStock: stockValues[i],
     isAvailable: true,
+    totalPages: totalPagesValues[i],
     createdBy: '00000000-0000-0000-0000-000000000001',
   }));
 
@@ -237,6 +242,28 @@ async function seed() {
   }
 
   console.log(`Created ${ratingCount} ratings`);
+
+  // --- Posts (social feed) ---
+
+  const postTexts = [
+    "Rossi-Vaughn's chapter on brutalist memorials is devastating. Did anyone else catch the reference to Rossi's own cemetery design?",
+    'Just finished Paper Shadows. A little quiet in the middle, but the ending is worth it.',
+    "Looking for recommendations on mid-century urban design. Any classics I'm missing?",
+    'Finally started The Quiet Hours — Elena Marsh has such a distinctive voice. Perfect rainy morning read.',
+  ];
+
+  const postRatings = [4, 3, null, 5];
+
+  for (let i = 0; i < postTexts.length; i++) {
+    const userId = commentUsers[i % commentUsers.length].id;
+    await db.insert(schema.posts).values({
+      userId,
+      text: postTexts[i],
+      rating: postRatings[i],
+    });
+  }
+
+  console.log(`Created ${postTexts.length} social posts`);
 
   await pool.end();
   console.log('\nSeed complete!');

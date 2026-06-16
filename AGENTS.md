@@ -1,4 +1,4 @@
-# Read in Pace — AGENTS.md
+# Read in Peace — AGENTS.md
 
 This file is consumed by agentic coding tools (Claude Code, Gemini CLI, Cursor, etc.).
 Use it to understand the project conventions before writing or editing code.

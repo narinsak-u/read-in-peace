@@ -110,6 +110,7 @@ export class TransactionsService {
           id: schema.books.id,
           isAvailable: schema.books.isAvailable,
           inStock: schema.books.inStock,
+          totalPages: schema.books.totalPages,
         })
         .from(schema.books)
         .where(eq(schema.books.id, bookId))
@@ -148,7 +149,13 @@ export class TransactionsService {
 
       const [borrow] = await tx
         .insert(schema.borrows)
-        .values({ bookId, userId })
+        .values({
+          bookId,
+          userId,
+          dueAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+          currentPage: 0,
+          totalPages: book.totalPages,
+        })
         .returning();
 
       return borrow;
@@ -241,7 +248,7 @@ export class TransactionsService {
           price_data: {
             currency: 'usd',
             product_data: {
-              name: `Read in Pace — ${bookIds.length} book${bookIds.length > 1 ? 's' : ''}`,
+              name: `Read in Peace — ${bookIds.length} book${bookIds.length > 1 ? 's' : ''}`,
             },
             unit_amount: discount.total,
           },
@@ -353,6 +360,9 @@ export class TransactionsService {
           userId: schema.borrows.userId,
           borrowedAt: schema.borrows.borrowedAt,
           returnedAt: schema.borrows.returnedAt,
+          dueAt: schema.borrows.dueAt,
+          currentPage: schema.borrows.currentPage,
+          totalPages: schema.borrows.totalPages,
         },
         book: {
           id: schema.books.id,

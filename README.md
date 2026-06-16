@@ -1,4 +1,4 @@
-# Read in Pace
+# Read in Peace
 
 A quiet library to review, borrow, return, and buy books — built with Nuxt 3 + NestJS.
 

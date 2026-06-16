@@ -1,4 +1,4 @@
-# Checkout Cart & Discount Pipeline — Read in Pace
+# Checkout Cart & Discount Pipeline — Read in Peace
 
 ## Overview
 

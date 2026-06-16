@@ -1,8 +1,8 @@
-# Read in Pace — Nuxt/Nest Migration Design
+# Read in Peace — Nuxt/Nest Migration Design
 
 ## Overview
 
-Migrate the existing "Read in Pace" TanStack React monolith (React 19 + TanStack Start SSR + shadcn/ui + Tailwind v4) to a separated architecture with a Nuxt 3 SSR frontend and a NestJS backend. Mock data is retained throughout — no real database or auth integration.
+Migrate the existing "Read in Peace" TanStack React monolith (React 19 + TanStack Start SSR + shadcn/ui + Tailwind v4) to a separated architecture with a Nuxt 3 SSR frontend and a NestJS backend. Mock data is retained throughout — no real database or auth integration.
 
 ---
 

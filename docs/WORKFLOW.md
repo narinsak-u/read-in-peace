@@ -673,7 +673,7 @@ cartStore.checkout()
        │
        │  4. Create Stripe Checkout Session:
        │     - mode: "payment"
-       │     - line_item: "Read in Pace — N books" at computed total
+       │     - line_item: "Read in Peace — N books" at computed total
        │     - metadata: { bookIds: JSON.stringify(bookIds), userId }
        │     - success_url: /dashboard?tab=purchased&session_id=...
        │     - cancel_url: /feed?cart=preserved

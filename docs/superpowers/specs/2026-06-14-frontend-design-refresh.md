@@ -1,4 +1,4 @@
-# Frontend Design Refresh — Read in Pace
+# Frontend Design Refresh — Read in Peace
 
 ## Overview
 

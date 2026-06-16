@@ -1,51 +1,65 @@
 <script setup lang="ts">
-import { useBooksStore } from '~/stores/books';
-import { useAuthStore } from '~/stores/auth';
-
-const booksStore = useBooksStore();
-const auth = useAuthStore();
-
-const { page, activeCategory, categories, totalPages, setPage, setCategory } = useShelf();
-
-const booksList = computed(() => [...booksStore.books]);
-const trendingList = computed(() => [...booksStore.trending]);
-
-function handleEdit(book: import('~/stores/books').BookWithMeta) {
-  booksStore.openEditForm(book);
-}
-
-function handleAddBook() {
-  booksStore.openCreateForm();
-}
-
-watch(() => booksStore.showForm, (showing) => {
-  if (!showing) {
-    booksStore.fetchBooks(page.value, 12, activeCategory.value === 'All' ? undefined : activeCategory.value);
-  }
-});
+import { Button } from "~/components/ui/button";
 
 definePageMeta({
-  title: 'Feed — Read in Pace',
-  description: 'Browse trending books and the full library on Read in Pace.',
+  title: "Ex Libris — Social Library",
+  description:
+    "Borrow, return, buy, review, rate, and discuss books with fellow readers.",
+  layout: "default",
 });
+
+const query = ref("");
+const returned = ref<string[]>([]);
+const reviewOpen = ref(false);
+const rating = ref(0);
+const reviewText = ref("");
+const { notice, flash } = useFlash();
 </script>
 
 <template>
-  <Navbar />
-  <main class="mx-auto max-w-5xl px-6 md:px-0 py-10">
-    <TrendingSection :trending="trendingList" />
+  <div
+    class="min-h-screen bg-background pb-28 text-foreground selection:bg-primary/10 selection:text-primary"
+  >
+    <Nav v-model:query="query" />
 
-    <BookShelf
-      :books="booksList"
-      :categories="categories"
-      :active-category="activeCategory"
-      :page="page"
-      :total-pages="totalPages"
-      :admin-mode="auth.adminMode"
-      @edit="handleEdit"
-      @add-book="handleAddBook"
-      @category-change="setCategory"
-      @page-change="setPage"
+    <main class="mx-auto grid max-w-7xl grid-cols-12 gap-10 px-4 py-8 md:px-6">
+      <div class="col-span-12 space-y-12 lg:col-span-8">
+        <ActiveLoans
+          :returned="returned"
+          :flashcards="flash"
+          @return="returned.push($event)"
+          @open-review="reviewOpen = true"
+        />
+        <NewArrivals v-model:query="query" :flashcards="flash" />
+      </div>
+
+      <aside class="col-span-12 space-y-10 lg:col-span-4">
+        <YearlyProgress :current="24" :goal="50" :behind="2" :year="2026" />
+        <ReaderFeed :flashcards="flash" />
+
+        <!-- Book Club -->
+        <section
+          class="animate-enter rounded-sm border-2 border-dashed border-border p-6 text-center [animation-delay:350ms]"
+        >
+          <p class="mb-4 font-serif text-sm italic">
+            Join the literary circles in your neighborhood.
+          </p>
+          <Button
+            class="w-full uppercase tracking-widest"
+            variant="archivalOutline"
+            @click="flash('The feature is coming soon!')"
+          >
+            Find a Book Club
+          </Button>
+        </section>
+      </aside>
+    </main>
+
+    <ReviewModal
+      v-model:open="reviewOpen"
+      v-model:rating="rating"
+      v-model:reviewText="reviewText"
+      :flashcards="flash"
     />
-  </main>
+  </div>
 </template>

@@ -1461,7 +1461,7 @@ onMounted(async () => {
 });
 
 definePageMeta({
-  title: "My Dashboard — Read in Pace",
+  title: "My Dashboard — Read in Peace",
 });
 ```
 

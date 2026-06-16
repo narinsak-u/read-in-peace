@@ -1,4 +1,4 @@
-# Read in Pace — Backend
+# Read in Peace — Backend
 
 NestJS v11 REST API with Better Auth, Drizzle ORM, and PostgreSQL.
 

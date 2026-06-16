@@ -2,7 +2,8 @@
 import { ArrowRight } from 'lucide-vue-next';
 
 definePageMeta({
-  title: "Read in Pace — A calmer way to read",
+  layout: 'default',
+  title: "Read in Peace — A calmer way to read",
   description:
     "A quiet library to review, borrow, return, and buy books at your own pace.",
 });
@@ -35,7 +36,7 @@ definePageMeta({
       <h1
         class="text-balance text-5xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-7xl"
       >
-        Read at the pace<br />the book deserves.
+        Read at the Peace<br />the book deserves.
       </h1>
       <p class="mt-6 max-w-xl text-balance text-base text-white sm:text-lg">
         Borrow, return, review, and own — without the noise. A place built for

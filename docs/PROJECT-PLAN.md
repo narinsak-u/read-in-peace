@@ -1,4 +1,4 @@
-Act as an Expert Full-Stack Developer and UI/UX Designer. Your task is to build a complete web application called "Read in Pace". The platform allows users to read reviews, as well as borrow, return, and buy books. 
+Act as an Expert Full-Stack Developer and UI/UX Designer. Your task is to build a complete web application called "Read in Peace". The platform allows users to read reviews, as well as borrow, return, and buy books. 
 
 Please use the following tech stack: Next.js (App Router), TypeScript, Tailwind CSS for styling, and Jotai for state management. Ensure the code follows Clean Architecture principles, with reusable components and clear separation of concerns.
 
