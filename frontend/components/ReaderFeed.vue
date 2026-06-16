@@ -4,10 +4,12 @@ import { MessageCircle } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 
 defineProps<{
-  flashcards: (message: string) => void;
+  flash: (message: string) => void;
 }>();
 
 const liked = ref(false);
+const replyOpen = ref(false);
+const replyText = ref('');
 </script>
 
 <template>
@@ -36,13 +38,27 @@ const liked = ref(false);
           anyone else catch the reference to Rossi's own cemetery design?"
         </p>
         <div class="mt-2 flex items-center gap-3">
-          <Button
-            variant="archivalGhost"
-            size="sm"
-            @click="flashcards('Reply composer opened.')"
-          >
-            <MessageCircle /> Reply
-          </Button>
+          <div>
+            <Button
+              variant="archivalGhost"
+              size="sm"
+              @click="replyOpen = !replyOpen"
+            >
+              <MessageCircle /> Reply
+            </Button>
+            <div v-if="replyOpen" class="mt-2">
+              <textarea
+                v-model="replyText"
+                rows="2"
+                placeholder="Write your reply..."
+                class="w-full resize-none rounded-sm border border-border bg-card p-2 text-xs focus:ring-1 focus:ring-ring"
+              />
+              <div class="mt-1 flex justify-end gap-1">
+                <Button size="sm" variant="archivalGhost" @click="replyOpen = false; replyText = ''">Cancel</Button>
+                <Button size="sm" variant="archival" :disabled="!replyText.trim()" @click="replyOpen = false; replyText = ''; flash('Reply posted.')">Post</Button>
+              </div>
+            </div>
+          </div>
           <Button
             variant="archivalGhost"
             size="sm"
@@ -97,7 +113,7 @@ const liked = ref(false);
           class="mt-2"
           variant="archivalGhost"
           size="sm"
-          @click="flashcards('Discussion saved to your archive.')"
+          @click="flash('Discussion details opening soon.')"
           >View discussion</Button
         >
       </article>

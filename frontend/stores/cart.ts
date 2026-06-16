@@ -12,6 +12,7 @@ export interface CartItem {
   cover: string;
   crop: number | null;
   quantity: number;
+  category?: string;
 }
 
 export const useCartStore = defineStore('cart', () => {

@@ -2,6 +2,7 @@
 import { onMounted, onUnmounted } from "vue";
 import { ArrowLeft, Search, ShoppingBag } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button/variants";
 import { useCartStore } from "~/stores/cart";
 
 const query = defineModel<string>("query", { default: "" });
@@ -49,18 +50,20 @@ onUnmounted(() => {
         >
           <NuxtLink to="/">Read in Peace</NuxtLink>
         </button>
-        <Button v-else as-child variant="archivalGhost">
-          <NuxtLink to="/feed" class="flex gap-2 items-center">
-            <ArrowLeft />
-            <span>
-              {{ mode === "book" ? "Back to the stacks" : "Continue browsing" }}
-            </span>
-          </NuxtLink>
-        </Button>
+        <NuxtLink
+          v-else
+          to="/feed"
+          :class="buttonVariants({ variant: 'archivalGhost' }) + ' flex gap-2 items-center'"
+        >
+          <ArrowLeft />
+          <span>
+            {{ mode === "book" ? "Back to the stacks" : "Continue browsing" }}
+          </span>
+        </NuxtLink>
       </div>
 
       <!-- Center: Search -->
-      <div class="hidden flex-1 m-auto max-w-3xl sm:block">
+      <div class="flex-1 m-auto max-w-3xl">
         <label class="relative">
           <span class="sr-only">Search books</span>
           <Search

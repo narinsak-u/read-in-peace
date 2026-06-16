@@ -51,10 +51,10 @@ export const useAuthStore = defineStore('auth', () => {
         closeAuthModal();
         callback?.();
       }
-    } catch {
+    } catch (err: any) {
       signedIn.value = false;
       user.value = null;
-      toast.error('Failed to sign in');
+      toast.error(err?.message || err?.data?.message || 'Failed to sign in');
     } finally {
       loading.value = false;
     }
@@ -73,10 +73,10 @@ export const useAuthStore = defineStore('auth', () => {
         closeAuthModal();
         callback?.();
       }
-    } catch {
+    } catch (err: any) {
       signedIn.value = false;
       user.value = null;
-      toast.error('Failed to create account');
+      toast.error(err?.message || err?.data?.message || 'Failed to create account');
     } finally {
       loading.value = false;
     }

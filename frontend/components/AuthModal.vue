@@ -16,6 +16,26 @@ const submitting = shallowRef(false);
 
 async function handleSubmit() {
   error.value = '';
+  if (tab.value === 'sign-up' && !name.value.trim()) {
+    error.value = 'Please enter your name';
+    return;
+  }
+  if (!email.value.trim()) {
+    error.value = 'Please enter your email';
+    return;
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value)) {
+    error.value = 'Please enter a valid email address';
+    return;
+  }
+  if (!password.value) {
+    error.value = 'Please enter a password';
+    return;
+  }
+  if (password.value.length < 8) {
+    error.value = 'Password must be at least 8 characters';
+    return;
+  }
   submitting.value = true;
   try {
     if (tab.value === 'sign-in') {

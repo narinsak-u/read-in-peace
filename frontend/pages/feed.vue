@@ -26,16 +26,16 @@ const { notice, flash } = useFlash();
       <div class="col-span-12 space-y-12 lg:col-span-8">
         <ActiveLoans
           :returned="returned"
-          :flashcards="flash"
+          :flash="flash"
           @return="returned.push($event)"
           @open-review="reviewOpen = true"
         />
-        <NewArrivals v-model:query="query" :flashcards="flash" />
+        <NewArrivals v-model:query="query" :flash="flash" />
       </div>
 
       <aside class="col-span-12 space-y-10 lg:col-span-4">
         <YearlyProgress :current="24" :goal="50" :behind="2" :year="2026" />
-        <ReaderFeed :flashcards="flash" />
+        <ReaderFeed :flash="flash" />
 
         <!-- Book Club -->
         <section
@@ -59,7 +59,7 @@ const { notice, flash } = useFlash();
       v-model:open="reviewOpen"
       v-model:rating="rating"
       v-model:reviewText="reviewText"
-      :flashcards="flash"
+      :flash="flash"
     />
   </div>
 </template>

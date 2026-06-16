@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Minus, Plus, ShoppingCart, Trash2 } from 'lucide-vue-next';
 import { Button } from '~/components/ui/button';
+import { buttonVariants } from '~/components/ui/button/variants';
 import { useCartStore } from '~/stores/cart';
 
 definePageMeta({
@@ -26,9 +27,7 @@ const cart = useCartStore();
         <ShoppingCart class="size-10 text-muted-foreground" />
         <h2 class="mt-5 font-serif text-2xl">Your book bag is empty.</h2>
         <p class="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">Browse the stacks and keep a permanent copy of something worth returning to.</p>
-        <Button as-child variant="archival" class="mt-6">
-          <NuxtLink to="/feed">Explore the library</NuxtLink>
-        </Button>
+        <NuxtLink to="/feed" :class="buttonVariants({ variant: 'archival', className: 'mt-6' })">Explore the library</NuxtLink>
       </div>
 
       <div v-else class="grid gap-12 py-10 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -67,7 +66,7 @@ const cart = useCartStore();
             <span class="font-serif text-lg">Estimated total</span>
             <strong class="font-serif text-3xl">${{ cart.subtotal.toFixed(2) }}</strong>
           </div>
-          <Button class="mt-6 w-full" variant="archival" @click="cart.checkout?.()">Proceed to checkout</Button>
+          <Button class="mt-6 w-full" variant="archival" @click="cart.checkout()">Proceed to checkout</Button>
           <p class="mt-3 text-center text-[11px] leading-5 text-muted-foreground">Secure checkout will be available when payments are enabled.</p>
         </aside>
       </div>

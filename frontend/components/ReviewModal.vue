@@ -7,7 +7,7 @@ const rating = defineModel<number>('rating', { default: 0 });
 const reviewText = defineModel<string>('reviewText', { default: '' });
 
 defineProps<{
-  flashcards: (message: string) => void;
+  flash: (message: string) => void;
 }>();
 </script>
 
@@ -58,7 +58,7 @@ defineProps<{
               () => {
                 open = false;
                 reviewText = '';
-                flashcards('Your review was published to the reader feed.');
+                flash('Your review was published to the reader feed.');
               }
             "
           >Publish Review</Button>

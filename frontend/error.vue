@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from '~/components/ui/button';
+import { buttonVariants } from '~/components/ui/button/variants';
 
 const props = defineProps<{
   error?: { statusCode?: number; message?: string };
@@ -24,9 +25,7 @@ function reload() {
         }}
       </p>
       <div class="mt-6 flex flex-wrap justify-center gap-2">
-        <Button as-child variant="archival">
-          <NuxtLink to="/feed">Go home</NuxtLink>
-        </Button>
+        <NuxtLink to="/feed" :class="buttonVariants({ variant: 'archival' })">Go home</NuxtLink>
         <Button v-if="error?.statusCode !== 404" variant="archivalOutline" @click="reload">Try again</Button>
       </div>
     </div>

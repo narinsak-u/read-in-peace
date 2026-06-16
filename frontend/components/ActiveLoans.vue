@@ -5,7 +5,7 @@ import { useCartStore } from '~/stores/cart';
 
 defineProps<{
   returned: string[];
-  flashcards: (message: string) => void;
+  flash: (message: string) => void;
 }>();
 
 const emit = defineEmits<{
@@ -57,9 +57,9 @@ const cart = useCartStore();
           <p class="mt-2 font-mono text-[11px] text-muted-foreground">PAGE 218 OF 340 (64%)</p>
         </div>
         <div class="mt-6 flex flex-wrap gap-3">
-          <Button variant="archival" @click="emit('return', 'memory'); flashcards('Book returned. Thank you!')">Return Book</Button>
+          <Button variant="archival" @click="emit('return', 'memory'); flash('Book returned. Thank you!')">Return Book</Button>
           <Button variant="archivalOutline" @click="emit('open-review')">Write Review</Button>
-          <Button variant="archivalGhost" @click="() => { cart.addItem({ id: 'architecture-of-memory', title: 'The Architecture of Memory', author: 'Elena Rossi-Vaughn', price: 21, cover: '/images/architecture-memory.png', crop: null }); flashcards('The Architecture of Memory added to your cart.'); }">
+          <Button variant="archivalGhost" @click="() => { cart.addItem({ id: 'architecture-of-memory', title: 'The Architecture of Memory', author: 'Elena Rossi-Vaughn', price: 21, cover: '/images/architecture-memory.png', crop: null }); flash('The Architecture of Memory added to your cart.'); }">
             <ShoppingBag /> Buy $21.00
           </Button>
         </div>
@@ -81,7 +81,7 @@ const cart = useCartStore();
             <p class="mb-2 text-xs italic text-muted-foreground">{{ book.author }}</p>
             <div class="flex items-center justify-between gap-2">
               <span :class="`font-mono text-[10px] ${book.key === 'urbanism' ? 'font-bold text-primary' : 'text-muted-foreground'}`">{{ book.due }}</span>
-              <Button size="sm" variant="archivalGhost" @click="emit('return', book.key); flashcards(`${book.title} returned.`)">Return</Button>
+              <Button size="sm" variant="archivalGhost" @click="emit('return', book.key); flash(`${book.title} returned.`)">Return</Button>
             </div>
           </div>
         </article>

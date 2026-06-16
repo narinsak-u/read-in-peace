@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button/variants";
 
 const route = useRoute();
+const { notice, flash } = useFlash();
 
 interface BookData {
   title: string;
@@ -100,8 +102,7 @@ const bookId = route.params.id as string;
 const book = computed(() => books[bookId]);
 
 definePageMeta({
-  title: "Book \u2014 Read in Peace",
-  description: "Discover this book and join its reader discussion.",
+  layout: 'default',
 });
 
 useHead({
@@ -116,14 +117,6 @@ useHead({
     return b ? [{ name: "description", content: b.description }] : [];
   }),
 });
-
-const notice = ref("");
-function flash(message: string) {
-  notice.value = message;
-  window.setTimeout(() => {
-    notice.value = "";
-  }, 2400);
-}
 </script>
 
 <template>
@@ -135,9 +128,7 @@ function flash(message: string) {
     <div>
       <p class="font-mono text-xs uppercase text-primary">Catalog note 404</p>
       <h1 class="mt-2 font-serif text-4xl">This volume isn't on the shelf.</h1>
-      <Button as-child variant="archival" class="mt-6">
-        <NuxtLink to="/feed">Return to library</NuxtLink>
-      </Button>
+      <NuxtLink to="/feed" :class="buttonVariants({ variant: 'archival', className: 'mt-6' })">Return to library</NuxtLink>
     </div>
   </div>
 
@@ -164,15 +155,5 @@ function flash(message: string) {
 
       <BookReviews :flash="flash" />
     </main>
-
-    <Teleport to="body">
-      <div
-        v-if="notice"
-        role="status"
-        class="fixed right-5 top-20 z-50 border border-border bg-foreground px-4 py-3 text-sm text-background shadow-xl"
-      >
-        {{ notice }}
-      </div>
-    </Teleport>
   </div>
 </template>

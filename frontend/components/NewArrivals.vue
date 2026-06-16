@@ -7,7 +7,7 @@ import { useCartStore } from '~/stores/cart';
 const query = defineModel<string>('query', { default: '' });
 
 defineProps<{
-  flashcards: (message: string) => void;
+  flash: (message: string) => void;
 }>();
 
 const cart = useCartStore();
@@ -34,13 +34,6 @@ const filtered = computed(() =>
       <h2 class="font-serif text-2xl">New Arrivals</h2>
       <span class="font-mono text-[10px] uppercase text-muted-foreground">Curated this week</span>
     </div>
-    <div class="mb-5 sm:hidden">
-      <input
-        v-model="query"
-        placeholder="Search new arrivals..."
-        class="w-full rounded-sm bg-input px-4 py-2 text-sm"
-      />
-    </div>
     <div v-if="filtered.length > 0" class="grid grid-cols-2 gap-x-5 gap-y-8 md:grid-cols-4">
       <article v-for="book in filtered" :key="book.id" class="group">
         <NuxtLink :to="`/book/${book.id}`" :aria-label="`View ${book.title}`">
@@ -58,7 +51,7 @@ const filtered = computed(() =>
             size="sm"
             :variant="borrowed.includes(book.title) ? 'archivalOutline' : 'archival'"
             :disabled="borrowed.includes(book.title)"
-            @click="() => { borrowed.push(book.title); flashcards(`${book.title} borrowed for 21 days.`); }"
+            @click="() => { borrowed.push(book.title); flash(`${book.title} borrowed for 21 days.`); }"
           >
             {{ borrowed.includes(book.title) ? 'Borrowed' : 'Borrow' }}
           </Button>
@@ -66,7 +59,7 @@ const filtered = computed(() =>
             size="icon"
             variant="archivalGhost"
             :aria-label="`Buy ${book.title}`"
-            @click="() => { cart.addItem({ id: book.id, title: book.title, author: book.author, price: book.price, cover: '/images/book-cover-sheet.png', crop: book.crop }); flashcards(`${book.title} added to your cart.`); }"
+            @click="() => { cart.addItem({ id: book.id, title: book.title, author: book.author, price: book.price, cover: '/images/book-cover-sheet.png', crop: book.crop }); flash(`${book.title} added to your cart.`); }"
           >
             <ShoppingBag />
           </Button>
