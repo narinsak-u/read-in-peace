@@ -54,8 +54,19 @@ const bookId = route.params.id as string;
 const book = books[bookId];
 
 definePageMeta({
-  title: book ? `${book.title} by ${book.author} — Read in Pace` : 'Book — Read in Pace',
-  description: book?.description ?? 'Discover this book and join its reader discussion.',
+  title: 'Book — Read in Pace',
+  description: 'Discover this book and join its reader discussion.',
+});
+
+useHead({
+  title: computed(() => {
+    const b = books[route.params.id as string];
+    return b ? `${b.title} by ${b.author} — Read in Pace` : 'Book — Read in Pace';
+  }),
+  meta: computed(() => {
+    const b = books[route.params.id as string];
+    return b ? [{ name: 'description', content: b.description }] : [];
+  }),
 });
 
 const borrowed = ref(false);
