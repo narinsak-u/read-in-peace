@@ -45,7 +45,7 @@ onUnmounted(() => {
         <button
           v-if="mode === 'feed'"
           type="button"
-          class="font-serif text-xl font-bold italic tracking-tight text-primary"
+          class="font-display text-xl tracking-tight text-primary font-bold md:px-6"
         >
           <NuxtLink to="/">Read in Peace</NuxtLink>
         </button>
@@ -60,8 +60,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Center: Search -->
-      <div class="hidden flex-1 m-auto max-w-3xl sm:block"
-      >
+      <div class="hidden flex-1 m-auto max-w-3xl sm:block">
         <label class="relative">
           <span class="sr-only">Search books</span>
           <Search
@@ -85,8 +84,8 @@ onUnmounted(() => {
       <div
         :class="
           mode === 'feed'
-            ? 'flex shrink-0 items-center gap-3'
-            : 'ml-auto flex shrink-0 items-center gap-3'
+            ? 'flex shrink-0 items-center gap-3 md:px-6'
+            : 'ml-auto flex shrink-0 items-center gap-3 md:px-6'
         "
       >
         <Button

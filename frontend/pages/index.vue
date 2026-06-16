@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ArrowRight } from 'lucide-vue-next';
+import { ArrowRight } from "lucide-vue-next";
 
 definePageMeta({
-  layout: 'default',
+  layout: "default",
   title: "Read in Peace — A calmer way to read",
   description:
     "A quiet library to review, borrow, return, and buy books at your own pace.",
@@ -29,16 +29,18 @@ definePageMeta({
       class="relative z-10 flex max-w-5xl flex-col items-center px-6 text-center"
     >
       <span
-        class="mb-6 rounded-full bg-amber-50 px-4 py-1.5 text-xs font-medium uppercase tracking-widest text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
+        class="mb-6 rounded-full bg-amber-50 px-4 py-1.5 text-xs font-mono font-medium uppercase tracking-widest text-amber-700 dark:bg-amber-900/30 dark:text-amber-300"
       >
         A quieter library
       </span>
       <h1
-        class="text-balance text-5xl font-semibold leading-[1.05] tracking-tight text-foreground sm:text-7xl"
+        class="text-balance text-white text-5xl font-semibold leading-[1.05] tracking-tight sm:text-7xl font-display"
       >
         Read at the Peace<br />the book deserves.
       </h1>
-      <p class="mt-6 max-w-xl text-balance text-base text-white sm:text-lg">
+      <p
+        class="mt-6 max-w-xl text-balance text-xs text-foreground/80 sm:text-sm font-mono uppercase"
+      >
         Borrow, return, review, and own — without the noise. A place built for
         slow afternoons and long evenings.
       </p>
@@ -55,7 +57,7 @@ definePageMeta({
     </div>
 
     <div
-      class="absolute bottom-6 left-1/2 -translate-x-1/2 text-xs text-foreground/40"
+      class="absolute bottom-6 left-1/2 -translate-x-1/2 text-xs text-foreground/40 font-display"
     >
       Scroll, sip, settle in.
     </div>
