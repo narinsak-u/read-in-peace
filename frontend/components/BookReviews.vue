@@ -1,10 +1,5 @@
 <script setup lang="ts">
-import { Star } from 'lucide-vue-next';
 import { Button } from '~/components/ui/button';
-
-const { flash } = defineProps<{
-  flash: (message: string) => void;
-}>();
 
 interface Review {
   id: number;
@@ -16,6 +11,10 @@ interface Review {
   likes: number;
   replies: string[];
 }
+
+const { flash } = defineProps<{
+  flash: (message: string) => void;
+}>();
 
 const reviews = ref<Review[]>([
   {
@@ -63,15 +62,9 @@ function publishReview() {
 
 function publishReply(reviewId: number, text: string) {
   reviews.value = reviews.value.map((r) =>
-    r.id === reviewId
-      ? { ...r, replies: [...r.replies, `${text} \u2014 Jamie S.`] }
-      : r,
+    r.id === reviewId ? { ...r, replies: [...r.replies, `${text} \u2014 Jamie S.`] } : r,
   );
   replyingTo.value = null;
-}
-
-function addLike(item: Review) {
-  item.likes++;
 }
 </script>
 
@@ -81,14 +74,10 @@ function addLike(item: Review) {
       <div>
         <div class="mb-8 flex items-end justify-between border-b border-border pb-3">
           <div>
-            <p class="font-mono text-[10px] uppercase tracking-widest text-primary">
-              Reader room
-            </p>
+            <p class="font-mono text-[10px] uppercase tracking-widest text-primary">Reader room</p>
             <h2 class="mt-1 font-serif text-3xl">Reviews &amp; discussion</h2>
           </div>
-          <span class="text-sm text-muted-foreground"
-            >{{ reviews.length }} conversations</span
-          >
+          <span class="text-sm text-muted-foreground">{{ reviews.length }} conversations</span>
         </div>
         <div class="divide-y divide-border">
           <ReviewItem
@@ -96,7 +85,7 @@ function addLike(item: Review) {
             :key="item.id"
             :review="item"
             :is-replying="replyingTo === item.id"
-            @like="addLike(item)"
+            @like="item.likes++"
             @reply="replyingTo = replyingTo === item.id ? null : item.id"
             @publish-reply="(text: string) => publishReply(item.id, text)"
             @cancel-reply="replyingTo = null"
@@ -104,46 +93,14 @@ function addLike(item: Review) {
         </div>
       </div>
 
-      <aside class="lg:sticky lg:top-28 lg:self-start">
-        <div class="border border-border bg-card p-6">
-          <p class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Add your voice
-          </p>
-          <h3 class="mt-2 font-serif text-lg">
-            What did you think of this volume?
-          </h3>
-          <div
-            class="mb-4 mt-4 flex gap-1"
-            :aria-label="`Your rating: ${rating} out of 5`"
-          >
-            <button
-              v-for="value in 5"
-              :key="value"
-              type="button"
-              :aria-label="`Rate ${value} stars`"
-              @click="rating = value"
-            >
-              <Star
-                :class="`size-6 ${value <= rating ? 'fill-current text-primary' : 'text-border'}`"
-              />
-            </button>
-          </div>
-          <textarea
-            v-model="reviewText"
-            rows="4"
-            placeholder="Write from the margins..."
-            class="w-full resize-none rounded-sm border border-border bg-card p-3 text-sm focus:ring-1 focus:ring-ring"
-          />
-          <Button
-            class="mt-4 w-full"
-            variant="archival"
-            :disabled="!rating || !reviewText.trim()"
-            @click="publishReview"
-          >
-            Publish review
-          </Button>
-        </div>
-      </aside>
+      <ReviewForm
+        :rating="rating"
+        :review-text="reviewText"
+        :flash="flash"
+        @update:rating="rating = $event"
+        @update:review-text="reviewText = $event"
+        @publish="publishReview"
+      />
     </div>
   </section>
 </template>

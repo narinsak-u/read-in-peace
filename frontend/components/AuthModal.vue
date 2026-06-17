@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Button } from "~/components/ui/button";
-import { useAuthStore } from "~/stores/auth";
-import { z } from "zod";
+import { useAuthStore } from '~/stores/auth';
+import { validateSignIn, validateSignUp } from '~/utils/auth-schemas';
 
 const emit = defineEmits<{
   close: [];
@@ -9,63 +8,45 @@ const emit = defineEmits<{
 
 const auth = useAuthStore();
 
-const tab = shallowRef<"sign-in" | "sign-up">("sign-in");
-const email = shallowRef("");
-const password = shallowRef("");
-const name = shallowRef("");
-const error = shallowRef("");
+const tab = shallowRef<'sign-in' | 'sign-up'>('sign-in');
+const email = shallowRef('');
+const password = shallowRef('');
+const name = shallowRef('');
+const error = shallowRef('');
 const submitting = shallowRef(false);
 
-const signInSchema = z.object({
-  email: z
-    .string()
-    .min(1, "Please enter your email")
-    .email("Please enter a valid email address"),
-  password: z
-    .string()
-    .min(1, "Please enter a password")
-    .min(8, "Password must be at least 8 characters"),
-});
-
-const signUpSchema = signInSchema.extend({
-  name: z.string().min(1, "Please enter your name"),
-});
-
-function validate() {
-  const schema = tab.value === "sign-in" ? signInSchema : signUpSchema;
-  const data =
-    tab.value === "sign-in"
-      ? { email: email.value, password: password.value }
-      : { name: name.value, email: email.value, password: password.value };
-  const result = schema.safeParse(data);
-  if (!result.success) {
-    error.value = result.error.issues[0].message;
-    return false;
+function validate(): boolean {
+  if (tab.value === 'sign-in') {
+    const msg = validateSignIn({ email: email.value, password: password.value });
+    if (msg) { error.value = msg; return false; }
+  } else {
+    const msg = validateSignUp({ name: name.value, email: email.value, password: password.value });
+    if (msg) { error.value = msg; return false; }
   }
   return true;
 }
 
 async function handleSubmit() {
-  error.value = "";
+  error.value = '';
   if (!validate()) return;
   submitting.value = true;
   try {
-    if (tab.value === "sign-in") {
+    if (tab.value === 'sign-in') {
       await auth.signIn(email.value, password.value);
     } else {
       await auth.signUp(name.value, email.value, password.value);
     }
-    emit("close");
+    emit('close');
   } catch (err: any) {
-    error.value = err?.data?.message || err?.message || "Something went wrong";
+    error.value = err?.data?.message || err?.message || 'Something went wrong';
   } finally {
     submitting.value = false;
   }
 }
 
-function switchTab(t: "sign-in" | "sign-up") {
+function switchTab(t: 'sign-in' | 'sign-up') {
   tab.value = t;
-  error.value = "";
+  error.value = '';
 }
 </script>
 
@@ -77,149 +58,18 @@ function switchTab(t: "sign-in" | "sign-up") {
     aria-labelledby="auth-title"
     @click.self="emit('close')"
   >
-    <div
-      class="w-full max-w-sm border border-border bg-background p-6 shadow-2xl"
-      @mousedown.stop
-    >
-      <!-- Header -->
-      <div class="mb-6 text-center">
-        <p
-          class="font-mono text-[10px] uppercase tracking-widest text-primary my-4"
-        >
-          Reader access
-        </p>
-        <h2 id="auth-title" class="mt-1 font-display text-3xl tracking-tight">
-          Read<span class="text-primary"> in </span>Peace
-        </h2>
-        <p class="mt-2 text-sm text-muted-foreground">
-          {{
-            tab === "sign-in"
-              ? "Welcome back to the stacks."
-              : "Join the library."
-          }}
-        </p>
-      </div>
-
-      <!-- Tabs -->
-      <div class="mb-6 flex rounded-sm border border-border bg-muted p-1">
-        <button
-          @click="switchTab('sign-in')"
-          class="flex-1 rounded-sm px-4 py-2 cursor-pointer text-sm font-medium transition-colors"
-          :class="
-            tab === 'sign-in'
-              ? 'bg-card text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-        >
-          Sign In
-        </button>
-        <button
-          @click="switchTab('sign-up')"
-          class="flex-1 rounded-sm px-4 py-2 cursor-pointer text-sm font-medium transition-colors"
-          :class="
-            tab === 'sign-up'
-              ? 'bg-card text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          "
-        >
-          Sign Up
-        </button>
-      </div>
-
-      <!-- Error -->
-      <p
-        v-if="error"
-        class="mb-4 rounded-sm bg-destructive/10 px-3 py-2 text-sm text-destructive"
-      >
-        {{ error }}
-      </p>
-
-      <!-- Name field (sign-up only) -->
-      <div v-if="tab === 'sign-up'" class="mb-5">
-        <label
-          class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground"
-        >
-          Name
-        </label>
-        <input
-          v-model="name"
-          type="text"
-          placeholder="Alex Rivera"
-          class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-
-      <!-- Email -->
-      <div class="mb-5">
-        <label
-          class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground"
-        >
-          Email
-        </label>
-        <input
-          v-model="email"
-          type="email"
-          placeholder="alex@example.com"
-          class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-
-      <!-- Password -->
-      <div class="mb-6">
-        <label
-          class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground"
-        >
-          Password
-        </label>
-        <input
-          v-model="password"
-          type="password"
-          placeholder="At least 8 characters"
-          class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-
-      <!-- Submit -->
-      <Button
-        variant="archival"
-        class="w-full tracking-widest uppercase cursor-pointer"
-        :disabled="submitting"
-        @click="handleSubmit"
-      >
-        {{
-          submitting
-            ? "Please&nbsp;wait…"
-            : tab === "sign-in"
-              ? "Sign in"
-              : "Create account"
-        }}
-      </Button>
-
-      <!-- Switch tab -->
-      <p class="mt-5 text-center text-sm text-muted-foreground">
-        <template v-if="tab === 'sign-in'">
-          Don&rsquo;t have an account?
-          <Button
-            class="cursor-pointer text-primary"
-            variant="archivalGhost"
-            size="sm"
-            @click="switchTab('sign-up')"
-          >
-            Sign up
-          </Button>
-        </template>
-        <template v-else>
-          Already have an account?
-          <Button
-            class="cursor-pointer text-primary"
-            variant="archivalGhost"
-            size="sm"
-            @click="switchTab('sign-in')"
-          >
-            Sign in
-          </Button>
-        </template>
-      </p>
-    </div>
+    <AuthForm
+      :tab="tab"
+      :email="email"
+      :password="password"
+      :name="name"
+      :error="error"
+      :submitting="submitting"
+      @update:email="email = $event"
+      @update:password="password = $event"
+      @update:name="name = $event"
+      @submit="handleSubmit"
+      @switch-tab="switchTab"
+    />
   </div>
 </template>

@@ -1,59 +1,31 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue";
-import { ArrowLeft, Search, ShoppingBag } from "lucide-vue-next";
-import { Button } from "~/components/ui/button";
-import { buttonVariants } from "~/components/ui/button/variants";
-import { useCartStore } from "~/stores/cart";
-import { useAuthStore } from "~/stores/auth";
-import { onClickOutside } from "@vueuse/core";
+import { onMounted, onUnmounted } from 'vue';
+import { ArrowLeft, Search, ShoppingBag } from 'lucide-vue-next';
+import { Button } from '~/components/ui/button';
+import { buttonVariants } from '~/components/ui/button/variants';
+import { useCartStore } from '~/stores/cart';
 
-const query = defineModel<string>("query", { default: "" });
+const query = defineModel<string>('query', { default: '' });
 const cart = useCartStore();
-const auth = useAuthStore();
 
 const props = withDefaults(
   defineProps<{
-    mode?: "feed" | "book" | "cart";
+    mode?: 'feed' | 'book' | 'cart';
   }>(),
-  {
-    mode: "feed",
-  },
+  { mode: 'feed' },
 );
 
 const searchInput = ref<HTMLInputElement | null>(null);
-const showProfileMenu = ref(false);
-const profileMenuRef = ref<HTMLElement | null>(null);
-
-onClickOutside(profileMenuRef, () => {
-  showProfileMenu.value = false;
-});
-
-const initials = computed(() => {
-  if (!auth.user?.name) return "";
-  return auth.user.name.slice(0, 2).toUpperCase();
-});
-
-function toggleProfile() {
-  if (auth.signedIn) {
-    showProfileMenu.value = !showProfileMenu.value;
-  } else {
-    auth.openAuthModal();
-  }
-}
 
 function onKeydown(e: KeyboardEvent) {
-  if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
     e.preventDefault();
     searchInput.value?.focus();
   }
 }
 
-onMounted(() => {
-  document.addEventListener("keydown", onKeydown);
-});
-onUnmounted(() => {
-  document.removeEventListener("keydown", onKeydown);
-});
+onMounted(() => document.addEventListener('keydown', onKeydown));
+onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 </script>
 
 <template>
@@ -109,7 +81,6 @@ onUnmounted(() => {
         </label>
       </div>
 
-      <!-- Right: Cart + Profile -->
       <div
         :class="
           mode === 'feed'
@@ -134,43 +105,7 @@ onUnmounted(() => {
           </NuxtLink>
         </Button>
 
-        <!-- Profile -->
-        <div ref="profileMenuRef" class="relative">
-          <Button
-            size="icon"
-            variant="archival"
-            :aria-label="auth.signedIn ? 'Open profile menu' : 'Sign in'"
-            class="rounded-full text-xs italic"
-            @click="toggleProfile"
-          >
-            {{ auth.signedIn ? initials : "?" }}
-          </Button>
-          <div
-            v-if="showProfileMenu"
-            class="absolute right-0 top-full mt-2 z-50 w-48 rounded-sm border border-border bg-white p-2 shadow-lg"
-          >
-            <p class="px-3 py-2 text-sm font-medium">
-              {{ auth.user?.name }}
-            </p>
-            <p class="px-3 pb-2 text-xs text-muted-foreground">
-              {{ auth.user?.email }}
-            </p>
-            <hr class="border-border" />
-            <Button
-              variant="archivalGhost"
-              size="sm"
-              class="w-full justify-start"
-              @click="
-                () => {
-                  auth.signOut();
-                  showProfileMenu = false;
-                }
-              "
-            >
-              Sign out
-            </Button>
-          </div>
-        </div>
+        <ProfileDropdown />
       </div>
     </div>
   </nav>
