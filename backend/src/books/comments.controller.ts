@@ -20,10 +20,7 @@ export class CommentsController {
 
   @Get()
   @UseGuards(OptionalAuthGuard)
-  findAll(
-    @Param('id') id: string,
-    @OptionalUser() user?: { id: string },
-  ) {
+  findAll(@Param('id') id: string, @OptionalUser() user?: { id: string }) {
     return this.commentsService.findByBook(id, user?.id);
   }
 
