@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, shallowRef, watch } from "vue";
 import { mapBookResponse, type Book } from "~/types/book";
 import { stockActions } from "~/utils/stock";
 
@@ -12,8 +12,8 @@ defineProps<{
 const categories = ["How-to", "Fiction", "Manga"] as const;
 const PAGE_SIZE = 8;
 
-const page = ref(1);
-const category = ref<string | undefined>(undefined);
+const page = shallowRef(1);
+const category = shallowRef<string | undefined>(undefined);
 const localBorrowed = ref<string[]>([]);
 
 const { data: rawPage, refresh } = await useFetch<{

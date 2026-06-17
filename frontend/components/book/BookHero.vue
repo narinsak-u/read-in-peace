@@ -8,7 +8,7 @@ defineProps<{
   flash: (message: string) => void;
 }>();
 
-const saved = ref(false);
+const saved = shallowRef(false);
 
 function scrollTo(id: string) {
   document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });

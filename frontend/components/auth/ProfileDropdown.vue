@@ -5,7 +5,7 @@ import { Button } from '~/components/ui/button';
 
 const auth = useAuthStore();
 
-const show = ref(false);
+const show = shallowRef(false);
 const menuRef = ref<HTMLElement | null>(null);
 
 onClickOutside(menuRef, () => { show.value = false; });

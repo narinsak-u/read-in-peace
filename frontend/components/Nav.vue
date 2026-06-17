@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue';
+import { onMounted, onUnmounted, useTemplateRef } from 'vue';
 import { ArrowLeft, Search, ShoppingBag } from 'lucide-vue-next';
 import { Button } from '~/components/ui/button';
 import { buttonVariants } from '~/components/ui/button/variants';
@@ -15,7 +15,7 @@ const props = withDefaults(
   { mode: 'feed' },
 );
 
-const searchInput = ref<HTMLInputElement | null>(null);
+const searchInput = useTemplateRef<HTMLInputElement>('searchInput');
 
 function onKeydown(e: KeyboardEvent) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'k') {

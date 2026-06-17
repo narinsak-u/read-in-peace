@@ -59,15 +59,12 @@ function switchTab(t: 'sign-in' | 'sign-up') {
     @click.self="emit('close')"
   >
     <AuthForm
+      v-model:email="email"
+      v-model:password="password"
+      v-model:name="name"
       :tab="tab"
-      :email="email"
-      :password="password"
-      :name="name"
       :error="error"
       :submitting="submitting"
-      @update:email="email = $event"
-      @update:password="password = $event"
-      @update:name="name = $event"
       @submit="handleSubmit"
       @switch-tab="switchTab"
     />

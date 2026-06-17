@@ -24,7 +24,7 @@ const emit = defineEmits<{
   "cancel-reply": [];
 }>();
 
-const replyText = ref("");
+const replyText = shallowRef("");
 </script>
 
 <template>

@@ -11,7 +11,7 @@ const props = defineProps<{
 }>();
 
 const cart = useCartStore();
-const borrowed = ref(false);
+const borrowed = shallowRef(false);
 </script>
 
 <template>

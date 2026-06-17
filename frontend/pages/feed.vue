@@ -10,11 +10,11 @@ definePageMeta({
 
 import { useAuthStore } from '~/stores/auth';
 
-const query = ref("");
+const query = shallowRef("");
 const returned = ref<string[]>([]);
-const reviewOpen = ref(false);
-const rating = ref(0);
-const reviewText = ref("");
+const reviewOpen = shallowRef(false);
+const rating = shallowRef(0);
+const reviewText = shallowRef("");
 const { notice, flash } = useFlash();
 const auth = useAuthStore();
 </script>

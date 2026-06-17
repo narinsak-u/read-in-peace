@@ -3,17 +3,15 @@ import { Button } from '~/components/ui/button';
 
 defineProps<{
   tab: 'sign-in' | 'sign-up';
-  email: string;
-  password: string;
-  name: string;
   error: string;
   submitting: boolean;
 }>();
 
+const email = defineModel<string>('email');
+const password = defineModel<string>('password');
+const name = defineModel<string>('name');
+
 const emit = defineEmits<{
-  'update:email': [value: string];
-  'update:password': [value: string];
-  'update:name': [value: string];
   submit: [];
   'switch-tab': [tab: 'sign-in' | 'sign-up'];
 }>();
@@ -49,33 +47,30 @@ const emit = defineEmits<{
     <div v-if="tab === 'sign-up'" class="mb-5">
       <label class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Name</label>
       <input
-        :value="name"
+        v-model="name"
         type="text"
         placeholder="Alex Rivera"
         class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-        @input="emit('update:name', ($event.target as HTMLInputElement).value)"
       />
     </div>
 
     <div class="mb-5">
       <label class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Email</label>
       <input
-        :value="email"
+        v-model="email"
         type="email"
         placeholder="alex@example.com"
         class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-        @input="emit('update:email', ($event.target as HTMLInputElement).value)"
       />
     </div>
 
     <div class="mb-6">
       <label class="mb-1.5 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Password</label>
       <input
-        :value="password"
+        v-model="password"
         type="password"
         placeholder="At least 8 characters"
         class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
-        @input="emit('update:password', ($event.target as HTMLInputElement).value)"
       />
     </div>
 

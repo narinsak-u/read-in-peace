@@ -8,10 +8,10 @@ defineProps<{
   time: string;
 }>();
 
-const replyOpen = ref(false);
-const replyText = ref('');
-const liked = ref(false);
-const likeCount = ref(12);
+const replyOpen = shallowRef(false);
+const replyText = shallowRef('');
+const liked = shallowRef(false);
+const likeCount = shallowRef(12);
 const flashProp = inject<(msg: string) => void>('flash')!;
 
 function toggleLike() {

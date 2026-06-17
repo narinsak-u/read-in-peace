@@ -39,9 +39,9 @@ const reviews = ref<Review[]>([
   },
 ]);
 
-const rating = ref(0);
-const reviewText = ref('');
-const replyingTo = ref<number | null>(null);
+const rating = shallowRef(0);
+const reviewText = shallowRef('');
+const replyingTo = shallowRef<number | null>(null);
 
 function publishReview() {
   if (!rating.value || !reviewText.value.trim()) return;

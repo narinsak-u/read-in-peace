@@ -18,7 +18,7 @@ const auth = useAuthStore();
 // --- Trending ---
 
 const trendingBooks = ref<Book[]>([]);
-const trendingLoaded = ref(false);
+const trendingLoaded = shallowRef(false);
 
 async function fetchTrending() {
   try {
@@ -50,8 +50,8 @@ interface BorrowItem {
 }
 
 const rawBorrows = ref<{ borrow: Record<PropertyKey, unknown>; book: Record<PropertyKey, unknown> }[] | null>(null);
-const borrowError = ref<unknown>(null);
-const loansLoaded = ref(false);
+const borrowError = shallowRef<unknown>(null);
+const loansLoaded = shallowRef(false);
 
 async function fetchBorrows() {
   if (!auth.signedIn) {
