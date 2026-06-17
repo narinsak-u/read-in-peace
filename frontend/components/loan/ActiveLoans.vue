@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useAuthStore } from "~/stores/auth";
-import { useLibraryStore } from "~/stores/library";
-import { mapBookResponse, type Book } from "~/types/book";
+import { useLibraryStore, type BorrowItem } from "~/stores/library";
 
 const props = defineProps<{
   mode: "loans" | "trending";
@@ -20,37 +19,10 @@ const trendingBooks = computed(() => store.trendingBooks);
 const trendingLoaded = computed(() => store.trendingLoaded);
 
 // --- Loans ---
-interface BorrowItem {
-  borrowId: string;
-  bookId: string;
-  bookSlug: string;
-  title: string;
-  author: string;
-  cover: string;
-  crop: number | null;
-  shelf: string;
-  category: string;
-  dueAt: string;
-  currentPage: number;
-  totalPages: number;
-  price: string;
-  inStock: number;
-  avgRating: number;
-  ratingsCount: number;
-}
-
-interface BorrowsResponse {
-  data: {
-    borrow: Record<PropertyKey, unknown>;
-    book: Record<PropertyKey, unknown>;
-  }[];
-  meta: { page: number; limit: number; total: number; totalPages: number };
-}
-
 const LIMIT = 3;
 const allBorrows = ref<BorrowItem[]>([]);
 const borrowsPage = shallowRef(1);
-const borrowsMeta = shallowRef<BorrowsResponse['meta'] | null>(null);
+const borrowsMeta = shallowRef<{ page: number; limit: number; total: number; totalPages: number } | null>(null);
 const borrowError = shallowRef<unknown>(null);
 const loansLoaded = shallowRef(true);
 
@@ -67,34 +39,10 @@ async function fetchBorrows(page = 1, append = false) {
   }
   loansLoaded.value = false;
   try {
-    const res = await $fetch<BorrowsResponse>('/api/user/borrows', {
-      query: { page, limit: LIMIT },
-    });
-    const items = res.data.map((entry) => ({
-      borrowId: entry.borrow.id as string,
-      bookId: entry.book.id as string,
-      bookSlug: (entry.book.slug as string) ?? (entry.book.id as string),
-      title: entry.book.title as string,
-      author: entry.book.author as string,
-      cover: entry.book.cover as string,
-      crop: (entry.book.crop as number | null) ?? null,
-      shelf: (entry.book.shelf as string) ?? 'GEN',
-      category: (entry.book.category as string) ?? '',
-      dueAt: entry.borrow.dueAt as string,
-      currentPage: entry.borrow.currentPage as number,
-      totalPages: entry.borrow.totalPages as number,
-      price: String(entry.book.price ?? '0'),
-      inStock: (entry.book.inStock as number) ?? 0,
-      avgRating: Number(entry.book.avgRating ?? 0),
-      ratingsCount: (entry.book.ratingsCount as number) ?? 0,
-    }));
-    if (append) {
-      allBorrows.value = [...allBorrows.value, ...items];
-    } else {
-      allBorrows.value = items;
-    }
+    const { items, meta } = await store.fetchBorrows(page, LIMIT);
+    allBorrows.value = append ? [...allBorrows.value, ...items] : items;
     borrowsPage.value = page;
-    borrowsMeta.value = res.meta;
+    borrowsMeta.value = meta;
     borrowError.value = null;
   } catch (e) {
     if (!append) allBorrows.value = [];

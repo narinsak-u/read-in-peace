@@ -3,6 +3,56 @@ import { shallowRef, computed, watch } from "vue";
 import { mapBookResponse, type Book } from "~/types/book";
 import { useAuthStore } from "~/stores/auth";
 
+export interface BorrowItem {
+  borrowId: string;
+  bookId: string;
+  bookSlug: string;
+  title: string;
+  author: string;
+  cover: string;
+  crop: number | null;
+  shelf: string;
+  category: string;
+  dueAt: string;
+  currentPage: number;
+  totalPages: number;
+  price: string;
+  inStock: number;
+  avgRating: number;
+  ratingsCount: number;
+}
+
+export interface BorrowsResponse {
+  data: {
+    borrow: Record<PropertyKey, unknown>;
+    book: Record<PropertyKey, unknown>;
+  }[];
+  meta: { page: number; limit: number; total: number; totalPages: number };
+}
+
+function mapBorrowResponse(
+  entry: BorrowsResponse["data"][number],
+): BorrowItem {
+  return {
+    borrowId: entry.borrow.id as string,
+    bookId: entry.book.id as string,
+    bookSlug: (entry.book.slug as string) ?? (entry.book.id as string),
+    title: entry.book.title as string,
+    author: entry.book.author as string,
+    cover: entry.book.cover as string,
+    crop: (entry.book.crop as number | null) ?? null,
+    shelf: (entry.book.shelf as string) ?? "GEN",
+    category: (entry.book.category as string) ?? "",
+    dueAt: entry.borrow.dueAt as string,
+    currentPage: entry.borrow.currentPage as number,
+    totalPages: entry.borrow.totalPages as number,
+    price: String(entry.book.price ?? "0"),
+    inStock: (entry.book.inStock as number) ?? 0,
+    avgRating: Number(entry.book.avgRating ?? 0),
+    ratingsCount: (entry.book.ratingsCount as number) ?? 0,
+  };
+}
+
 export const useLibraryStore = defineStore("library", () => {
   const auth = useAuthStore();
 
@@ -26,8 +76,8 @@ export const useLibraryStore = defineStore("library", () => {
   // --- Trending cache (1-minute TTL) ---
   const trendingBooks = shallowRef<Book[]>([]);
   const trendingLoaded = shallowRef(false);
-  let trendingFetchedAt = 0;
   const TRENDING_TTL = 60_000;
+  let trendingFetchedAt = 0;
 
   async function fetchTrending(force = false) {
     if (
@@ -57,6 +107,14 @@ export const useLibraryStore = defineStore("library", () => {
     borrowRefreshKey.value++;
   }
 
+  // --- Fetch borrows with pagination (shared mapping) ---
+  async function fetchBorrows(page = 1, limit = 10) {
+    const res = await $fetch<BorrowsResponse>("/api/user/borrows", {
+      query: { page, limit },
+    });
+    return { items: res.data.map(mapBorrowResponse), meta: res.meta };
+  }
+
   // --- Init: auto-fetch borrowed slugs when signed in ---
   async function initBorrowedSlugs() {
     if (!auth.signedIn) {
@@ -64,13 +122,8 @@ export const useLibraryStore = defineStore("library", () => {
       return;
     }
     try {
-      const res = await $fetch<{
-        data: { book: Record<PropertyKey, unknown> }[];
-      }>("/api/user/borrows", { query: { page: 1, limit: 100 } });
-      const slugs = res.data.map(
-        (e) => (e.book.slug as string) ?? (e.book.id as string),
-      );
-      setBorrowedSlugs(slugs);
+      const { items } = await fetchBorrows(1, 100);
+      setBorrowedSlugs(items.map((b) => b.bookSlug));
     } catch {
       borrowedSlugs.value = new Set();
     }
@@ -89,15 +142,16 @@ export const useLibraryStore = defineStore("library", () => {
   );
 
   return {
-    borrowedSlugs,
+    borrowedSlugs: readonly(borrowedSlugs),
     setBorrowedSlugs,
     addBorrowedSlug,
     removeBorrowedSlug,
-    trendingBooks,
-    trendingLoaded,
+    trendingBooks: readonly(trendingBooks),
+    trendingLoaded: readonly(trendingLoaded),
     fetchTrending,
-    borrowRefreshKey,
+    borrowRefreshKey: readonly(borrowRefreshKey),
     triggerBorrowRefresh,
+    fetchBorrows,
     initBorrowedSlugs,
   };
 });
