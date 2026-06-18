@@ -54,8 +54,4 @@ export class BooksService {
     const deleted = await this.books.delete(id);
     if (!deleted) throw new NotFoundException('Book not found');
   }
-
-  decrementStock(id: string) {
-    return this.books.decrementStock(id);
-  }
 }

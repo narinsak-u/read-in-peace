@@ -6,12 +6,10 @@ export const BORROW_REPO = Symbol('BORROW_REPO');
 export const PURCHASE_REPO = Symbol('PURCHASE_REPO');
 export const POST_REPO = Symbol('POST_REPO');
 export const GOAL_REPO = Symbol('GOAL_REPO');
-export const USER_REPO = Symbol('USER_REPO');
 export const BOOK_READ_MODEL = Symbol('BOOK_READ_MODEL');
 
 export type {
   BookPricing,
-  BookLockRow,
   BookRepository,
   BookReadModel,
   BookRow,
@@ -44,5 +42,4 @@ export type {
   ReadingGoalRepository,
   ReadingGoalRow,
 } from './interfaces/goal.repository';
-export type { UserRepository, UserRow } from './interfaces/user.repository';
 export type { Paginated } from './paginated';

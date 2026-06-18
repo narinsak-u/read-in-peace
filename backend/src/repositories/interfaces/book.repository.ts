@@ -14,13 +14,6 @@ export interface BookPricing {
   isAvailable: boolean;
 }
 
-export interface BookLockRow {
-  id: string;
-  inStock: number;
-  isAvailable: boolean;
-  totalPages: number;
-}
-
 export interface BookRepository {
   findById(id: string): Promise<BookRow | null>;
   findByIdOrSlug(idOrSlug: string): Promise<BookRow | null>;
@@ -29,9 +22,7 @@ export interface BookRepository {
   create(data: NewBook, userId: string): Promise<BookRow>;
   update(id: string, data: UpdateBook): Promise<BookRow | null>;
   delete(id: string): Promise<boolean>;
-  setStockForBorrow(bookId: string, remaining: number): Promise<BookRow | null>;
   incrementStock(bookId: string): Promise<void>;
-  acquireLockForBorrow(bookId: string): Promise<BookLockRow | null>;
   decrementStock(bookId: string): Promise<BookRow | null>;
 }
 

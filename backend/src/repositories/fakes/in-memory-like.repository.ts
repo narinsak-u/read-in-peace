@@ -23,5 +23,3 @@ export class InMemoryLikeRepository implements LikeRepository {
   }
 }
 
-// Helper export to silence `require-await` for synchronous fake methods.
-export const passthrough = <T>(value: T): Promise<T> => Promise.resolve(value);

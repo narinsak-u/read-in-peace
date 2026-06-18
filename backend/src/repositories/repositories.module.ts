@@ -35,10 +35,6 @@ import {
   DrizzleGoalRepository,
   goalRepoProvider,
 } from './drizzle/drizzle-goal.repository';
-import {
-  DrizzleUserRepository,
-  userRepoProvider,
-} from './drizzle/drizzle-user.repository';
 
 @Global()
 @Module({
@@ -52,7 +48,6 @@ import {
     DrizzlePurchaseRepository,
     DrizzlePostRepository,
     DrizzleGoalRepository,
-    DrizzleUserRepository,
     bookRepoProvider,
     bookReadModelProvider,
     commentRepoProvider,
@@ -62,7 +57,6 @@ import {
     purchaseRepoProvider,
     postRepoProvider,
     goalRepoProvider,
-    userRepoProvider,
   ],
   exports: [
     bookRepoProvider,
@@ -74,7 +68,6 @@ import {
     purchaseRepoProvider,
     postRepoProvider,
     goalRepoProvider,
-    userRepoProvider,
   ],
 })
 export class RepositoriesModule {}

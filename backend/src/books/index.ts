@@ -1,9 +1,0 @@
-export { BooksModule } from './books.module';
-export { BooksService } from './books.service';
-export { BooksController } from './books.controller';
-export { LikesController } from './likes.controller';
-export { LikesService } from './likes.service';
-export { CommentsController } from './comments.controller';
-export { CommentsService } from './comments.service';
-export { RatingsController } from './ratings.controller';
-export { RatingsService } from './ratings.service';

@@ -7,7 +7,6 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { DRIZZLE } from '../../db/db.module';
 import * as schema from '../../db/schema';
 import {
-  type BookLockRow,
   type BookPricing,
   type BookRepository,
   type BookRow,
@@ -95,21 +94,6 @@ export class DrizzleBookRepository implements BookRepository {
     return result.length > 0;
   }
 
-  async setStockForBorrow(
-    bookId: string,
-    remaining: number,
-  ): Promise<BookRow | null> {
-    const [row] = await this.db
-      .update(schema.books)
-      .set({
-        inStock: remaining,
-        isAvailable: remaining > 1,
-      })
-      .where(and(eq(schema.books.id, bookId), gt(schema.books.inStock, 0)))
-      .returning();
-    return row ?? null;
-  }
-
   async incrementStock(bookId: string): Promise<void> {
     await this.db
       .update(schema.books)
@@ -118,20 +102,6 @@ export class DrizzleBookRepository implements BookRepository {
         isAvailable: true,
       })
       .where(eq(schema.books.id, bookId));
-  }
-
-  async acquireLockForBorrow(bookId: string): Promise<BookLockRow | null> {
-    const [row] = await this.db
-      .select({
-        id: schema.books.id,
-        isAvailable: schema.books.isAvailable,
-        inStock: schema.books.inStock,
-        totalPages: schema.books.totalPages,
-      })
-      .from(schema.books)
-      .where(eq(schema.books.id, bookId))
-      .for('update');
-    return row ?? null;
   }
 
   async decrementStock(bookId: string): Promise<BookRow | null> {
