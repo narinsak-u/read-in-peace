@@ -22,4 +22,3 @@ export class InMemoryLikeRepository implements LikeRepository {
     return Promise.resolve({ liked: !wasLiked, likeCount: set.size });
   }
 }
-

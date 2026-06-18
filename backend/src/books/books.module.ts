@@ -7,10 +7,7 @@ import { CommentsController } from './comments.controller';
 import { CommentsService } from './comments.service';
 
 @Module({
-  controllers: [
-    BooksController,
-    CommentsController,
-  ],
+  controllers: [BooksController, CommentsController],
   providers: [BooksService, CommentsService],
   exports: [BooksService, CommentsService],
 })

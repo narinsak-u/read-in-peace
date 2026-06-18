@@ -1,35 +1,17 @@
 import { AllExceptionsFilter } from './all-exceptions.filter';
-import { type LoggerPort, type LogContext } from '../logger/logger.port';
+import type { PinoLogger } from 'nestjs-pino';
 
-export interface MockLogCall {
-  level: 'log' | 'error' | 'warn' | 'debug' | 'verbose';
+interface MockLogCall {
   message: string;
-  context?: LogContext;
-  trace?: string;
+  obj: Record<string, unknown>;
 }
 
-export const createMockLogger = (): jest.Mocked<LoggerPort> & {
-  calls: MockLogCall[];
-} => {
+const createMockLogger = () => {
   const calls: MockLogCall[] = [];
-  const record = (level: MockLogCall['level']) =>
-    jest.fn(
-      (message: string, arg2?: string | LogContext, arg3?: LogContext) => {
-        if (level === 'error') {
-          calls.push({ level, message, trace: arg2 as string, context: arg3 });
-        } else {
-          calls.push({ level, message, context: arg2 as LogContext });
-        }
-      },
-    );
-  return {
-    calls,
-    log: record('log'),
-    error: record('error'),
-    warn: record('warn'),
-    debug: record('debug'),
-    verbose: record('verbose'),
-  };
+  const error = jest.fn((obj: Record<string, unknown>, msg: string) => {
+    calls.push({ obj, message: msg });
+  });
+  return { error, calls } as unknown as PinoLogger & { calls: MockLogCall[] };
 };
 
 describe('AllExceptionsFilter', () => {
@@ -68,8 +50,8 @@ describe('AllExceptionsFilter', () => {
     );
     expect(logger.calls).toHaveLength(1);
     expect(logger.calls[0]).toMatchObject({
-      level: 'error',
-      context: expect.objectContaining({ status: 404 }),
+      message: expect.stringContaining('HTTP 404'),
+      obj: expect.objectContaining({ status: 404 }),
     });
   });
 

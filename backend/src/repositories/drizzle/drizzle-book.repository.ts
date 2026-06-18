@@ -74,10 +74,7 @@ export class DrizzleBookRepository implements BookRepository {
     return row;
   }
 
-  async update(
-    id: string,
-    data: UpdateBook,
-  ): Promise<BookRow | null> {
+  async update(id: string, data: UpdateBook): Promise<BookRow | null> {
     const [row] = await this.db
       .update(schema.books)
       .set(data)

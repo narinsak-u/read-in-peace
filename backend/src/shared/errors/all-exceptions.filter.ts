@@ -4,12 +4,11 @@ import {
   ExceptionFilter,
   HttpException,
   HttpStatus,
-  Inject,
   Injectable,
 } from '@nestjs/common';
 import { ClsServiceManager } from 'nestjs-cls';
+import { PinoLogger } from 'nestjs-pino';
 import type { Request, Response } from 'express';
-import { LOGGER_PORT, type LoggerPort } from '../logger/logger.port';
 
 function clsString(value: unknown, fallback: string): string {
   return typeof value === 'string' && value.length > 0 ? value : fallback;
@@ -42,7 +41,7 @@ function httpStatusText(status: number): string {
 @Injectable()
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(@Inject(LOGGER_PORT) private readonly logger: LoggerPort) {}
+  constructor(private readonly logger: PinoLogger) {}
 
   catch(exception: unknown, host: ArgumentsHost): void {
     const http = host.switchToHttp();
@@ -73,8 +72,6 @@ export class AllExceptionsFilter implements ExceptionFilter {
     };
 
     this.logger.error(
-      `HTTP ${status} ${method} ${path}`,
-      exception instanceof Error ? exception.stack : undefined,
       {
         requestId,
         method,
@@ -83,7 +80,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         error: exception instanceof Error ? exception.name : 'UnknownError',
         message:
           typeof message === 'string' ? message : JSON.stringify(message),
+        trace: exception instanceof Error ? exception.stack : undefined,
       },
+      `HTTP ${status} ${method} ${path}`,
     );
 
     res.status(status).json(body);

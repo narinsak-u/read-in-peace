@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { Logger as PinoNestLogger } from 'nestjs-pino';
+import { Logger as PinoNestLogger, PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module';
 import { AUTH } from './auth/better-auth';
 import { toNodeHandler } from 'better-auth/node';
@@ -30,9 +30,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(
-    new AllExceptionsFilter(app.get('LOGGER_PORT' as never)),
-  );
+  app.useGlobalFilters(new AllExceptionsFilter(app.get(PinoLogger)));
 
   const authHandler = toNodeHandler(app.get(AUTH));
   app.use('/api/auth', (req: Request, res: Response, next: NextFunction) => {

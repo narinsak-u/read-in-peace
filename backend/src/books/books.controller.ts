@@ -103,7 +103,11 @@ export class BooksController {
 
   @Post(':id/rate')
   @UseGuards(AuthGuard)
-  rateBook(@Param('id') id: string, @Body() dto: RateBookDto, @CurrentUser() user: { id: string }) {
+  rateBook(
+    @Param('id') id: string,
+    @Body() dto: RateBookDto,
+    @CurrentUser() user: { id: string },
+  ) {
     return this.booksService.rateBook(id, user.id, dto.rating);
   }
 }

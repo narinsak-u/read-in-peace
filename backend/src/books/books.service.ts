@@ -1,11 +1,7 @@
 // Business logic for books: CRUD, paginated listing, stock management, and trending.
 // All Drizzle access goes through BookRepository and BookReadModel — the cross-table
 // meta-projection (with likeCount, commentCount, avgRating) lives in BookReadModel only.
-import {
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import {
   BOOK_REPO,
   type BookRepository,
