@@ -1,75 +1,47 @@
 <script setup lang="ts">
-import { CheckCircle, BookOpen } from "lucide-vue-next";
-import { useAuthStore } from "~/stores/auth";
-import { useLibraryStore } from "~/stores/library";
+import { CheckCircle, BookOpen } from 'lucide-vue-next';
+import { useAuthStore } from '~/stores/auth';
+import { usePurchases } from '~/composables/usePurchases';
 
 definePageMeta({
-  title: "Dashboard — Read in Peace",
-  description: "Your purchases and reading activity.",
+  title: 'Dashboard — Read in Peace',
+  description: 'Your purchases and reading activity.',
 });
 
 const route = useRoute();
 const router = useRouter();
 const { flash } = useFlash();
 const auth = useAuthStore();
-const library = useLibraryStore();
 
-const tab = shallowRef<"purchased" | "borrowed">("purchased");
-const purchases = ref<any[]>([]);
-const loaded = shallowRef(false);
+const tab = shallowRef<'purchased'>('purchased');
 const confirming = shallowRef(false);
 
-async function confirmPurchase(sessionId: string) {
+const {
+  purchases,
+  loaded,
+  confirmPurchase,
+  refresh,
+} = usePurchases();
+
+async function onConfirmPurchase(sessionId: string) {
   confirming.value = true;
   try {
-    await $fetch("/api/confirm-purchase", {
-      method: "POST",
-      query: { session_id: sessionId },
-    });
-    flash("Purchase confirmed! Welcome to your library.");
+    await confirmPurchase(sessionId);
+    flash('Purchase confirmed! Welcome to your library.');
     await router.replace({ query: {} });
   } catch (e: any) {
-    flash(e?.data?.message || "Could not confirm purchase.");
+    flash(e?.data?.message || 'Could not confirm purchase.');
   } finally {
     confirming.value = false;
-  }
-}
-
-async function fetchPurchases() {
-  if (!auth.signedIn) {
-    loaded.value = true;
-    return;
-  }
-  try {
-    const data = await $fetch<any[]>("/api/user/purchases");
-    purchases.value = data;
-  } catch {
-    purchases.value = [];
-  } finally {
-    loaded.value = true;
-  }
-}
-
-async function returnBook(bookId: string, title: string) {
-  try {
-    await $fetch(`/api/books/${bookId}/return`, { method: "POST" });
-    flash(`${title} returned. Thank you!`);
-    await library.fetchBorrows(1);
-    library.setBorrowedSlugs(
-      library.borrows.map((l: { bookSlug: string }) => l.bookSlug),
-    );
-    library.triggerBorrowRefresh();
-  } catch (e: any) {
-    flash(e?.data?.message || "Could not return the book.");
   }
 }
 
 onMounted(async () => {
   const sessionId = route.query.session_id as string | undefined;
   if (sessionId) {
-    await confirmPurchase(sessionId);
+    await onConfirmPurchase(sessionId);
   }
-  await Promise.all([fetchPurchases(), library.fetchBorrows(1)]);
+  await refresh();
 });
 </script>
 
