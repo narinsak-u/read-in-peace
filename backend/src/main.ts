@@ -3,18 +3,18 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger as PinoNestLogger, PinoLogger } from 'nestjs-pino';
 import { AppModule } from './app.module';
-import { AUTH } from './auth/better-auth';
 import { toNodeHandler } from 'better-auth/node';
-import { ConfigService } from './config/config.provider';
-import { AllExceptionsFilter } from './shared/errors/all-exceptions.filter';
 import type { Request, Response, NextFunction } from 'express';
+import { CoreConfigService } from './core/config/config.provider';
+import { AllExceptionsFilter } from './core/http/all-exceptions.filter';
+import { AUTH } from './iam/auth/better-auth';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
   });
   app.useLogger(app.get(PinoNestLogger));
-  const config = app.get(ConfigService);
+  const config = app.get(CoreConfigService);
 
   app.enableCors({
     origin: [...config.server.corsOrigins],
@@ -30,7 +30,12 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new AllExceptionsFilter(app.get(PinoLogger)));
+  // PinoLogger is a TRANSIENT-scoped provider; app.get() does not work for
+  // scoped providers, so we resolve it explicitly. PinoLogger is a thin
+  // wrapper that reads the per-request pino instance from AsyncLocalStorage
+  // on every call, so sharing one instance across requests is safe and correct.
+  const pinoLogger = await app.resolve(PinoLogger);
+  app.useGlobalFilters(new AllExceptionsFilter(pinoLogger));
 
   const authHandler = toNodeHandler(app.get(AUTH));
   app.use('/api/auth', (req: Request, res: Response, next: NextFunction) => {

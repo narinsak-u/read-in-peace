@@ -1,28 +1,28 @@
-// Root module that imports all feature modules (Auth, Db, Books, Transactions).
-// Registers AppController (health check / root endpoint) and AppService.
+// Root module. Composes the platform (core/) and feature modules with
+// explicit imports — no @Global abuse. Feature modules that depend on
+// each other (transactions → books, social → iam) declare that
+// dependency in their own imports, not here.
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { ConfigModule } from './config/config.module';
-import { SharedModule } from './shared/shared.module';
-import { RepositoriesModule } from './repositories/repositories.module';
-import { AuthModule } from './auth/auth.module';
-import { DbModule } from './db/db.module';
+import { CoreConfigModule } from './core/config/config.module';
+import { CoreDatabaseModule } from './core/database/database.module';
+import { CoreLoggerModule } from './core/logger/logger.module';
+import { CoreRequestContextModule } from './core/shared/request-context.module';
+import { IamModule } from './iam/iam.module';
 import { BooksModule } from './books/books.module';
 import { TransactionsModule } from './transactions/transactions.module';
-import { ReadingGoalsModule } from './reading-goals/reading-goals.module';
 import { SocialModule } from './social/social.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
-    ConfigModule,
-    SharedModule,
-    RepositoriesModule,
-    AuthModule,
-    DbModule,
+    CoreConfigModule,
+    CoreDatabaseModule,
+    CoreLoggerModule,
+    CoreRequestContextModule,
+    IamModule,
     BooksModule,
     TransactionsModule,
-    ReadingGoalsModule,
     SocialModule,
   ],
   controllers: [AppController],

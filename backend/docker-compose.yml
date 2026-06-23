@@ -1,13 +1,13 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: readinpace-db
+    container_name: readinpeace-db
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: readinpace
-      POSTGRES_PASSWORD: readinpace
-      POSTGRES_DB: readinpace
+      POSTGRES_USER: readinpeace
+      POSTGRES_PASSWORD: readinpeace
+      POSTGRES_DB: readinpeace
     volumes:
       - pgdata:/var/lib/postgresql/data
 

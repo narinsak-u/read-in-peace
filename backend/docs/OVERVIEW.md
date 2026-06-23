@@ -3,180 +3,281 @@
 NestJS v11 REST API (Express platform) serving the Read in Peace book marketplace.
 PostgreSQL via Drizzle ORM, Better Auth for authentication, Stripe for payments.
 
-## Directory Structure
+The codebase follows the official [NestJS modular
+architecture](https://docs.nestjs.com/modules) layered with the clean
+architecture split (domain → application → infrastructure → presentation).
+The repo enforces `@Global()` only where it is genuinely justified
+(config, database) and uses explicit `imports` everywhere else.
+
+## Directory structure
 
 ```
 backend/src/
-├── main.ts                     # Bootstrap: CORS, validation, auth middleware, global filters
-├── app.module.ts               # Root module — imports all sub-modules
-├── app.controller.ts           # Health check: GET /
-├── app.service.ts              # (unused NestJS boilerplate)
-
-├── config/                     # Environment configuration (hand-rolled, Zod-validated)
-├── db/                         # Drizzle ORM schema, migrations, seed data
-├── auth/                       # Authentication & authorization
-├── shared/                     # Cross-cutting: logging, error handling
-├── repositories/               # Data access — Drizzle implementations
-├── books/                      # Books CRUD, comments, rating system
-├── transactions/               # Borrowing, Stripe checkout, purchase verification
-├── reading-goals/              # Yearly reading goal tracking
-└── social/                     # User feed, posts, replies, likes
+├── main.ts                        # Bootstrap: CORS, ValidationPipe, AllExceptionsFilter, /api/auth
+├── app.module.ts                  # Root module — composes core/ + iam/ + every feature
+├── app.controller.ts              # GET / health check
+├── app.service.ts
+│
+├── core/                          # Cross-cutting platform (no business logic)
+│   ├── config/                    #   CoreConfigService (Zod-validated env)
+│   ├── database/                  #   Drizzle client + schema (DATABASE token)
+│   ├── http/                      #   AllExceptionsFilter
+│   ├── logger/                    #   nestjs-pino wiring
+│   └── shared/                    #   CLS request context
+│
+├── iam/                           # Identity & access (no feature coupling)
+│   ├── auth/                      #   AuthGuard / OptionalAuthGuard / CurrentUser
+│   └── authorization/             #   Policy / @Policies / PoliciesGuard
+│
+├── books/                         # Feature: books + comments + likes + ratings
+│   ├── domain/                    #   Book, Comment, Like/Rating/Paginated contracts
+│   ├── application/               #   BooksService, CommentsService
+│   ├── infrastructure/            #   Drizzle repos, in-memory fake
+│   ├── authorization/             #   EditBookPolicy, DeleteBookPolicy, DeleteCommentPolicy
+│   ├── presentation/              #   controllers, DTOs
+│   └── books.module.ts
+│
+├── transactions/                  # Feature: borrow, cart checkout, purchase confirmation
+│   ├── domain/                    #   pricing.ts (pure), Borrow/Purchase contracts
+│   ├── application/               #   BorrowsService, CheckoutService, PurchaseConfirmationService
+│   ├── infrastructure/            #   Drizzle repos, Stripe provider
+│   ├── presentation/              #   TransactionsController
+│   └── transactions.module.ts
+│
+├── social/                        # Feature: reader feed (posts, likes, replies)
+│   ├── domain/ | application/ | infrastructure/ | presentation/ | social.module.ts
 ```
 
 ---
 
-## Module Responsibilities
+## Per-feature layout
 
-### `config/` — Environment Configuration
-- `ConfigService` (Zod-validated, typed config groups: db, auth, stripe, server, frontend)
-- `@Global()` module — available everywhere without importing
-- Hand-rolled (no `@nestjs/config`), see [ADR 001](adr/001-handrolled-config.md)
+Every feature module uses the same four-layer shape. The layers reflect the
+clean architecture dependency rule: outer layers depend on inner; inner
+layers know nothing about outer.
 
-### `db/` — Database Layer
-- Drizzle ORM schema (`schema.ts`): 15 tables (users, sessions, books, comments, ratings, likes, borrows, purchases, posts, goals, and join tables)
-- `DRIZZLE` provider: PostgreSQL connection pool via `pg` + `drizzle-orm/node-postgres`
-- Migrations in `db/migrations/` (11 files), applied via `npm run db:migrate`
-- Seed data via `npm run db:seed` (demo books, users, comments)
-- `@Global()` module
+| Layer            | Responsibility                                                        | Depends on                             |
+|------------------|-----------------------------------------------------------------------|----------------------------------------|
+| `domain/`        | Entities, repository contracts, pure logic                           | nothing                                |
+| `application/`   | Use cases (services) that orchestrate domain contracts                | `domain/`, `iam/` (for guards in controllers) |
+| `infrastructure/`| Drizzle implementations of repository contracts                     | `domain/`, `core/database`             |
+| `presentation/`  | HTTP boundary (controllers, DTOs)                                     | `application/`, `iam/`                |
+| `authorization/` | Per-feature `Policy` implementations (where applicable)              | `domain/` (for repository contracts)   |
 
-### `auth/` — Authentication & Authorization
-- **Better Auth** instance provided via `AUTH` token, mounted as Express middleware at `/api/auth`
-- **Guards:**
-  - `AuthGuard` — requires valid session, throws 401 on failure, sets `request.user`
-  - `OptionalAuthGuard` — attaches user if session exists, never throws
-  - `PoliciesGuard` — resolves `@Policies()` decorator tokens, runs each `Policy.check()`
-- **Policies:**
-  - `OwnershipPolicy` — verifies `createdBy`/`userId` matches current user for book edit/delete and comment delete
-  - Bound to policy tokens: `CAN_EDIT_BOOK`, `CAN_DELETE_BOOK`, `CAN_DELETE_COMMENT`
-- **Decorators:** `@CurrentUser()`, `@OptionalUser()`, `@Policies(...tokens)`
-- `@Global()` module
+The module itself wires the layers:
 
-### `shared/` — Cross-Cutting Infrastructure
-- `AppLoggerModule` — nestjs-pino integration (structured JSON logging)
-- `AllExceptionsFilter` — global exception filter producing `{ statusCode, error, message, requestId, timestamp, path }` envelope
-- `ClsModule` — continuation-local storage for request-scoped `requestId`, `method`, `path`
-- `@Global()` (`SharedModule`)
-
-### `repositories/` — Data Access
-- Drizzle implementations are concrete `@Injectable()` classes used as their own DI tokens (no interfaces, no Symbol tokens)
-- `RepositoriesModule` (`@Global()`) provides: `DrizzleBookRepository`, `DrizzleCommentRepository`, `DrizzleRatingRepository`, `DrizzleLikeRepository`, `DrizzleBorrowRepository`, `DrizzlePurchaseRepository`, `DrizzlePostRepository`, `DrizzleGoalRepository`
-- `Paginated<T>` helper for paginated responses
-- `InMemoryLikeRepository` — test double for like toggle logic
-
-### `books/` — Books Feature Module
-- **Controller:** `BooksController` at `/api/books`
-- **Endpoints:**
-  - `GET /api/books` — paginated listing (filterable by `?category=`)
-  - `GET /api/books/trending` — top 3 trending books
-  - `GET /api/books/new-arrivals` — latest 4 books
-  - `GET /api/books/:id` — single book detail
-  - `POST /api/books` — create (auth required)
-  - `PUT /api/books/:id` — update (auth + ownership policy)
-  - `DELETE /api/books/:id` — delete (auth + ownership policy)
-  - `GET /api/books/:id/like` — check if current user liked
-  - `POST /api/books/:id/like` — toggle like (auth)
-  - `GET /api/books/:id/rate` — get current user's rating
-  - `POST /api/books/:id/rate` — submit/update rating (auth)
-- **Sub-resources:** comments at `/api/books/:id/comments` (CRUD, like, reply)
-- **Service:** `BooksService` — CRUD, like toggle, rating upsert
-- **Service:** `CommentsService` — comment tree assembly, like/unlike, creation with optional rating in a Drizzle transaction
-- **DTOs:** `CreateBookDto`, `UpdateBookDto` (class-validator), `CreateCommentDto`, `RateBookDto`
-
-### `transactions/` — Purchases & Borrowing
-- **Controller:** `TransactionsController`
-- **Endpoints:**
-  - `POST /api/books/:id/borrow` — borrow a book (stock lock via FOR UPDATE)
-  - `POST /api/books/:id/return` — return a book
-  - `POST /api/books/:id/create-checkout-session` — Stripe checkout for single book
-  - `POST /api/cart/checkout` — Stripe checkout for multiple books
-  - `POST /api/confirm-purchase` — Stripe webhook: verify session, record purchases, decrement stock
-  - `GET /api/user/borrows` — list user's borrows
-  - `GET /api/user/purchases` — list user's purchases
-- **Services:**
-  - `BorrowsService` — borrow with `SELECT ... FOR UPDATE` row lock, 14-day due, return, paginated history
-  - `CheckoutService` — Stripe session creation (single + cart), integrates `pricing.ts`
-  - `PurchaseConfirmationService` — Stripe signature verification, batch purchase recording
-- `pricing.ts` — pure discount math (tier percentage, category bonus, every-$100 discount)
-
-### `reading-goals/` — Reading Goals
-- **Controller:** `ReadingGoalsController` at `/api/user/reading-goal`
-- **Endpoints:**
-  - `GET /api/user/reading-goal` — get current year's goal + progress
-  - `PUT /api/user/reading-goal` — set/update yearly goal
-- **Service:** `ReadingGoalsService` — goal CRUD with upsert logic
-
-### `social/` — Social Feed
-- **Controller:** `SocialController` at `/api/feed`
-- **Endpoints:**
-  - `GET /api/feed` — paginated feed of posts
-  - `POST /api/feed` — create post (auth)
-  - `POST /api/feed/:id/like` — toggle post like (auth)
-  - `GET /api/feed/:id/like` — check if user liked post
-  - `GET /api/feed/:id/replies` — list replies to a post
-  - `POST /api/feed/:id/reply` — add reply (auth)
-- **Service:** `SocialService` — feed, post CRUD, likes, replies
+```ts
+// books/books.module.ts (sketch)
+@Module({
+  imports: [IamModule],
+  controllers: [BooksController, CommentsController],
+  providers: [
+    DrizzleBookRepository,            // implementation
+    BooksService,                     // application
+    EditBookPolicy,                   // authorization
+    alias(BOOK_REPOSITORY, DrizzleBookRepository),  // token → implementation
+    alias(CAN_EDIT_BOOK, EditBookPolicy),
+    ...
+  ],
+  exports: [BooksService, BOOK_REPOSITORY, ...],  // exposed to other features
+})
+```
 
 ---
 
-## Architecture Principles
+## Core layer
 
-### Repository Pattern (Concrete Classes)
-All database access goes through Drizzle repository classes in `repositories/drizzle/`. Services never write raw SQL — they delegate to repositories. Repositories are concrete `@Injectable()` classes injected directly (no interfaces, no Symbol tokens).
+### `core/config/` — Environment configuration
+- `CoreConfigService` — Zod-validated env grouped into typed slices
+  (`db`, `server`, `frontend`, `auth`, `stripe`).
+- `CoreConfigModule` is `@Global()` because every feature needs the typed
+  config; explicit `imports` everywhere would be pure noise.
+- The auth/stripe slices here are typed views of env vars owned by the
+  `iam/` and `transactions/` features. Features consume
+  `config.auth.baseUrl` etc. through the same `CoreConfigService`.
 
-### Port/Adapter (Auth Only)
-`AuthPort` interface with `BetterAuthAdapter` implementation enables testable auth guards. This is the only remaining port/adapter abstraction — all others were inlined.
+### `core/database/` — Drizzle client + schema
+- `Drizzle` provider wraps a `pg` Pool and a `drizzle()` client with the
+  full schema registered. `DATABASE` token (a `Symbol`) is the
+  injection key.
+- Schema lives here in `schema.ts` (15 tables: Better Auth tables,
+  `books`, `comments`, `comment_likes`, `likes`, `ratings`, `borrows`,
+  `purchases`, `posts`, `post_likes`, `post_replies`).
+- `@Global()` — every feature's infrastructure layer needs the DB client.
 
-### Policy-Based Authorization
-Composable `Policy` interface with `@Policies()` decorator + `PoliciesGuard` for fine-grained access control. Ownership verification lives in guards, not in service methods.
-
-### Request Tracing
-Every request gets a unique `requestId` via `nestjs-cls`. All error responses include this ID for log correlation.
-
-### Pure Business Logic
-`pricing.ts` has zero framework dependencies — pure functions, trivially testable.
+### `core/http/`, `core/logger/`, `core/shared/`
+- `AllExceptionsFilter` produces the canonical error envelope
+  (`{ statusCode, error, message, requestId, timestamp, path }`).
+- `CoreLoggerModule` configures `nestjs-pino` from `CoreConfigService`
+  (level, transport).
+- `CoreRequestContextModule` wraps `nestjs-cls` to assign a `requestId`
+  per request and stash `method`/`path` for log correlation.
 
 ---
 
-## DI Tokens
+## IAM layer
 
-| Token | Type | Purpose |
-|---|---|---|
-| `DrizzleBookRepository` | Class | Book write + read operations |
-| `DrizzleCommentRepository` | Class | Comment CRUD + like aggregation |
-| `DrizzleRatingRepository` | Class | Rating upsert + aggregation |
-| `DrizzleLikeRepository` | Class | Book like toggle |
-| `DrizzleBorrowRepository` | Class | Borrow record CRUD |
-| `DrizzlePurchaseRepository` | Class | Purchase record CRUD |
-| `DrizzlePostRepository` | Class | Social post CRUD + feed query |
-| `DrizzleGoalRepository` | Class | Reading goal upsert |
-| `DRIZZLE` | Symbol | Raw Drizzle ORM instance |
-| `AUTH` | Symbol | Better Auth server instance |
-| `AUTH_PORT` | Symbol | AuthPort adapter (for guards) |
-| `ConfigService` | Class | Typed environment config |
+The `iam/` module is the **generic mechanism** for authentication and
+authorization. It does not know what a "book" or a "comment" is.
+
+### `iam/auth/`
+- `AuthGuard` — requires a valid session, throws `UnauthorizedException`
+  on failure, attaches the user to `request.user`.
+- `OptionalAuthGuard` — same as `AuthGuard` with `{ required: false }`;
+  never throws. Pair with `@CurrentUser() user?: AuthUser`.
+- `CurrentUser` — param decorator that returns `request.user`.
+- `AuthPort` (interface) + `BetterAuthAdapter` (implementation) — the
+  guards depend on `AuthPort`, not Better Auth. This is the only
+  port/adapter in the codebase.
+- `better-auth.ts` exports the `AUTH` symbol, the Better Auth server
+  instance. `main.ts` mounts it on `/api/auth` via
+  `toNodeHandler(app.get(AUTH))`.
+
+### `iam/authorization/`
+- `Policy` interface (`check(ctx: PolicyContext): Promise<boolean>`)
+  with `PolicyContext` carrying `user`, `params`, `body`.
+- `@Policies(token, ...)` decorator attaches policy tokens to a route.
+- `PoliciesGuard` resolves each token from the DI container and runs
+  `check()`. Throws on the first failure.
+
+---
+
+## Feature modules
+
+### `books/`
+- **Controllers:** `BooksController` (`/api/books`), `CommentsController`
+  (`/api/books/:id/comments`).
+- **Use cases:** `BooksService` (CRUD, like toggle, rating upsert),
+  `CommentsService` (tree assembly, like/unlike, comment+rating in a
+  single Drizzle transaction).
+- **Authorization:** `EditBookPolicy`, `DeleteBookPolicy`,
+  `DeleteCommentPolicy` — each loads the resource via the repository
+  contract and verifies the current user owns it. Bound to
+  `CAN_EDIT_BOOK`, `CAN_DELETE_BOOK`, `CAN_DELETE_COMMENT` (tokens
+  declared in `books/authorization/policy.tokens.ts`).
+- **Exports:** `BooksService`, `CommentsService`, `BOOK_REPOSITORY`,
+  `COMMENT_REPOSITORY`, `LIKE_REPOSITORY`, `RATING_REPOSITORY`,
+  `BOOK_READ_MODEL` — exposed so `transactions/` can compose them.
+
+### `transactions/`
+- **Controller:** `TransactionsController`.
+- **Use cases:**
+  - `BorrowsService` — borrow with `SELECT ... FOR UPDATE` row lock
+    (14-day due), return, paginated history.
+  - `CheckoutService` — Stripe Checkout session creation for single
+    book + cart. The cart path runs `applyDiscounts(items)` from
+    `transactions/domain/pricing.ts` and packs the book IDs into
+    Stripe metadata.
+  - `PurchaseConfirmationService` — verifies the Stripe session
+    (`payment_status === 'paid'` and `metadata.userId` matches),
+    records purchases atomically (single + batch), decrements stock.
+- **Domain:** `pricing.ts` is a pure function with zero framework
+  dependencies — the only place business math is computed.
+- **Infrastructure:** Drizzle borrow/purchase repos and the shared
+  `stripeProvider` (one Stripe client per app, configured from
+  `CoreConfigService`).
+- **Imports:** `BooksModule` (for `BookRepository`, `BookReadModel`).
+
+### `social/`
+- **Controller:** `SocialController` (`/api/feed`).
+- **Use case:** `SocialService` — feed, post CRUD, like toggle, replies.
+
+---
+
+## Architecture principles
+
+### 1. Per-feature clean architecture
+Each feature is a self-contained slice with `domain/`, `application/`,
+`infrastructure/`, `presentation/`, and (where needed) `authorization/`.
+The domain layer has zero Drizzle, Nest, or IO imports. Application
+services depend on domain interfaces. Infrastructure implementations
+import Drizzle. Controllers depend on application services.
+
+### 2. `@Global()` is rare and justified
+The Nest docs explicitly recommend against making everything global.
+Only `CoreConfigModule` and `CoreDatabaseModule` are `@Global()` —
+two cases where every consumer would otherwise re-import the same
+module. Everything else uses explicit `imports`.
+
+### 3. Repositories are interfaces, not concrete classes
+Each feature declares its repository contracts in `domain/`
+(e.g. `BookRepository`, `CommentRepository`). The Drizzle implementation
+lives in `infrastructure/` and is bound to the interface token in the
+module via `alias(TOKEN, Implementation)`. The application layer is
+testable by passing any object that satisfies the interface
+(`InMemoryLikeRepository` is an example test fake).
+
+### 4. Policies are co-located with their resources
+`EditBookPolicy` lives in `books/authorization/`, not in
+`iam/authorization/`. The `iam` module provides the *mechanism*
+(`Policy` interface, `PoliciesGuard`); each feature provides the
+*rules* for its own resources. Adding a new ownership-gated action
+means: new policy class + bind it to a `CAN_*` token in the feature
+module.
+
+### 5. Pure logic stays in `domain/`
+`transactions/domain/pricing.ts` has no I/O, no Nest, no DB. It is
+unit-tested in isolation and consumed by `CheckoutService`.
+
+### 6. Request tracing
+Every request gets a `requestId` via `nestjs-cls` (set up in
+`core/shared/request-context.module.ts`). `AllExceptionsFilter`
+includes it in every error response and log line for correlation.
+
+---
+
+## DI tokens
+
+| Token                 | Kind         | Provided by                   | Consumed by                          |
+|-----------------------|--------------|-------------------------------|--------------------------------------|
+| `DATABASE`            | Symbol       | `core/database`               | every repo's infrastructure layer    |
+| `BOOK_REPOSITORY`     | Symbol       | `books` module                | `BooksService`, `BorrowsService`, policies, `CheckoutService` |
+| `BOOK_READ_MODEL`     | Symbol       | `books` module                | `BooksService`, `BorrowsService`, `PurchaseConfirmationService` |
+| `COMMENT_REPOSITORY`  | Symbol       | `books` module                | `CommentsService`, `DeleteCommentPolicy` |
+| `LIKE_REPOSITORY`     | Symbol       | `books` module                | `BooksService`                       |
+| `RATING_REPOSITORY`   | Symbol       | `books` module                | `BooksService`, `CommentsService`    |
+| `BORROW_REPOSITORY`   | Symbol       | `transactions` module         | `BorrowsService`                     |
+| `PURCHASE_REPOSITORY` | Symbol       | `transactions` module         | `PurchaseConfirmationService`        |
+| `POST_REPOSITORY`     | Symbol       | `social` module               | `SocialService`                      |
+| `AUTH`                | Symbol       | `iam` module                  | `main.ts` (mounted as `/api/auth`)   |
+| `AUTH_PORT`           | Symbol       | `iam` module                  | guards (`AuthGuard`, `OptionalAuthGuard`) |
+| `CAN_EDIT_BOOK`       | string       | `books/authorization`         | `@Policies()` on PUT `/api/books/:id` |
+| `CAN_DELETE_BOOK`     | string       | `books/authorization`         | `@Policies()` on DELETE `/api/books/:id` |
+| `CAN_DELETE_COMMENT`  | string       | `books/authorization`         | `@Policies()` on DELETE comment      |
 
 ---
 
 ## Database
 
-**Engine:** PostgreSQL (via Docker Compose)  
-**ORM:** Drizzle ORM with `node-postgres` driver  
-**Schema:** 15 tables across 11 migration files  
-**Setup:** `docker compose up -d && npm run db:migrate && npm run db:seed`
+- **Engine:** PostgreSQL 17 (via `docker compose up -d`)
+- **ORM:** Drizzle ORM with `node-postgres` driver
+- **Migrations:** `drizzle-kit` (config at `drizzle.config.ts`),
+  applied via `npm run db:migrate`
+- **Setup:** `docker compose up -d && npm run db:migrate && npm run db:seed`
+- **15 tables** including Better Auth tables (`user`, `session`,
+  `account`, `verification`).
 
-Key tables: `books` (UUID PK, unique slug), `comments` (self-referencing parentId), `ratings` (composite PK on bookId+userId), `borrows` (dueAt, borrowedAt, returnedAt), `purchases`, `readingGoals`, `posts`, and Better Auth tables (`user`, `session`, `account`, `verification`).
+Key design points:
+- `books.slug` is unique; controllers accept slug or id and the
+  repository's `findByIdOrSlug` resolves either.
+- `ratings`, `likes`, `comment_likes`, `post_likes` use composite
+  primary keys on `(bookId, userId)` / `(commentId, userId)` etc.
+- `comments.parentId` is self-referencing for replies.
+- `borrows.returnedAt` is nullable — `IS NULL` filters active borrows.
 
 ---
 
 ## Commands
 
-| Command | Purpose |
-|---|---|
-| `npm run build` | Compile NestJS (nest build) |
-| `npm run start:dev` | Watch mode (nest start --watch) |
-| `npm run lint` | ESLint + Prettier fix |
-| `npm run format` | Prettier format |
-| `npm run test` | Jest unit tests |
-| `npm run test:cov` | Jest with coverage |
-| `npm run test:e2e` | E2E tests |
-| `npm run db:migrate` | Apply Drizzle migrations |
-| `npm run db:seed` | Populate demo data |
+| Command               | Purpose                                |
+|-----------------------|----------------------------------------|
+| `npm run build`       | `nest build`                           |
+| `npm run start:dev`   | Watch mode                             |
+| `npm run lint`        | ESLint v9 flat config + Prettier (`--fix` baked in) |
+| `npm run format`      | Prettier write                         |
+| `npm run test`        | Jest unit tests                        |
+| `npm run test:watch`  | Jest watch                             |
+| `npm run test:cov`    | Jest with coverage                     |
+| `npm run test:e2e`    | E2E tests                              |
+| `npm run db:migrate`  | Apply Drizzle migrations              |
+| `npm run db:seed`     | Seed demo data                         |
