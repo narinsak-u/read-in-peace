@@ -1,38 +1,7 @@
 <script setup lang="ts">
 import { Button } from '~/components/ui/button';
 import { useAuthStore } from '~/stores/auth';
-
-interface CommentUser {
-  id: string;
-  name: string;
-  image: string | null;
-}
-
-interface ApiComment {
-  id: string;
-  bookId: string;
-  userId: string;
-  parentId: string | null;
-  text: string;
-  rating: number | null;
-  createdAt: string;
-  updatedAt: string;
-  likeCount: number;
-  likedByUser: boolean;
-  user: CommentUser;
-  replies?: ApiComment[];
-}
-
-interface Review {
-  id: string;
-  initials: string;
-  name: string;
-  time: string;
-  rating: number;
-  text: string;
-  likes: number;
-  replies: string[];
-}
+import { useBookComments } from '~/composables/useBookComments';
 
 const { flash, bookId } = defineProps<{
   flash: (message: string) => void;
@@ -41,84 +10,34 @@ const { flash, bookId } = defineProps<{
 
 const auth = useAuthStore();
 
-const reviews = ref<Review[]>([]);
-const loaded = shallowRef(false);
-const submitting = shallowRef(false);
-const replyingSubmitId = shallowRef<string | null>(null);
-
-function getInitials(name: string): string {
-  return name.toUpperCase().slice(0, 2);
-}
-
-function timeAgo(dateStr: string): string {
-  const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
-  if (seconds < 60) return 'just now';
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days === 1) return 'Yesterday';
-  return `${days}d ago`;
-}
-
-function mapCommentToReview(comment: ApiComment): Review {
-  return {
-    id: comment.id,
-    initials: getInitials(comment.user.name),
-    name: comment.user.name,
-    time: timeAgo(comment.createdAt),
-    rating: comment.rating ?? 0,
-    text: comment.text,
-    likes: comment.likeCount ?? 0,
-    replies: (comment.replies ?? []).map(
-      (r) => `${r.text} — ${r.user.name}`,
-    ),
-  };
-}
-
-async function fetchComments() {
-  try {
-    const data = await $fetch<ApiComment[]>(`/api/books/${bookId}/comments`);
-    reviews.value = data.map(mapCommentToReview);
-  } catch {
-    reviews.value = [];
-  } finally {
-    loaded.value = true;
-  }
-}
-
-onMounted(fetchComments);
+const {
+  reviews,
+  addComment,
+  addReply,
+  toggleLike,
+} = useBookComments(() => bookId);
 
 const rating = shallowRef(0);
 const reviewText = shallowRef('');
 const replyingTo = shallowRef<string | null>(null);
+const submitting = shallowRef(false);
+const replyingSubmitId = shallowRef<string | null>(null);
 
 async function publishReview() {
   if (!rating.value || !reviewText.value.trim()) return;
-
   if (!auth.signedIn) {
-    auth.openAuthModal(() => {
-      void publishReview();
-    });
+    auth.openAuthModal(() => { void publishReview(); });
     return;
   }
-
   submitting.value = true;
   try {
-    await $fetch<ApiComment>(`/api/books/${bookId}/comments`, {
-      method: 'POST',
-      body: { text: reviewText.value.trim(), rating: rating.value },
-    });
-    await fetchComments();
+    await addComment(reviewText.value.trim(), rating.value);
     rating.value = 0;
     reviewText.value = '';
     flash('Your review is now part of the discussion.');
   } catch (e: any) {
     if (e?.status === 401) {
-      auth.openAuthModal(() => {
-        void publishReview();
-      });
+      auth.openAuthModal(() => { void publishReview(); });
     } else if (e?.data?.message) {
       flash(e.data.message);
     } else {
@@ -131,27 +50,17 @@ async function publishReview() {
 
 async function publishReply(reviewId: string, text: string) {
   if (!text.trim()) return;
-
   if (!auth.signedIn) {
-    auth.openAuthModal(() => {
-      void publishReply(reviewId, text);
-    });
+    auth.openAuthModal(() => { void publishReply(reviewId, text); });
     return;
   }
-
   replyingSubmitId.value = reviewId;
   try {
-    await $fetch<ApiComment>(`/api/books/${bookId}/comments`, {
-      method: 'POST',
-      body: { text, parentId: reviewId },
-    });
-    await fetchComments();
+    await addReply(reviewId, text);
     replyingTo.value = null;
   } catch (e: any) {
     if (e?.status === 401) {
-      auth.openAuthModal(() => {
-        void publishReply(reviewId, text);
-      });
+      auth.openAuthModal(() => { void publishReply(reviewId, text); });
     } else if (e?.data?.message) {
       flash(e.data.message);
     } else {
@@ -159,6 +68,18 @@ async function publishReply(reviewId: string, text: string) {
     }
   } finally {
     replyingSubmitId.value = null;
+  }
+}
+
+async function onToggleLike(commentId: string, reviewIndex: number) {
+  if (!auth.signedIn) {
+    auth.openAuthModal(() => { void onToggleLike(commentId, reviewIndex); });
+    return;
+  }
+  try {
+    await toggleLike(commentId);
+  } catch {
+    flash('Could not update like.');
   }
 }
 </script>
@@ -176,12 +97,12 @@ async function publishReply(reviewId: string, text: string) {
         </div>
         <div class="divide-y divide-border">
           <ReviewItem
-            v-for="item in reviews"
+            v-for="(item, idx) in reviews"
             :key="item.id"
             :review="item"
             :is-replying="replyingTo === item.id"
             :reply-submitting="replyingSubmitId === item.id"
-            @like="item.likes++"
+            @like="onToggleLike(item.id, idx)"
             @reply="replyingTo = replyingTo === item.id ? null : item.id"
             @publish-reply="(text: string) => publishReply(item.id, text)"
             @cancel-reply="replyingTo = null"
