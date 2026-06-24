@@ -2,19 +2,16 @@
 import { Button } from "~/components/ui/button";
 import { ArrowRight } from "lucide-vue-next";
 import { useFeed } from "~/composables/useFeed";
+import { useBookComments } from "~/composables/useBookComments";
 
 defineProps<{
   flash: (message: string) => void;
 }>();
 
-const {
-  posts,
-  bookSlug,
-  loading,
-  replySubmittingId,
-  toggleLike,
-  publishReply,
-} = useFeed();
+const { posts, bookSlug, bookId, loading } = useFeed();
+
+const { toggleLike, addReply } = useBookComments(() => bookId.value);
+const replySubmittingId = shallowRef<string | null>(null);
 
 const FEED_POST_LIMIT = 3;
 const visiblePosts = computed(() => posts.value.slice(0, FEED_POST_LIMIT));
@@ -35,11 +32,15 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`;
 }
 
-async function onToggleLike(postId: string) {
+async function onReply(postId: string, text: string): Promise<boolean> {
+  replySubmittingId.value = postId;
   try {
-    await toggleLike(postId);
+    await addReply(postId, text);
+    return true;
   } catch {
-    // handled silently
+    return false;
+  } finally {
+    replySubmittingId.value = null;
   }
 }
 </script>
@@ -78,10 +79,10 @@ async function onToggleLike(postId: string) {
         :liked="post.liked"
         :replies="post.replies"
         :submitting="replySubmittingId === post.id"
-        :submit-reply="(text: string) => publishReply(post.id, text)"
+        :submit-reply="(text: string) => onReply(post.id, text)"
       >
         <span v-if="post.rating" class="text-primary">
-          {{ '★'.repeat(post.rating) }}
+          {{ "★".repeat(post.rating) }}
         </span>
         {{ post.text }}
       </FeedPost>

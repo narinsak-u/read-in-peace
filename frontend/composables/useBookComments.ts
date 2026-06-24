@@ -109,10 +109,11 @@ export function useBookComments(bookId: string | Ref<string> | (() => string)) {
   async function toggleLike(commentId: string) {
     if (!auth.signedIn) throw new Error('not signed in')
     const idx = reviews.value.findIndex((r) => r.id === commentId)
-    if (idx === -1) return
-    const prevLiked = reviews.value[idx].likedByUser
-    reviews.value[idx].likedByUser = !prevLiked
-    reviews.value[idx].likes += reviews.value[idx].likedByUser ? 1 : -1
+    const prevLiked = idx !== -1 ? reviews.value[idx].likedByUser : false
+    if (idx !== -1) {
+      reviews.value[idx].likedByUser = !prevLiked
+      reviews.value[idx].likes += reviews.value[idx].likedByUser ? 1 : -1
+    }
     try {
       if (prevLiked) {
         await $fetch(`/api/books/${id.value}/comments/${commentId}/like`, { method: 'DELETE' })
@@ -120,8 +121,10 @@ export function useBookComments(bookId: string | Ref<string> | (() => string)) {
         await $fetch(`/api/books/${id.value}/comments/${commentId}/like`, { method: 'POST' })
       }
     } catch {
-      reviews.value[idx].likedByUser = prevLiked
-      reviews.value[idx].likes += prevLiked ? 1 : -1
+      if (idx !== -1) {
+        reviews.value[idx].likedByUser = prevLiked
+        reviews.value[idx].likes += prevLiked ? 1 : -1
+      }
       throw new Error('Could not update like')
     }
   }
