@@ -1,6 +1,6 @@
-import { ref, shallowRef, computed, readonly, watch } from "vue";
-import { useAuthStore } from "~/stores/auth";
-import { useInvalidate } from "~/composables/useInvalidate";
+import { ref, shallowRef, computed, readonly } from 'vue';
+import { useAuthStore } from '~/stores/auth';
+import { useInvalidate } from '~/composables/useInvalidate';
 
 export interface BorrowItem {
   borrowId: string;
@@ -39,7 +39,6 @@ const borrowsMeta = shallowRef<{
 } | null>(null);
 const borrowsLoaded = shallowRef(false);
 const borrowError = shallowRef<unknown>(null);
-const borrowedSlugs = shallowRef<Set<string>>(new Set());
 
 let lastBorrowsLimit = 3;
 
@@ -52,7 +51,12 @@ export function useBorrows() {
     return borrowsPage.value < borrowsMeta.value.totalPages;
   });
 
-  async function fetchBorrows(page = 1, append = false, limit?: number, sort?: string) {
+  async function fetchBorrows(
+    page = 1,
+    append = false,
+    limit?: number,
+    sort?: string,
+  ) {
     if (!auth.signedIn) {
       borrows.value = [];
       borrowsLoaded.value = true;
@@ -61,9 +65,9 @@ export function useBorrows() {
     }
     borrowsLoaded.value = false;
     lastBorrowsLimit = limit ?? 3;
-    
+
     try {
-      const res = await $fetch<BorrowsResponse>("/api/user/borrows", {
+      const res = await $fetch<BorrowsResponse>('/api/user/borrows', {
         query: { page, limit: lastBorrowsLimit, ...(sort ? { sort } : {}) },
       });
       const items = res.data.map(mapBorrowResponse);
@@ -84,50 +88,7 @@ export function useBorrows() {
     fetchBorrows(borrowsPage.value + 1, true, lastBorrowsLimit);
   }
 
-  async function borrowBook(bookId: string, slug: string) {
-    await $fetch(`/api/books/${bookId}/borrow`, { method: "POST" });
-    borrowedSlugs.value = new Set([...borrowedSlugs.value, slug]);
-    invalidate("borrows", "books");
-  }
-
-  async function returnBook(bookId: string, slug: string) {
-    await $fetch(`/api/books/${bookId}/return`, { method: "POST" });
-    const next = new Set(borrowedSlugs.value);
-    next.delete(slug);
-    borrowedSlugs.value = next;
-    invalidate("borrows", "books");
-  }
-
-  async function initBorrowedSlugs() {
-    if (!auth.signedIn) {
-      borrowedSlugs.value = new Set();
-      return;
-    }
-    try {
-      const res = await $fetch<BorrowsResponse>("/api/user/borrows", {
-        query: { page: 1, limit: 3 },
-      });
-      borrowedSlugs.value = new Set(
-        res.data.map((b) => (b.book.slug as string) ?? (b.book.id as string)),
-      );
-    } catch {
-      borrowedSlugs.value = new Set();
-    }
-  }
-
-  onInvalidate("borrows", () => fetchBorrows(1));
-
-  watch(
-    () => auth.signedIn,
-    (val) => {
-      if (val) {
-        initBorrowedSlugs();
-      } else {
-        borrowedSlugs.value = new Set();
-      }
-    },
-    { immediate: true },
-  );
+  onInvalidate('borrows', () => fetchBorrows(1));
 
   return {
     borrows: readonly(borrows),
@@ -136,15 +97,14 @@ export function useBorrows() {
     borrowsLoaded: readonly(borrowsLoaded),
     borrowError: readonly(borrowError),
     hasMoreBorrows,
-    borrowedSlugs: readonly(borrowedSlugs),
     fetchBorrows,
     loadMoreBorrows,
-    borrowBook,
-    returnBook,
   };
 }
 
-function mapBorrowResponse(entry: BorrowsResponse["data"][number]): BorrowItem {
+function mapBorrowResponse(
+  entry: BorrowsResponse['data'][number],
+): BorrowItem {
   return {
     borrowId: entry.borrow.id as string,
     bookId: entry.book.id as string,
@@ -153,12 +113,12 @@ function mapBorrowResponse(entry: BorrowsResponse["data"][number]): BorrowItem {
     author: entry.book.author as string,
     cover: entry.book.cover as string,
     crop: (entry.book.crop as number | null) ?? null,
-    shelf: (entry.book.shelf as string) ?? "GEN",
-    category: (entry.book.category as string) ?? "",
+    shelf: (entry.book.shelf as string) ?? 'GEN',
+    category: (entry.book.category as string) ?? '',
     dueAt: entry.borrow.dueAt as string,
     currentPage: entry.borrow.currentPage as number,
     totalPages: entry.borrow.totalPages as number,
-    price: String(entry.book.price ?? "0"),
+    price: String(entry.book.price ?? '0'),
     inStock: (entry.book.inStock as number) ?? 0,
     avgRating: Number(entry.book.avgRating ?? 0),
     ratingsCount: (entry.book.ratingsCount as number) ?? 0,
