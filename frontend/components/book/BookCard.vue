@@ -2,6 +2,7 @@
 import { ShoppingBag, Star } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import { useCartStore } from "~/stores/cart";
+import { useBookStatusStore } from "~/stores/bookStatus";
 import { stockActions, type StockActions } from "~/utils/stock";
 import type { Book } from "~/types/book";
 
@@ -17,6 +18,10 @@ const emit = defineEmits<{
 }>();
 
 const cart = useCartStore();
+const { purchasedCounts } = useBookStatusStore();
+const ownedCount = computed(
+  () => purchasedCounts.value.get(props.book.slug) ?? 0,
+);
 
 function onBorrow() {
   emit("borrow");
@@ -27,6 +32,12 @@ function onReturn() {
 }
 
 function onBuy() {
+  if (ownedCount.value > 0) {
+    const ok = window.confirm(
+      `You already own ${ownedCount.value} cop${ownedCount.value > 1 ? "ies" : "y"}. Are you sure you want to buy more?`,
+    );
+    if (!ok) return;
+  }
   cart.addItem({
     id: props.book.id,
     title: props.book.title,
