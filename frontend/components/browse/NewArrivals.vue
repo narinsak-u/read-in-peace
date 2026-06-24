@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { stockActions } from "~/utils/stock";
 import { useAuthStore } from "~/stores/auth";
+import { useBookStatusStore } from "~/stores/bookStatus";
 import { useBooks } from "~/composables/useBooks";
-import { useBorrows } from "~/composables/useBorrows";
 
 const query = defineModel<string>("query", { default: "" });
 
@@ -11,7 +11,8 @@ const props = defineProps<{
 }>();
 
 const auth = useAuthStore();
-const { borrowedSlugs, borrowBook, returnBook } = useBorrows();
+const { borrowedSlugs, purchasedCounts, borrow, returnBook } =
+  useBookStatusStore();
 
 const {
   filtered,
@@ -30,7 +31,7 @@ async function onBorrow(slug: string, bookId: string) {
     return;
   }
   try {
-    await borrowBook(bookId, slug);
+    await borrow(bookId, slug);
     props.flash("Book borrowed for 14 days.");
   } catch (e: any) {
     props.flash(e?.data?.message || "Could not borrow the book.");
@@ -85,7 +86,7 @@ function onPageGo(p: number) {
         v-for="book in filtered"
         :key="book.id"
         :book="book"
-        :actions="stockActions(book, borrowedSlugs)"
+        :actions="stockActions(book, borrowedSlugs, purchasedCounts)"
         :flash="flash"
         @borrow="onBorrow(book.slug, book.id)"
         @return="onReturn(book.slug, book.id)"
