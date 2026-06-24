@@ -1,5 +1,6 @@
-import { ref, shallowRef, readonly } from 'vue'
+import { ref, shallowRef, readonly, watch } from 'vue'
 import { useInvalidate } from '~/composables/useInvalidate'
+import { useBooks } from '~/composables/useBooks'
 
 export interface FeedUser {
   id: string
@@ -20,8 +21,10 @@ export interface FeedPost {
 
 export function useFeed() {
   const { invalidate, onInvalidate } = useInvalidate()
+  const { books: trendingBooks, loading: trendingLoading } = useBooks({ trending: true })
 
   const posts = ref<FeedPost[]>([])
+  const bookSlug = shallowRef('')
   const loading = shallowRef(true)
   const error = shallowRef<unknown>(null)
   const replySubmittingId = shallowRef<string | null>(null)
@@ -30,11 +33,28 @@ export function useFeed() {
     loading.value = true
     error.value = null
     try {
-      const data = await $fetch<FeedPost[]>('/api/feed')
-      posts.value = data
+      // Wait for trending to load
+      if (trendingLoading.value && trendingBooks.value.length === 0) {
+        await new Promise<void>((resolve) => {
+          const unwatch = watch(trendingLoading, (val) => {
+            if (!val) { unwatch(); resolve(); }
+          })
+        })
+      }
+      const trending = trendingBooks.value
+      if (trending.length === 0) {
+        posts.value = []
+        bookSlug.value = ''
+        return
+      }
+      const first = trending[0]
+      bookSlug.value = first.slug
+      const data = await $fetch<FeedPost[]>(`/api/books/${first.id}/comments`)
+      posts.value = data.slice(0, 3)
     } catch (e) {
       error.value = e
       posts.value = []
+      bookSlug.value = ''
     } finally {
       loading.value = false
     }
@@ -82,6 +102,7 @@ export function useFeed() {
 
   return {
     posts: readonly(posts),
+    bookSlug: readonly(bookSlug),
     loading: readonly(loading),
     error: readonly(error),
     replySubmittingId: readonly(replySubmittingId),

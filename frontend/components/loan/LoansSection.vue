@@ -24,14 +24,12 @@ interface LoanItem {
 
 const props = defineProps<{
   loans: LoanItem[];
-  hasMore: boolean;
   flash: (message: string) => void;
 }>();
 
 const emit = defineEmits<{
   return: [bookId: string, title: string];
   "open-review": [];
-  "load-more": [];
 }>();
 
 const cart = useCartStore();
@@ -80,6 +78,9 @@ function toBook(loan: LoanItem) {
     likeCount: 0,
     commentCount: 0,
     year: 0,
+    createdBy: "",
+    createdAt: "",
+    updatedAt: "",
   };
 }
 </script>
@@ -208,9 +209,9 @@ function toBook(loan: LoanItem) {
     </template>
   </BookListSection>
 
-  <div v-if="hasMore" class="mt-8 text-center">
-    <Button size="sm" variant="archivalGhost" @click="emit('load-more')">
-      Load more
+  <div class="mt-8 text-center">
+    <Button size="sm" variant="archivalGhost" @click="navigateTo('/dashboard?tab=borrowed')">
+      View all borrowed books
     </Button>
   </div>
 </template>

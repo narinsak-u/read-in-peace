@@ -1,85 +1,112 @@
-import { ref, shallowRef, computed, readonly, watch } from 'vue'
-import type { Book } from '~/types/book'
-import { mapBookResponse } from '~/types/book'
-import { useAuthStore } from '~/stores/auth'
-import { useInvalidate } from '~/composables/useInvalidate'
-import { useBorrows } from '~/composables/useBorrows'
+import { ref, shallowRef, computed, readonly, watch, toValue } from "vue";
+import type { Book } from "~/types/book";
+import { mapBookResponse } from "~/types/book";
+import { useAuthStore } from "~/stores/auth";
+import { useInvalidate } from "~/composables/useInvalidate";
+import { useBorrows } from "~/composables/useBorrows";
 
 export function useBooks(options?: {
-  page?: Ref<number> | number
-  limit?: Ref<number> | number
-  category?: Ref<string | undefined> | string | undefined
-  query?: Ref<string> | string
+  page?: Ref<number> | number;
+  limit?: Ref<number> | number;
+  category?: Ref<string | undefined> | string | undefined;
+  query?: Ref<string> | string;
+  trending?: boolean;
 }) {
-  const { invalidate, onInvalidate } = useInvalidate()
-  const auth = useAuthStore()
-  const { borrowedSlugs } = useBorrows()
+  const { invalidate, onInvalidate } = useInvalidate();
+  const auth = useAuthStore();
+  const { borrowedSlugs } = useBorrows();
 
-  const page = ref(options?.page ?? 1)
-  const limit = ref(options?.limit ?? 8)
-  const category = ref<string | undefined>(options?.category ?? undefined)
-  const query = ref(options?.query ?? '')
+  const trendingMode = options?.trending ?? false;
+  const page = ref(options?.page ?? 1);
+  const limit = ref(options?.limit ?? 8);
+  const category = ref<string | undefined>(toValue(options?.category));
+  const query = ref(options?.query ?? "");
 
-  const rawPage = ref<{ data: Record<string, unknown>[]; meta: { page: number; limit: number; total: number; totalPages: number } } | null>(null)
-  const loading = shallowRef(true)
-  const error = shallowRef<unknown>(null)
+  const rawPage = ref<{
+    data: Record<string, unknown>[];
+    meta: { page: number; limit: number; total: number; totalPages: number };
+  } | null>(null);
+  const rawTrending = shallowRef<Record<string, unknown>[]>([]);
+  const loading = shallowRef(true);
+  const error = shallowRef<unknown>(null);
 
+  // fetch books based on trending mode
+  // if trending mode is enabled, fetch trending books; otherwise, fetch regular books
   async function fetch() {
-    loading.value = true
-    error.value = null
+    loading.value = true;
+    error.value = null;
     try {
-      rawPage.value = await $fetch('/api/books', {
-        query: { page: page.value, limit: limit.value, category: category.value },
-      })
+      if (trendingMode) {
+        rawTrending.value = await $fetch<Record<string, unknown>[]>(
+          "/api/books/trending",
+        );
+      } else {
+        rawPage.value = await $fetch("/api/books", {
+          query: {
+            page: page.value,
+            limit: limit.value,
+            category: category.value,
+          },
+        });
+      }
     } catch (e) {
-      error.value = e
-      rawPage.value = null
+      error.value = e;
+      rawPage.value = null;
+      rawTrending.value = [];
     } finally {
-      loading.value = false
+      loading.value = false;
     }
   }
 
   const books = computed<Book[]>(() => {
-    if (!rawPage.value?.data) return []
-    return rawPage.value.data.map(mapBookResponse)
-  })
+    if (trendingMode) {
+      if (rawTrending.value.length === 0) return [];
+      return rawTrending.value.map(mapBookResponse);
+    }
+    if (!rawPage.value?.data) return [];
+    return rawPage.value.data.map(mapBookResponse);
+  });
 
-  const meta = computed(() => rawPage.value?.meta ?? null)
+  const meta = computed(() => rawPage.value?.meta ?? null);
 
   const filtered = computed(() => {
-    const q = query.value.toLowerCase().trim()
-    if (!q) return books.value
+    const q = query.value.toLowerCase().trim();
+    if (!q) return books.value;
     return books.value.filter((b) =>
       `${b.title} ${b.author}`.toLowerCase().includes(q),
-    )
-  })
+    );
+  });
 
   const pageNumbers = computed(() => {
-    const total = meta.value?.totalPages ?? 1
-    const current = page.value
-    const pages: number[] = []
-    const start = Math.max(1, current - 2)
-    const end = Math.min(total, current + 2)
-    for (let i = start; i <= end; i++) pages.push(i)
-    return pages
-  })
+    const total = meta.value?.totalPages ?? 1;
+    const current = page.value;
+    const pages: number[] = [];
+    const start = Math.max(1, current - 2);
+    const end = Math.min(total, current + 2);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  });
 
   async function borrow(slug: string, bookId: string) {
-    if (!auth.signedIn) throw new Error('not signed in')
-    const { borrowBook } = useBorrows()
-    await borrowBook(bookId, slug)
-    invalidate('books')
+    if (!auth.signedIn) throw new Error("not signed in");
+    const { borrowBook } = useBorrows();
+    await borrowBook(bookId, slug);
+    invalidate("books");
   }
 
   async function returnBook(slug: string, bookId: string) {
-    const { returnBook: ret } = useBorrows()
-    await ret(bookId, slug)
-    invalidate('books')
+    const { returnBook: ret } = useBorrows();
+    await ret(bookId, slug);
+    invalidate("books");
   }
 
-  watch([page, category], () => fetch(), { immediate: true })
-  onInvalidate('books', () => fetch())
-  onInvalidate('borrows', () => fetch())
+  if (trendingMode) {
+    fetch();
+  } else {
+    watch([page, category], () => fetch(), { immediate: true });
+  }
+  onInvalidate("books", () => fetch());
+  onInvalidate("borrows", () => fetch());
 
   return {
     books: readonly(books),
@@ -94,5 +121,5 @@ export function useBooks(options?: {
     refresh: fetch,
     borrow,
     return: returnBook,
-  }
+  };
 }

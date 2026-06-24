@@ -9,6 +9,7 @@ defineProps<{
 
 const {
   posts,
+  bookSlug,
   loading,
   replySubmittingId,
   toggleLike,
@@ -83,12 +84,12 @@ async function onToggleLike(postId: string) {
         {{ post.text }}
       </FeedPost>
       <NuxtLink
-        v-if="posts.length > FEED_POST_LIMIT"
-        to="/feed"
+        v-if="bookSlug"
+        :to="`/book/${bookSlug}`"
         class="group inline-block"
       >
         <Button variant="archivalGhost" size="sm">
-          View all posts
+          View discussions
           <ArrowRight
             class="h-4 w-4 transition-transform group-hover:translate-x-1"
           />

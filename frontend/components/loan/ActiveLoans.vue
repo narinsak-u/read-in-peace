@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { useAuthStore } from '~/stores/auth';
-import { useBorrows } from '~/composables/useBorrows';
-import { useBooks } from '~/composables/useBooks';
+import { useAuthStore } from "~/stores/auth";
+import { useBorrows } from "~/composables/useBorrows";
+import { useBooks } from "~/composables/useBooks";
 
 const props = defineProps<{
-  mode: 'loans' | 'trending';
+  mode: "loans" | "trending";
   flash: (message: string) => void;
 }>();
 
 const emit = defineEmits<{
-  'open-review': [];
+  "open-review": [];
 }>();
 
 const auth = useAuthStore();
@@ -18,22 +18,19 @@ const {
   borrows,
   borrowsLoaded,
   borrowError,
-  hasMoreBorrows,
-  loadMoreBorrows,
-  borrowedSlugs,
   borrowBook,
   returnBook,
   fetchBorrows,
 } = useBorrows();
 
-const { books: trendingBooks, loading: trendingLoading, refresh: refreshTrending } = useBooks({ limit: 4 });
+const {
+  books: trendingBooks,
+  loading: trendingLoading,
+  refresh: refreshTrending,
+} = useBooks({ trending: true });
 
-const showTrending = computed(
-  () =>
-    props.mode === 'loans' &&
-    auth.signedIn &&
-    borrowsLoaded.value &&
-    borrows.value.length === 0,
+const showTrendingSection = computed(
+  () => !auth.signedIn || (borrowsLoaded.value && borrows.value.length === 0),
 );
 
 const userBorrowedSlugs = computed(() => {
@@ -46,8 +43,8 @@ const userBorrowedSlugs = computed(() => {
 
 async function onBorrowBook(bookId: string) {
   try {
-    await borrowBook(bookId, '');
-    props.flash('Book borrowed for 14 days.');
+    await borrowBook(bookId, "");
+    props.flash("Book borrowed for 14 days.");
     await fetchBorrows(1);
     refreshTrending();
   } catch (e: any) {
@@ -56,23 +53,23 @@ async function onBorrowBook(bookId: string) {
     } else if (e?.data?.message) {
       props.flash(e.data.message);
     } else {
-      props.flash('Could not borrow the book. Please try again.');
+      props.flash("Could not borrow the book. Please try again.");
     }
   }
 }
 
 async function onReturnBook(bookId: string, title: string) {
   try {
-    await returnBook(bookId, '');
+    await returnBook(bookId, "");
     props.flash(`${title} returned. Thank you!`);
     await fetchBorrows(1);
     refreshTrending();
   } catch (e: any) {
-    props.flash(e?.data?.message || 'Could not return the book.');
+    props.flash(e?.data?.message || "Could not return the book.");
   }
 }
 
-function onBorrow(slug: string, bookId: string) {
+function onBorrow(bookId: string) {
   if (!auth.signedIn) {
     auth.openAuthModal();
     return;
@@ -81,7 +78,7 @@ function onBorrow(slug: string, bookId: string) {
 }
 
 onMounted(() => {
-  if (props.mode === 'loans') {
+  if (props.mode === "loans") {
     fetchBorrows(1).then(() => {
       if (borrows.value.length === 0) refreshTrending();
     });
@@ -93,7 +90,7 @@ onMounted(() => {
 watch(
   () => auth.signedIn,
   (val) => {
-    if (val && props.mode === 'loans') {
+    if (val && props.mode === "loans") {
       fetchBorrows(1).then(() => {
         if (borrows.value.length === 0) refreshTrending();
       });
@@ -104,15 +101,21 @@ watch(
 
 <template>
   <section id="loans" class="animate-enter scroll-mt-24">
-    <!-- Trending -->
-    <template v-if="mode === 'trending'">
+    <template v-if="showTrendingSection">
       <div
         class="mb-6 flex items-baseline justify-between border-b border-border pb-2"
       >
-        <h1 class="font-serif text-2xl">Trending Now</h1>
-        <span class="font-mono text-[10px] uppercase text-muted-foreground">
-          Most popular this month
-        </span>
+        <template v-if="auth.signedIn">
+          <h2 class="font-serif text-lg">
+            No active loans — check what's trending
+          </h2>
+        </template>
+        <template v-else>
+          <h1 class="font-serif text-2xl">Trending Now</h1>
+          <span class="font-mono text-[10px] uppercase text-muted-foreground">
+            Most popular this month
+          </span>
+        </template>
       </div>
 
       <div
@@ -132,12 +135,19 @@ watch(
         :books="trendingBooks as any"
         :borrowed-slugs="userBorrowedSlugs"
         :flash="flash"
-        @borrow="(slug: string, bookId: string) => onBorrow(slug, bookId)"
-        @return="(slug: string, bookId: string) => { const book = (trendingBooks as any).find((b: any) => b.id === bookId || b.slug === slug); onReturnBook(bookId, book?.title ?? 'Book'); }"
+        @borrow="(_slug, bookId) => onBorrow(bookId)"
+        @return="
+          (slug, bookId) =>
+            onReturnBook(
+              bookId,
+              (trendingBooks as any).find(
+                (b: any) => b.id === bookId || b.slug === slug,
+              )?.title ?? 'Book',
+            )
+        "
       />
     </template>
 
-    <!-- Loans -->
     <template v-else>
       <div
         class="mb-6 flex items-baseline justify-between border-b border-border pb-2"
@@ -145,7 +155,7 @@ watch(
         <h1 class="font-serif text-2xl">Active Loans</h1>
         <span class="font-mono text-[10px] uppercase text-muted-foreground">
           {{ borrows.length }}
-          {{ borrows.length === 1 ? 'item' : 'items' }} currently on desk
+          {{ borrows.length === 1 ? "item" : "items" }} currently on desk
         </span>
       </div>
 
@@ -156,54 +166,18 @@ watch(
         Loading your loans...
       </div>
       <div
-        v-else-if="!auth.signedIn"
-        class="border-y border-border py-12 text-center font-serif italic text-muted-foreground"
-      >
-        Sign in to see your active loans.
-      </div>
-      <div
         v-else-if="borrowError"
         class="border-y border-border py-12 text-center font-serif italic text-muted-foreground"
       >
         Could not load your loans. Please try again.
       </div>
-      <template v-else>
-        <template v-if="showTrending">
-          <div class="mb-6 flex items-baseline justify-between">
-            <h2 class="font-serif text-lg">No active loans — check what's trending</h2>
-          </div>
-          <div
-            v-if="trendingLoading"
-            class="border-y border-border py-12 text-center font-serif italic text-muted-foreground"
-          >
-            Loading trending books...
-          </div>
-          <div
-            v-else-if="trendingBooks.length === 0"
-            class="border-y border-border py-12 text-center font-serif italic text-muted-foreground"
-          >
-            No trending books right now.
-          </div>
-          <TrendingSection
-            v-else
-            :books="trendingBooks as any"
-            :borrowed-slugs="userBorrowedSlugs"
-            :flash="flash"
-            @borrow="(slug: string, bookId: string) => onBorrow(slug, bookId)"
-            @return="(slug: string, bookId: string) => { const book = (trendingBooks as any).find((b: any) => b.id === bookId || b.slug === slug); onReturnBook(bookId, book?.title ?? 'Book'); }"
-          />
-        </template>
-        <template v-else>
-          <LoansSection
-            :loans="borrows as any"
-            :has-more="hasMoreBorrows"
-            :flash="flash"
-            @return="(bookId: string, title: string) => onReturnBook(bookId, title)"
-            @open-review="emit('open-review')"
-            @load-more="loadMoreBorrows"
-          />
-        </template>
-      </template>
+      <LoansSection
+        v-else
+        :loans="borrows as any"
+        :flash="flash"
+        @return="(bookId, title) => onReturnBook(bookId, title)"
+        @open-review="emit('open-review')"
+      />
     </template>
   </section>
 </template>

@@ -65,7 +65,7 @@ function mapCommentToReview(comment: ApiComment): Review {
   }
 }
 
-export function useBookComments(bookId: string | Ref<string>) {
+export function useBookComments(bookId: string | Ref<string> | (() => string)) {
   const id = toRef(bookId)
   const auth = useAuthStore()
   const { invalidate, onInvalidate } = useInvalidate()

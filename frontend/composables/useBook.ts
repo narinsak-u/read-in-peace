@@ -4,7 +4,7 @@ import { mapBookResponse } from '~/types/book'
 import { useAuthStore } from '~/stores/auth'
 import { useInvalidate } from '~/composables/useInvalidate'
 
-export function useBook(bookId: string | Ref<string>) {
+export function useBook(bookId: string | Ref<string> | (() => string)) {
   const id = toRef(bookId)
   const auth = useAuthStore()
   const { invalidate, onInvalidate } = useInvalidate()
