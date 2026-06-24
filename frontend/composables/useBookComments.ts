@@ -32,7 +32,7 @@ export interface Review {
   text: string
   likes: number
   likedByUser: boolean
-  replies: string[]
+  readonly replies: readonly string[]
 }
 
 function getInitials(name: string): string {
