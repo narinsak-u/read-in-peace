@@ -41,6 +41,12 @@ export class BooksController {
     return this.booksService.getTrending();
   }
 
+  @Get('search')
+  search(@Query('q') q?: string) {
+    if (!q || !q.trim()) return [];
+    return this.booksService.search(q.trim());
+  }
+
   @Get('new-arrivals')
   getNewArrivals() {
     return this.booksService.findNewArrivals();

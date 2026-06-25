@@ -1,5 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { desc, eq, inArray, sql } from 'drizzle-orm';
+import { desc, eq, ilike, inArray, sql } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../core/database/database.provider';
 import * as schema from '../../core/database/schema';
 import type { BookReadModel } from '../domain/book.repository';
@@ -48,6 +48,16 @@ export class DrizzleBookReadModel implements BookReadModel {
       .where(where);
 
     return buildPaginated(data, Number(totalResult?.value ?? 0), page, limit);
+  }
+
+  async search(q: string, limit: number): Promise<BookProjection[]> {
+    const pattern = `%${q}%`;
+    return await this.db
+      .select(bookWithMeta)
+      .from(schema.books)
+      .where(ilike(schema.books.title, pattern))
+      .limit(limit)
+      .orderBy(desc(schema.books.createdAt));
   }
 
   async findNewArrivals(limit: number): Promise<BookProjection[]> {

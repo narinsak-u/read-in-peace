@@ -58,6 +58,7 @@ export interface BookReadModel {
     data: BookProjection[];
     meta: { page: number; limit: number; total: number; totalPages: number };
   }>;
+  search(q: string, limit: number): Promise<BookProjection[]>;
   findNewArrivals(limit: number): Promise<BookProjection[]>;
   getTrending(limit: number): Promise<BookProjection[]>;
   attachToBorrows(

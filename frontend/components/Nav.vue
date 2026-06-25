@@ -1,31 +1,18 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, useTemplateRef } from 'vue';
-import { ArrowLeft, Library, Search, ShoppingBag } from 'lucide-vue-next';
-import { Button } from '~/components/ui/button';
-import { buttonVariants } from '~/components/ui/button/variants';
-import { useCartStore } from '~/stores/cart';
+import { ArrowLeft, Library, ShoppingBag } from "lucide-vue-next";
+import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button/variants";
+import { useCartStore } from "~/stores/cart";
 
-const query = defineModel<string>('query', { default: '' });
+const query = defineModel<string>("query", { default: "" });
 const cart = useCartStore();
 
 const props = withDefaults(
   defineProps<{
-    mode?: 'feed' | 'book' | 'cart';
+    mode?: "feed" | "book" | "cart";
   }>(),
-  { mode: 'feed' },
+  { mode: "feed" },
 );
-
-const searchInput = useTemplateRef<HTMLInputElement>('searchInput');
-
-function onKeydown(e: KeyboardEvent) {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    searchInput.value?.focus();
-  }
-}
-
-onMounted(() => document.addEventListener('keydown', onKeydown));
-onUnmounted(() => document.removeEventListener('keydown', onKeydown));
 </script>
 
 <template>
@@ -60,26 +47,8 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown));
         </NuxtLink>
       </div>
 
-      <!-- Center: Search -->
-      <div class="flex-1 m-auto max-w-3xl">
-        <label class="relative">
-          <span class="sr-only">Search books</span>
-          <Search
-            class="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          />
-          <input
-            ref="searchInput"
-            v-model="query"
-            placeholder="Search titles, authors..."
-            class="w-full rounded-sm border-0 bg-input py-2 pl-9 pr-14 text-sm placeholder:text-muted-foreground focus:ring-1 focus:ring-ring"
-          />
-          <kbd
-            class="absolute right-2 top-1/2 hidden -translate-y-1/2 items-center gap-0.5 rounded-sm border border-border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground sm:flex"
-          >
-            <span>⌘</span>K
-          </kbd>
-        </label>
-      </div>
+      <!-- Center: Searchbar -->
+      <SearchBar v-model:query="query" />
 
       <div
         :class="

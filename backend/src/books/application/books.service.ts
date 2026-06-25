@@ -32,6 +32,10 @@ export class BooksService {
     return this.readModel.findNewArrivals(4);
   }
 
+  search(q: string) {
+    return this.readModel.search(q, 10);
+  }
+
   getTrending() {
     return this.readModel.getTrending(3);
   }
