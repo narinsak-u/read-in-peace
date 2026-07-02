@@ -23,6 +23,7 @@ import {
   type BorrowRow,
   type BorrowWithBook,
 } from '../domain/borrow';
+import { MembershipService } from '../../membership/application/membership.service';
 
 const BORROW_PERIOD_DAYS = 14;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -34,6 +35,7 @@ export class BorrowsService {
     @Inject(BOOK_REPOSITORY) private readonly books: BookRepository,
     @Inject(BORROW_REPOSITORY) private readonly borrows: BorrowRepository,
     @Inject(BOOK_READ_MODEL) private readonly readModel: BookReadModel,
+    private readonly membership: MembershipService,
   ) {}
 
   async borrow(bookId: string, userId: string): Promise<BorrowRow> {
@@ -51,6 +53,8 @@ export class BorrowsService {
       if (active) {
         throw new BadRequestException('Book already borrowed');
       }
+
+      await this.membership.enforceBorrowLimit(userId);
 
       const remaining = book.inStock - 1;
       await this.books.update(

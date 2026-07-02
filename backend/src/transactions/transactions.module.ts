@@ -7,7 +7,7 @@ import { IamModule } from '../iam/iam.module';
 import { BooksModule } from '../books/books.module';
 import { DrizzleBorrowRepository } from './infrastructure/drizzle-borrow.repository';
 import { DrizzlePurchaseRepository } from './infrastructure/drizzle-purchase.repository';
-import { stripeProvider } from './infrastructure/stripe.provider';
+import { stripeProvider, STRIPE } from './infrastructure/stripe.provider';
 import { BORROW_REPOSITORY } from './domain/borrow';
 import type { BorrowRepository } from './domain/borrow';
 import { PURCHASE_REPOSITORY } from './domain/purchase';
@@ -39,6 +39,7 @@ const alias = (token: symbol, impl: unknown) => ({
     BorrowsService,
     CheckoutService,
     PurchaseConfirmationService,
+    STRIPE,
     BORROW_REPOSITORY,
     PURCHASE_REPOSITORY,
   ],

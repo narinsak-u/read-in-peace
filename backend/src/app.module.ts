@@ -11,6 +11,7 @@ import { IamModule } from './iam/iam.module';
 import { BooksModule } from './books/books.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { SocialModule } from './social/social.module';
+import { MembershipModule } from './membership/membership.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -24,6 +25,7 @@ import { AppService } from './app.service';
     BooksModule,
     TransactionsModule,
     SocialModule,
+    MembershipModule,
   ],
   controllers: [AppController],
   providers: [AppService],
