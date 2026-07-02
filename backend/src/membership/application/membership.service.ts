@@ -13,6 +13,11 @@ import { MEMBERSHIP_REPOSITORY } from '../domain/membership.repository';
 import { PLAN_CONFIG, type Plan } from '../domain/plans';
 import type { MembershipRow } from '../domain/membership.entity';
 
+export interface MembershipWithBorrows extends MembershipRow {
+  activeBorrows: number;
+  borrowsRemaining: number;
+}
+
 const SUCCESS_PATH = '/dashboard?membership=success';
 const CANCEL_PATH = '/plans';
 
@@ -35,18 +40,11 @@ export class MembershipService {
     });
   }
 
-  async getMembershipWithBorrows(userId: string) {
+  async getMembershipWithBorrows(
+    userId: string,
+  ): Promise<MembershipWithBorrows> {
     const membership = await this.getOrCreate(userId);
-    const [countResult] = await this.db
-      .select({ value: count() })
-      .from(schema.borrows)
-      .where(
-        and(
-          eq(schema.borrows.userId, userId),
-          isNull(schema.borrows.returnedAt),
-        ),
-      );
-    const activeBorrows = Number(countResult?.value ?? 0);
+    const activeBorrows = await this.countActiveBorrows(userId);
     return {
       ...membership,
       activeBorrows,
@@ -66,7 +64,11 @@ export class MembershipService {
     }
 
     const membership = await this.getOrCreate(userId);
-    if (membership.plan !== 'free' && membership.status === 'active') {
+    const isActive =
+      membership.status === 'active' &&
+      !membership.cancelAtPeriodEnd &&
+      (!membership.currentPeriodEnd || membership.currentPeriodEnd > new Date());
+    if (membership.plan !== 'free' && isActive) {
       throw new BadRequestException('Already subscribed to a plan');
     }
 
@@ -97,26 +99,29 @@ export class MembershipService {
       throw new BadRequestException('No active subscription');
     }
 
+    interface StripeSubSnapshot {
+      current_period_end: number | null;
+      current_period_start: number | null;
+    }
     const subscription = await this.stripe.subscriptions.update(
       membership.stripeSubscriptionId,
       { cancel_at_period_end: true },
     );
+    const sub = subscription as unknown as StripeSubSnapshot;
+    const periodEnd = sub.current_period_end;
 
-    const periodEnd = (subscription as any).current_period_end as
-      | number
-      | null
-      | undefined;
+    const effectiveDate =
+      periodEnd != null && isFinite(periodEnd)
+        ? new Date(periodEnd * 1000).toISOString()
+        : new Date().toISOString();
 
     await this.repo.upsert(userId, {
       cancelAtPeriodEnd: true,
-      currentPeriodEnd: periodEnd
-        ? new Date(periodEnd * 1000)
-        : undefined,
+      currentPeriodEnd:
+        periodEnd != null && isFinite(periodEnd)
+          ? new Date(periodEnd * 1000)
+          : undefined,
     });
-
-    const effectiveDate = periodEnd
-      ? new Date(periodEnd * 1000).toISOString()
-      : new Date().toISOString();
 
     return { effectiveDate };
   }
@@ -126,10 +131,19 @@ export class MembershipService {
     if (!membership?.stripeSubscriptionId) {
       throw new BadRequestException('No subscription to reactivate');
     }
-    await this.stripe.subscriptions.update(membership.stripeSubscriptionId, {
-      cancel_at_period_end: false,
-    });
-    await this.repo.upsert(userId, { cancelAtPeriodEnd: false });
+    if (!membership.cancelAtPeriodEnd) {
+      throw new BadRequestException(
+        'Subscription is not scheduled for cancellation',
+      );
+    }
+    try {
+      await this.stripe.subscriptions.update(membership.stripeSubscriptionId, {
+        cancel_at_period_end: false,
+      });
+      await this.repo.upsert(userId, { cancelAtPeriodEnd: false });
+    } catch {
+      throw new BadRequestException('Failed to reactivate subscription');
+    }
   }
 
   async getLimit(userId: string): Promise<number> {
@@ -139,7 +153,16 @@ export class MembershipService {
 
   async enforceBorrowLimit(userId: string): Promise<void> {
     const limit = await this.getLimit(userId);
-    const [countResult] = await this.db
+    const activeCount = await this.countActiveBorrows(userId);
+    if (activeCount >= limit) {
+      throw new BadRequestException(
+        `You've reached your plan's borrow limit of ${limit} books. Upgrade to borrow more.`,
+      );
+    }
+  }
+
+  private async countActiveBorrows(userId: string): Promise<number> {
+    const [result] = await this.db
       .select({ value: count() })
       .from(schema.borrows)
       .where(
@@ -148,11 +171,6 @@ export class MembershipService {
           isNull(schema.borrows.returnedAt),
         ),
       );
-    const activeCount = Number(countResult?.value ?? 0);
-    if (activeCount >= limit) {
-      throw new BadRequestException(
-        `You've reached your plan's borrow limit of ${limit} books. Upgrade to borrow more.`,
-      );
-    }
+    return Number(result?.value ?? 0);
   }
 }
