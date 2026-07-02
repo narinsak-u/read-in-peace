@@ -23,10 +23,10 @@ function mergeGuestCart(
   for (const guestItem of guest) {
     const existingItem = map.get(guestItem.id);
     if (existingItem) {
-      existingItem.quantity = Math.max(
-        existingItem.quantity,
-        guestItem.quantity,
-      );
+      map.set(existingItem.id, {
+        ...existingItem,
+        quantity: Math.max(existingItem.quantity, guestItem.quantity),
+      });
     } else {
       map.set(guestItem.id, guestItem);
     }
