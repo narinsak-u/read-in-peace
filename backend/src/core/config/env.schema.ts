@@ -10,6 +10,7 @@ export const envSchema = z.object({
   CORS_ORIGINS: z.string().optional(),
   FRONTEND_URL: z.url().optional(),
   STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1, 'STRIPE_WEBHOOK_SECRET is required'),
   AUTH_SECRET: z.string().min(16).optional(),
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])

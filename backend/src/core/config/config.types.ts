@@ -34,10 +34,15 @@ export interface TransactionsStripeConfig {
   readonly secretKey: string;
 }
 
+export interface MembershipStripeConfig {
+  readonly webhookSecret: string;
+}
+
 export interface AppConfig {
   readonly db: CoreDbConfig;
   readonly server: CoreServerConfig;
   readonly frontend: CoreFrontendConfig;
   readonly auth: IamAuthConfig;
   readonly stripe: TransactionsStripeConfig;
+  readonly membership: MembershipStripeConfig;
 }
