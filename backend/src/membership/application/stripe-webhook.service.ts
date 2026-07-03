@@ -9,6 +9,7 @@ import {
 import type { MembershipRepository } from '../domain/membership.repository';
 import { MEMBERSHIP_REPOSITORY } from '../domain/membership.repository';
 import { PLAN_CONFIG, type Plan } from '../domain/plans';
+import { PurchaseConfirmationService } from '../../transactions/application/purchase-confirmation.service';
 
 /* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-assignment */
 
@@ -18,6 +19,7 @@ export class StripeWebhookService {
     @Inject(MEMBERSHIP_REPOSITORY) private readonly repo: MembershipRepository,
     @Inject(STRIPE) private readonly stripe: StripeClient,
     @Inject(DATABASE) private readonly db: Database,
+    private readonly purchaseConfirmation: PurchaseConfirmationService,
   ) {}
 
   async handleEvent(event: any): Promise<void> {
@@ -47,6 +49,16 @@ export class StripeWebhookService {
   }
 
   private async handleCheckoutCompleted(session: any): Promise<void> {
+    if (session.metadata?.plan) {
+      await this.handleMembershipCheckout(session);
+      return;
+    }
+    if (session.metadata?.bookId || session.metadata?.bc) {
+      await this.purchaseConfirmation.recordFromSession(session);
+    }
+  }
+
+  private async handleMembershipCheckout(session: any): Promise<void> {
     const userId: string | undefined = session.metadata?.userId;
     const plan: string | undefined = session.metadata?.plan;
     if (!userId || !plan) return;
