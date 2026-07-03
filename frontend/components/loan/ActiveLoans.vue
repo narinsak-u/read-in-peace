@@ -58,9 +58,9 @@ async function onBorrowBook(bookId: string) {
   }
 }
 
-async function onReturnBook(bookId: string, title: string) {
+async function onReturnBook(bookId: string, title: string, slug: string) {
   try {
-    await returnBook(bookId, "");
+    await returnBook(bookId, slug);
     props.flash(`${title} returned. Thank you!`);
     await fetchBorrows(1);
     refreshTrending();
@@ -143,6 +143,7 @@ watch(
               (trendingBooks as any).find(
                 (b: any) => b.id === bookId || b.slug === slug,
               )?.title ?? 'Book',
+              slug,
             )
         "
       />
@@ -175,7 +176,7 @@ watch(
         v-else
         :loans="borrows as any"
         :flash="flash"
-        @return="(bookId, title) => onReturnBook(bookId, title)"
+        @return="(bookId, title, slug) => onReturnBook(bookId, title, slug)"
         @open-review="(book: { id: string; title: string; cover: string; crop: number | null }) => emit('open-review', book)"
       />
     </template>
