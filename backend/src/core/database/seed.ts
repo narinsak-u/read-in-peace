@@ -211,7 +211,9 @@ async function seed() {
   for (const u of commentUsers) {
     await upsertMembership(u.id);
   }
-  console.log(`Memberships created for ${commentUsers.length} commenter accounts`);
+  console.log(
+    `Memberships created for ${commentUsers.length} commenter accounts`,
+  );
 
   // --- Books ---
 

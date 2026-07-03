@@ -1,7 +1,10 @@
 import { Controller, Post, Req, Res, Inject } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { CoreConfigService } from '../../core/config/config.provider';
-import { STRIPE, type StripeClient } from '../../transactions/infrastructure/stripe.provider';
+import {
+  STRIPE,
+  type StripeClient,
+} from '../../transactions/infrastructure/stripe.provider';
 import { StripeWebhookService } from '../application/stripe-webhook.service';
 
 @Controller()
@@ -29,6 +32,7 @@ export class StripeWebhookController {
       res.status(400).send('Webhook signature verification failed');
       return;
     }
+
     await this.webhook.handleEvent(event);
     res.json({ received: true });
   }

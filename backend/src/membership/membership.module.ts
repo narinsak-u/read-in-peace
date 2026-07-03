@@ -1,9 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { IamModule } from '../iam/iam.module';
 import { TransactionsModule } from '../transactions/transactions.module';
 import { DrizzleMembershipRepository } from './infrastructure/drizzle-membership.repository';
 import { MEMBERSHIP_REPOSITORY } from './domain/membership.repository';
-import type { MembershipRepository } from './domain/membership.repository';
+
 import { MembershipService } from './application/membership.service';
 import { StripeWebhookService } from './application/stripe-webhook.service';
 import { MembershipController } from './presentation/membership.controller';
@@ -15,7 +15,7 @@ const alias = (token: symbol, impl: unknown) => ({
 });
 
 @Module({
-  imports: [IamModule, TransactionsModule],
+  imports: [IamModule, forwardRef(() => TransactionsModule)],
   controllers: [MembershipController, StripeWebhookController],
   providers: [
     DrizzleMembershipRepository,

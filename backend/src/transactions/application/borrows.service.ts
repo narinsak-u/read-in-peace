@@ -4,6 +4,7 @@
 import {
   Inject,
   Injectable,
+  forwardRef,
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
@@ -35,6 +36,7 @@ export class BorrowsService {
     @Inject(BOOK_REPOSITORY) private readonly books: BookRepository,
     @Inject(BORROW_REPOSITORY) private readonly borrows: BorrowRepository,
     @Inject(BOOK_READ_MODEL) private readonly readModel: BookReadModel,
+    @Inject(forwardRef(() => MembershipService))
     private readonly membership: MembershipService,
   ) {}
 

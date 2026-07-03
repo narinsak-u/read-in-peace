@@ -215,7 +215,9 @@ export const readingGoals = pgTable('reading_goals', {
 });
 
 export const memberships = pgTable('memberships', {
-  id: text('id').primaryKey().default(sql`gen_random_uuid()`),
+  id: text('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: text('user_id')
     .notNull()
     .unique()

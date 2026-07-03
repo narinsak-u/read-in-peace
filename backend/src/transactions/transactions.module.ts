@@ -2,9 +2,10 @@
 // BookRepository, BookReadModel, and Database (the borrow flow needs
 // to lock a book row + decrement stock atomically). Provides its own
 // borrow/purchase repositories and the shared Stripe client.
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { IamModule } from '../iam/iam.module';
 import { BooksModule } from '../books/books.module';
+import { MembershipModule } from '../membership/membership.module';
 import { DrizzleBorrowRepository } from './infrastructure/drizzle-borrow.repository';
 import { DrizzlePurchaseRepository } from './infrastructure/drizzle-purchase.repository';
 import { stripeProvider, STRIPE } from './infrastructure/stripe.provider';
@@ -23,7 +24,7 @@ const alias = (token: symbol, impl: unknown) => ({
 });
 
 @Module({
-  imports: [IamModule, BooksModule],
+  imports: [IamModule, BooksModule, forwardRef(() => MembershipModule)],
   controllers: [TransactionsController],
   providers: [
     DrizzleBorrowRepository,

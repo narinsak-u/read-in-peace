@@ -1,13 +1,12 @@
-import {
-  Inject,
-  Injectable,
-  BadRequestException,
-} from '@nestjs/common';
+import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { and, count, eq, isNull } from 'drizzle-orm';
 import { CoreConfigService } from '../../core/config/config.provider';
 import { DATABASE, type Database } from '../../core/database/database.provider';
 import * as schema from '../../core/database/schema';
-import { STRIPE, type StripeClient } from '../../transactions/infrastructure/stripe.provider';
+import {
+  STRIPE,
+  type StripeClient,
+} from '../../transactions/infrastructure/stripe.provider';
 import type { MembershipRepository } from '../domain/membership.repository';
 import { MEMBERSHIP_REPOSITORY } from '../domain/membership.repository';
 import { PLAN_CONFIG, type Plan } from '../domain/plans';
@@ -67,7 +66,8 @@ export class MembershipService {
     const isActive =
       membership.status === 'active' &&
       !membership.cancelAtPeriodEnd &&
-      (!membership.currentPeriodEnd || membership.currentPeriodEnd > new Date());
+      (!membership.currentPeriodEnd ||
+        membership.currentPeriodEnd > new Date());
     if (membership.plan !== 'free' && isActive) {
       throw new BadRequestException('Already subscribed to a plan');
     }

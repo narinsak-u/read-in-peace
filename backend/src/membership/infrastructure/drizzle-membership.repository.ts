@@ -1,9 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
-import {
-  DATABASE,
-  type Database,
-} from '../../core/database/database.provider';
+import { DATABASE, type Database } from '../../core/database/database.provider';
 import * as schema from '../../core/database/schema';
 import type { MembershipRow } from '../domain/membership.entity';
 import type { MembershipRepository } from '../domain/membership.repository';
@@ -27,6 +24,7 @@ export class DrizzleMembershipRepository implements MembershipRepository {
   ): Promise<MembershipRow> {
     const [row] = await this.db
       .insert(schema.memberships)
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       .values({ userId, ...data } as any)
       .onConflictDoUpdate({
         target: schema.memberships.userId,

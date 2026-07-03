@@ -1,6 +1,6 @@
 export const PLAN_CONFIG = {
-  free:      { itemLimit: 15, monthlyPriceCents: 0 },
-  curator:   { itemLimit: 25, monthlyPriceCents: 500 },
+  free: { itemLimit: 15, monthlyPriceCents: 0 },
+  curator: { itemLimit: 25, monthlyPriceCents: 500 },
   archivist: { itemLimit: 50, monthlyPriceCents: 1000 },
 } as const;
 

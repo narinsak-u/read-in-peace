@@ -83,6 +83,7 @@ describe('BooksService', () => {
       getTrending: jest.fn(),
       attachToBorrows: jest.fn(),
       attachToPurchases: jest.fn(),
+      search: jest.fn(),
     };
 
     likes = {
@@ -181,9 +182,10 @@ describe('BooksService', () => {
         shelf: 'A1',
         year: 2025,
       };
-      books.create.mockResolvedValue(fakeBookRow('new'));
+      const expected = fakeBookRow('new');
+      books.create.mockResolvedValue(expected);
       const result = await svc.create(data, 'u1');
-      expect(result).toEqual(fakeBookRow('new'));
+      expect(result).toEqual(expected);
       expect(books.create).toHaveBeenCalledWith(data, 'u1');
     });
   });
