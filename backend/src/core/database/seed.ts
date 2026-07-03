@@ -196,6 +196,23 @@ async function seed() {
 
   console.log(`Created ${commentUsers.length} commenter accounts`);
 
+  // --- Memberships ---
+
+  const upsertMembership = async (userId: string) => {
+    await db
+      .insert(schema.memberships)
+      .values({ userId, plan: 'free', status: 'active', itemLimit: 15 })
+      .onConflictDoNothing();
+  };
+
+  await upsertMembership(seedUserId);
+  console.log('Membership created for seed user');
+
+  for (const u of commentUsers) {
+    await upsertMembership(u.id);
+  }
+  console.log(`Memberships created for ${commentUsers.length} commenter accounts`);
+
   // --- Books ---
 
   function slugify(text: string): string {
