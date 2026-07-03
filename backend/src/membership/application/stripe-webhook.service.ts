@@ -15,6 +15,8 @@ import { PurchaseConfirmationService } from '../../transactions/application/purc
 
 @Injectable()
 export class StripeWebhookService {
+  private readonly processedEventIds = new Set<string>();
+
   constructor(
     @Inject(MEMBERSHIP_REPOSITORY) private readonly repo: MembershipRepository,
     @Inject(STRIPE) private readonly stripe: StripeClient,
@@ -23,6 +25,9 @@ export class StripeWebhookService {
   ) {}
 
   async handleEvent(event: any): Promise<void> {
+    const eventId: string | undefined = event.id;
+    if (eventId && this.processedEventIds.has(eventId)) return;
+
     switch (event.type) {
       case 'checkout.session.completed':
         await this.handleCheckoutCompleted(event.data.object);
@@ -36,7 +41,11 @@ export class StripeWebhookService {
       case 'customer.subscription.deleted':
         await this.handleSubscriptionDeleted(event.data.object);
         break;
+      default:
+        break;
     }
+
+    if (eventId) this.processedEventIds.add(eventId);
   }
 
   private async findMembershipBySubId(subId: string) {

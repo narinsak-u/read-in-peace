@@ -72,25 +72,35 @@ export class MembershipService {
       throw new BadRequestException('Already subscribed to a plan');
     }
 
-    const session = await this.stripe.checkout.sessions.create({
-      mode: 'subscription',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: { name: `Read in Peace — ${plan}` },
-            unit_amount: config.monthlyPriceCents,
-            recurring: { interval: 'month' as const },
+    let session;
+    try {
+      session = await this.stripe.checkout.sessions.create({
+        mode: 'subscription',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: { name: `Read in Peace — ${plan}` },
+              unit_amount: config.monthlyPriceCents,
+              recurring: { interval: 'month' as const },
+            },
+            quantity: 1,
           },
-          quantity: 1,
-        },
-      ],
-      metadata: { userId, plan },
-      success_url: `${this.config.frontend.url}${SUCCESS_PATH}`,
-      cancel_url: `${this.config.frontend.url}${CANCEL_PATH}`,
-    });
+        ],
+        metadata: { userId, plan },
+        success_url: `${this.config.frontend.url}${SUCCESS_PATH}`,
+        cancel_url: `${this.config.frontend.url}${CANCEL_PATH}`,
+      });
+    } catch {
+      throw new BadRequestException(
+        'Could not create checkout session. Please try again.',
+      );
+    }
 
-    return { url: session.url ?? '' };
+    if (!session.url) {
+      throw new BadRequestException('Checkout session has no URL');
+    }
+    return { url: session.url };
   }
 
   async cancel(userId: string): Promise<{ effectiveDate: string }> {
@@ -103,10 +113,15 @@ export class MembershipService {
       current_period_end: number | null;
       current_period_start: number | null;
     }
-    const subscription = await this.stripe.subscriptions.update(
-      membership.stripeSubscriptionId,
-      { cancel_at_period_end: true },
-    );
+    let subscription;
+    try {
+      subscription = await this.stripe.subscriptions.update(
+        membership.stripeSubscriptionId,
+        { cancel_at_period_end: true },
+      );
+    } catch {
+      throw new BadRequestException('Failed to cancel subscription');
+    }
     const sub = subscription as unknown as StripeSubSnapshot;
     const periodEnd = sub.current_period_end;
 
