@@ -1,9 +1,10 @@
-import { defineStore } from 'pinia';
-import { shallowRef, watch } from 'vue';
-import { useAuthStore } from '~/stores/auth';
-import { useInvalidate } from '~/composables/useInvalidate';
+import { defineStore } from "pinia";
+import { shallowRef, watch } from "vue";
+import { useAuthStore } from "~/stores/auth";
+import { useMembershipStore } from "~/stores/membership";
+import { useInvalidate } from "~/composables/useInvalidate";
 
-export const useBookStatusStore = defineStore('bookStatus', () => {
+export const useBookStatusStore = defineStore("bookStatus", () => {
   const auth = useAuthStore();
   const { invalidate, onInvalidate } = useInvalidate();
 
@@ -26,13 +27,13 @@ export const useBookStatusStore = defineStore('bookStatus', () => {
             borrow: Record<string, unknown>;
             book: Record<string, unknown>;
           }[];
-        }>('/api/user/borrows', { query: { page: 1, limit: 100 } }),
+        }>("/api/user/borrows", { query: { page: 1, limit: 100 } }),
         $fetch<
           {
             purchase: Record<string, unknown>;
             book: Record<string, unknown>;
           }[]
-        >('/api/user/purchases'),
+        >("/api/user/purchases"),
       ]);
       borrowedSlugs.value = new Set(
         borrowsRes.data.map(
@@ -54,17 +55,19 @@ export const useBookStatusStore = defineStore('bookStatus', () => {
   }
 
   async function borrow(bookId: string, slug: string) {
-    await $fetch(`/api/books/${bookId}/borrow`, { method: 'POST' });
+    await $fetch(`/api/books/${bookId}/borrow`, { method: "POST" });
     borrowedSlugs.value = new Set([...borrowedSlugs.value, slug]);
-    invalidate('borrows', 'books');
+    invalidate("borrows", "books");
+    useMembershipStore().fetchMembership();
   }
 
   async function returnBook(bookId: string, slug: string) {
-    await $fetch(`/api/books/${bookId}/return`, { method: 'POST' });
+    await $fetch(`/api/books/${bookId}/return`, { method: "POST" });
     const next = new Set(borrowedSlugs.value);
     next.delete(slug);
     borrowedSlugs.value = next;
-    invalidate('borrows', 'books');
+    invalidate("borrows", "books");
+    useMembershipStore().fetchMembership();
   }
 
   async function refreshPurchases() {
@@ -78,7 +81,7 @@ export const useBookStatusStore = defineStore('bookStatus', () => {
           purchase: Record<string, unknown>;
           book: Record<string, unknown>;
         }[]
-      >('/api/user/purchases');
+      >("/api/user/purchases");
       const counts = new Map<string, number>();
       for (const entry of purchases) {
         const id = (entry.book.id as string) ?? (entry.book.slug as string);
@@ -108,7 +111,7 @@ export const useBookStatusStore = defineStore('bookStatus', () => {
     { immediate: true },
   );
 
-  onInvalidate('purchases', () => refreshPurchases());
+  onInvalidate("purchases", () => refreshPurchases());
 
   return {
     borrowedSlugs,
