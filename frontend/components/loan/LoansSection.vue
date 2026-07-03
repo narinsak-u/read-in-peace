@@ -130,7 +130,7 @@ function toBook(loan: LoanItem) {
     </template>
 
     <template #actions="{ book }">
-      <Button variant="archival" @click="emit('return', book.id, book.title)">
+      <Button variant="archival" @click="emit('return', book.id, book.title, book.bookSlug)">
         Return Book
       </Button>
       <Button
@@ -186,7 +186,7 @@ function toBook(loan: LoanItem) {
         <Button
           size="sm"
           variant="archivalGhost"
-          @click="emit('return', book.id, book.title)"
+          @click="emit('return', book.id, book.title, book.bookSlug)"
         >
           Return
         </Button>

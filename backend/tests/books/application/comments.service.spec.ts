@@ -14,10 +14,7 @@ import {
   RATING_REPOSITORY,
   type RatingRepository,
 } from '../../../src/books/domain/engagement';
-import {
-  DATABASE,
-  type Database,
-} from '../../../src/core/database/database.provider';
+import { DATABASE } from '../../../src/core/database/database.provider';
 import type { CreateCommentDto } from '../../../src/books/presentation/dto/create-comment.dto';
 
 const makeComment = (

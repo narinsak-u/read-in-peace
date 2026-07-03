@@ -45,7 +45,7 @@ const auth = useAuthStore();
       </div>
 
       <aside class="col-span-12 space-y-10 lg:col-span-4">
-        <YearlyProgress :current="24" :goal="50" :behind="2" :year="2026" />
+        <MembershipProgress />
         <ReaderFeed :flash="flash" />
 
         <!-- Book Club -->

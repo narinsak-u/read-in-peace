@@ -57,9 +57,7 @@ async function publishReview() {
             <h2 id="review-title" class="font-serif text-2xl font-bold">
               {{ book.title }}
             </h2>
-            <p class="text-sm text-muted-foreground">
-              What stayed with you?
-            </p>
+            <p class="text-sm text-muted-foreground">What stayed with you?</p>
           </div>
         </div>
         <div
@@ -72,6 +70,7 @@ async function publishReview() {
             type="button"
             :aria-label="`Rate ${value} stars`"
             @click="rating = value"
+            class="cursor-pointer"
           >
             <Star
               :class="`size-7 ${value <= rating ? 'fill-current text-primary' : 'text-border'}`"

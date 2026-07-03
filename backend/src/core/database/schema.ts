@@ -9,6 +9,7 @@ import {
   boolean,
   timestamp,
   integer,
+  varchar,
 } from 'drizzle-orm/pg-core';
 import { numeric, primaryKey } from 'drizzle-orm/pg-core';
 
@@ -206,6 +207,29 @@ export const readingGoals = pgTable('reading_goals', {
     .references(() => user.id, { onDelete: 'cascade' }),
   year: integer('year').notNull(),
   goal: integer('goal').notNull().default(0),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at')
+    .notNull()
+    .defaultNow()
+    .$onUpdate(() => new Date()),
+});
+
+export const memberships = pgTable('memberships', {
+  id: text('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
+  userId: text('user_id')
+    .notNull()
+    .unique()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  plan: varchar('plan', { length: 20 }).notNull().default('free'),
+  status: varchar('status', { length: 20 }).notNull().default('active'),
+  stripeSubscriptionId: text('stripe_subscription_id'),
+  stripePriceId: text('stripe_price_id'),
+  currentPeriodStart: timestamp('current_period_start'),
+  currentPeriodEnd: timestamp('current_period_end'),
+  cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+  itemLimit: integer('item_limit').notNull().default(15),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at')
     .notNull()

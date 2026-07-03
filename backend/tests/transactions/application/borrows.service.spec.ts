@@ -18,6 +18,7 @@ import {
   type Database,
 } from '../../../src/core/database/database.provider';
 import type { BookRow } from '../../../src/books/domain/book';
+import { MembershipService } from '../../../src/membership/application/membership.service';
 
 const baseBook = (id: string, inStock = 3): BookRow => ({
   id,
@@ -56,7 +57,7 @@ describe('BorrowsService', () => {
   let books: jest.Mocked<BookRepository>;
   let borrows: jest.Mocked<BorrowRepository>;
   let readModel: jest.Mocked<BookReadModel>;
-  let db: { transaction: jest.Mock };
+  let membership: jest.Mocked<Pick<MembershipService, 'enforceBorrowLimit'>>;
 
   const mockTx = {};
 
@@ -96,6 +97,10 @@ describe('BorrowsService', () => {
       transaction: jest.fn().mockImplementation((cb) => cb(mockTx)),
     };
 
+    membership = {
+      enforceBorrowLimit: jest.fn().mockResolvedValue(undefined),
+    };
+
     const mod = await Test.createTestingModule({
       providers: [
         BorrowsService,
@@ -103,6 +108,7 @@ describe('BorrowsService', () => {
         { provide: BOOK_REPOSITORY, useValue: books },
         { provide: BORROW_REPOSITORY, useValue: borrows },
         { provide: BOOK_READ_MODEL, useValue: readModel },
+        { provide: MembershipService, useValue: membership },
       ],
     }).compile();
 

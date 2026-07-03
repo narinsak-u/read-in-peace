@@ -15,6 +15,25 @@ export interface CartItem {
   category?: string;
 }
 
+function mergeGuestCart(
+  existing: CartItem[],
+  guest: CartItem[],
+): CartItem[] {
+  const map = new Map(existing.map((item) => [item.id, item]));
+  for (const guestItem of guest) {
+    const existingItem = map.get(guestItem.id);
+    if (existingItem) {
+      map.set(existingItem.id, {
+        ...existingItem,
+        quantity: Math.max(existingItem.quantity, guestItem.quantity),
+      });
+    } else {
+      map.set(guestItem.id, guestItem);
+    }
+  }
+  return Array.from(map.values());
+}
+
 export const useCartStore = defineStore('cart', () => {
   const items = ref<CartItem[]>([]);
   const { flash } = useFlash();
@@ -119,6 +138,27 @@ export const useCartStore = defineStore('cart', () => {
 
   hydrateFromStorage();
   watch(items, persist, { deep: true });
+
+  const auth = useAuthStore();
+
+  watch(
+    () => auth.signedIn,
+    (now, prev) => {
+      if (now && prev === false) {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          try {
+            const guestItems: CartItem[] = JSON.parse(raw);
+            items.value = mergeGuestCart(items.value, guestItems);
+          } catch {
+            // malformed localStorage — ignore
+          }
+          // Persist watcher handles writing; no need to delete the shared key.
+        }
+      }
+    },
+    { immediate: true },
+  );
 
   return {
     items,

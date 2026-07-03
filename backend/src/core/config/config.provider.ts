@@ -6,6 +6,7 @@ import type {
   CoreFrontendConfig,
   CoreServerConfig,
   IamAuthConfig,
+  MembershipStripeConfig,
   TransactionsStripeConfig,
 } from './config.types';
 
@@ -30,6 +31,7 @@ export class CoreConfigService implements AppConfig {
   readonly frontend: CoreFrontendConfig;
   readonly auth: IamAuthConfig;
   readonly stripe: TransactionsStripeConfig;
+  readonly membership: MembershipStripeConfig;
 
   constructor(raw: NodeJS.ProcessEnv) {
     const parsed = envSchema.parse(raw);
@@ -54,5 +56,6 @@ export class CoreConfigService implements AppConfig {
       secret: parsed.AUTH_SECRET,
     };
     this.stripe = { secretKey: parsed.STRIPE_SECRET_KEY };
+    this.membership = { webhookSecret: parsed.STRIPE_WEBHOOK_SECRET };
   }
 }

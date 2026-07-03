@@ -4,6 +4,7 @@ describe('CoreConfigService', () => {
   const validEnv = {
     DATABASE_URL: 'postgres://test:test@localhost:5432/test',
     STRIPE_SECRET_KEY: 'sk_test_xxx',
+    STRIPE_WEBHOOK_SECRET: 'whsec_test_xxx',
   };
 
   it('exposes typed config from minimal env', () => {
@@ -40,13 +41,31 @@ describe('CoreConfigService', () => {
 
   it('throws when DATABASE_URL is missing', () => {
     expect(
-      () => new CoreConfigService({ STRIPE_SECRET_KEY: 'sk_x' }),
+      () =>
+        new CoreConfigService({
+          STRIPE_SECRET_KEY: 'sk_x',
+          STRIPE_WEBHOOK_SECRET: 'whsec_x',
+        }),
     ).toThrow();
   });
 
   it('throws when STRIPE_SECRET_KEY is missing', () => {
     expect(
-      () => new CoreConfigService({ DATABASE_URL: 'postgres://x' }),
+      () =>
+        new CoreConfigService({
+          DATABASE_URL: 'postgres://x',
+          STRIPE_WEBHOOK_SECRET: 'whsec_x',
+        }),
+    ).toThrow();
+  });
+
+  it('throws when STRIPE_WEBHOOK_SECRET is missing', () => {
+    expect(
+      () =>
+        new CoreConfigService({
+          DATABASE_URL: 'postgres://x',
+          STRIPE_SECRET_KEY: 'sk_x',
+        }),
     ).toThrow();
   });
 });
