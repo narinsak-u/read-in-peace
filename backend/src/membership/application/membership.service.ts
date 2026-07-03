@@ -1,3 +1,11 @@
+// MembershipService — domain logic for membership lifecycle.
+// Responsibilities:
+//   - getOrCreate: lazy-assign a free plan on first access
+//   - getMembershipWithBorrows: return membership + active borrow count
+//   - createCheckoutSession: create Stripe subscription, return redirect URL
+//   - cancel: mark Stripe sub as cancel_at_period_end, persist effective date
+//   - reactivate: unset cancel_at_period_end on Stripe
+//   - getLimit / enforceBorrowLimit: gate the borrow flow by plan limits
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { and, count, eq, isNull } from 'drizzle-orm';
 import { CoreConfigService } from '../../core/config/config.provider';

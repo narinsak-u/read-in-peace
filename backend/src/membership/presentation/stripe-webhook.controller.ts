@@ -1,3 +1,9 @@
+// StripeWebhookController — receives Stripe webhook events via raw POST body.
+// Stripe signs each request with the webhook signing secret; this controller
+// verifies the signature via constructEvent before delegating to
+// StripeWebhookService. Returns 400 on verification failure.
+// The raw body is preserved by NestFactory.create({ rawBody: true }) in main.ts.
+
 import { Controller, Post, Req, Res, Inject } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { CoreConfigService } from '../../core/config/config.provider';

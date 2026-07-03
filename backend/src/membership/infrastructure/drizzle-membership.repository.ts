@@ -1,3 +1,7 @@
+// DrizzleMembershipRepository — Drizzle ORM implementation of
+// MembershipRepository. Uses onConflictDoUpdate (unique constraint on user_id)
+// for atomic upsert: insert if absent, update given fields if present.
+
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../core/database/database.provider';

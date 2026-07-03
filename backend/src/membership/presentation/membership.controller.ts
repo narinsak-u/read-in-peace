@@ -1,3 +1,10 @@
+// MembershipController — REST endpoints for the user-facing membership flow.
+// All routes require authentication (AuthGuard).
+//   POST /api/membership/checkout → create subscription checkout session
+//   POST /api/membership/cancel   → set cancel_at_period_end
+//   GET  /api/membership/me       → current membership + borrow counts
+//   POST /api/membership/reactivate → unset cancel_at_period_end
+
 import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../iam/auth/auth.guard';
 import { CurrentUser } from '../../iam/auth/current-user.decorator';

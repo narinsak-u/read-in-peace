@@ -1,3 +1,13 @@
+// StripeWebhookService — process incoming Stripe webhook events for both
+// membership subscriptions and book purchase checkouts.
+// Events handled:
+//   checkout.session.completed → route to membership (plan metadata) or
+//     purchase (bookId/bc metadata) via PurchaseConfirmationService
+//   invoice.paid → extend current subscription period
+//   customer.subscription.updated → sync cancelAtPeriodEnd / status
+//   customer.subscription.deleted → downgrade to free plan
+// Idempotency: tracks processed event IDs in memory to guard against
+// duplicate deliveries.
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DATABASE, type Database } from '../../core/database/database.provider';
