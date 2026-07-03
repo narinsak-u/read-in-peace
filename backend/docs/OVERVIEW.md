@@ -46,6 +46,13 @@ backend/src/
 │
 ├── social/                        # Feature: reader feed (posts, likes, replies)
 │   ├── domain/ | application/ | infrastructure/ | presentation/ | social.module.ts
+│
+├── membership/                    # Feature: subscription plans, Stripe subscriptions
+    ├── domain/                    #   MembershipRow, PLAN_CONFIG, repository contract
+    ├── application/               #   MembershipService, StripeWebhookService
+    ├── infrastructure/            #   DrizzleMembershipRepository
+    ├── presentation/              #   MembershipController
+    └── membership.module.ts
 ```
 
 ---
@@ -100,9 +107,9 @@ The module itself wires the layers:
 - `Drizzle` provider wraps a `pg` Pool and a `drizzle()` client with the
   full schema registered. `DATABASE` token (a `Symbol`) is the
   injection key.
-- Schema lives here in `schema.ts` (15 tables: Better Auth tables,
+- Schema lives here in `schema.ts` (16 tables: Better Auth tables,
   `books`, `comments`, `comment_likes`, `likes`, `ratings`, `borrows`,
-  `purchases`, `posts`, `post_likes`, `post_replies`).
+  `purchases`, `memberships`, `posts`, `post_likes`, `post_replies`).
 - `@Global()` — every feature's infrastructure layer needs the DB client.
 
 ### `core/http/`, `core/logger/`, `core/shared/`
@@ -182,6 +189,15 @@ authorization. It does not know what a "book" or a "comment" is.
 - **Controller:** `SocialController` (`/api/feed`).
 - **Use case:** `SocialService` — feed, post CRUD, like toggle, replies.
 
+### `membership/`
+- **Controller:** `MembershipController` (`/api/membership/me`, `/api/membership/cancel`, etc.).
+- **Use cases:**
+  - `MembershipService` — lazy-assigns free plan, tracks subscription lifecycle (checkout, cancel, reactivate), enforces borrow limits per plan tier.
+  - `StripeWebhookService` — processes `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`, `customer.subscription.deleted` events to sync Stripe with local state.
+- **Domain:** `PLAN_CONFIG` map in `domain/plans.ts` defines three tiers: free (15 items), curator (25 items, $5/mo), archivist (50 items, $10/mo). Item limit gates the borrow flow via `enforceBorrowLimit()`.
+- **Infrastructure:** `DrizzleMembershipRepository` with atomic upsert on the `user_id` unique constraint.
+- **Imports:** `TransactionsModule` (for `Stripe` provider).
+
 ---
 
 ## Architecture principles
@@ -238,6 +254,7 @@ includes it in every error response and log line for correlation.
 | `RATING_REPOSITORY`   | Symbol       | `books` module                | `BooksService`, `CommentsService`    |
 | `BORROW_REPOSITORY`   | Symbol       | `transactions` module         | `BorrowsService`                     |
 | `PURCHASE_REPOSITORY` | Symbol       | `transactions` module         | `PurchaseConfirmationService`        |
+| `MEMBERSHIP_REPOSITORY` | Symbol    | `membership` module           | `MembershipService`                  |
 | `POST_REPOSITORY`     | Symbol       | `social` module               | `SocialService`                      |
 | `AUTH`                | Symbol       | `iam` module                  | `main.ts` (mounted as `/api/auth`)   |
 | `AUTH_PORT`           | Symbol       | `iam` module                  | guards (`AuthGuard`, `OptionalAuthGuard`) |
@@ -254,7 +271,7 @@ includes it in every error response and log line for correlation.
 - **Migrations:** `drizzle-kit` (config at `drizzle.config.ts`),
   applied via `npm run db:migrate`
 - **Setup:** `docker compose up -d && npm run db:migrate && npm run db:seed`
-- **15 tables** including Better Auth tables (`user`, `session`,
+- **16 tables** including Better Auth tables (`user`, `session`,
   `account`, `verification`).
 
 Key design points:
