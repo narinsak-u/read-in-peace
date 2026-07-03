@@ -82,30 +82,33 @@ export class StripeWebhookService {
     const plan: string | undefined = session.metadata?.plan;
     if (!userId || !plan) return;
 
-    let subData: Record<string, unknown> = {};
+    const config = PLAN_CONFIG[plan as Plan];
+    const upsertData: Record<string, unknown> = {
+      plan,
+      itemLimit: config?.itemLimit ?? 15,
+      status: 'active',
+    };
+
     if (session.subscription) {
       const sub: any = await this.stripe.subscriptions.retrieve(
         session.subscription as string,
       );
-      subData = {
-        stripeSubscriptionId: sub.id as string,
-        stripePriceId: (sub.items?.data?.[0]?.price?.id as string) ?? null,
-        currentPeriodStart: sub.current_period_start
-          ? new Date((sub.current_period_start as number) * 1000)
-          : undefined,
-        currentPeriodEnd: sub.current_period_end
-          ? new Date((sub.current_period_end as number) * 1000)
-          : undefined,
-        status: 'active',
-      };
+      upsertData.stripeSubscriptionId = sub.id as string;
+      upsertData.stripePriceId =
+        (sub.items?.data?.[0]?.price?.id as string) ?? null;
+      if (sub.current_period_start) {
+        upsertData.currentPeriodStart = new Date(
+          (sub.current_period_start as number) * 1000,
+        );
+      }
+      if (sub.current_period_end) {
+        upsertData.currentPeriodEnd = new Date(
+          (sub.current_period_end as number) * 1000,
+        );
+      }
     }
 
-    const config = PLAN_CONFIG[plan as Plan];
-    await this.repo.upsert(userId, {
-      plan,
-      itemLimit: config?.itemLimit ?? 15,
-      ...subData,
-    });
+    await this.repo.upsert(userId, upsertData);
   }
 
   private async handleInvoicePaid(invoice: any): Promise<void> {

@@ -113,8 +113,14 @@ export class MembershipService {
 
   async cancel(userId: string): Promise<{ effectiveDate: string }> {
     const membership = await this.repo.findByUserId(userId);
+    const effectiveDate = new Date().toISOString();
+
     if (!membership?.stripeSubscriptionId) {
-      throw new BadRequestException('No active subscription');
+      await this.repo.upsert(userId, {
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: new Date(),
+      });
+      return { effectiveDate };
     }
 
     interface StripeSubSnapshot {
@@ -133,10 +139,10 @@ export class MembershipService {
     const sub = subscription as unknown as StripeSubSnapshot;
     const periodEnd = sub.current_period_end;
 
-    const effectiveDate =
+    const effectiveDateFormatted =
       periodEnd != null && isFinite(periodEnd)
         ? new Date(periodEnd * 1000).toISOString()
-        : new Date().toISOString();
+        : effectiveDate;
 
     await this.repo.upsert(userId, {
       cancelAtPeriodEnd: true,
@@ -146,18 +152,19 @@ export class MembershipService {
           : undefined,
     });
 
-    return { effectiveDate };
+    return { effectiveDate: effectiveDateFormatted };
   }
 
   async reactivate(userId: string): Promise<void> {
     const membership = await this.repo.findByUserId(userId);
-    if (!membership?.stripeSubscriptionId) {
-      throw new BadRequestException('No subscription to reactivate');
-    }
-    if (!membership.cancelAtPeriodEnd) {
+    if (!membership?.cancelAtPeriodEnd) {
       throw new BadRequestException(
         'Subscription is not scheduled for cancellation',
       );
+    }
+    if (!membership?.stripeSubscriptionId) {
+      await this.repo.upsert(userId, { cancelAtPeriodEnd: false });
+      return;
     }
     try {
       await this.stripe.subscriptions.update(membership.stripeSubscriptionId, {
