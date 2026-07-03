@@ -30,15 +30,15 @@ const progress = computed(() => {
       Membership
     </h2>
     <div class="mb-1 flex items-baseline gap-2">
-      <span class="font-serif text-4xl font-bold">{{ membershipStore.membership?.borrowsRemaining ?? 0 }}</span>
-      <span class="text-sm italic text-muted-foreground">of {{ limit }} books remaining</span>
+      <span class="font-serif text-4xl font-bold">{{ used }}</span>
+      <span class="text-sm italic text-muted-foreground">of {{ limit }} books</span>
     </div>
     <div class="mb-4 h-1 w-full bg-foreground/5">
       <div class="h-full bg-foreground" :style="{ width: `${progress}%` }" />
     </div>
     <p class="text-[11px] leading-relaxed text-muted-foreground">
       <template v-if="membershipStore.membership && membershipStore.membership.plan !== 'free'">
-        You have <span class="text-primary">{{ membershipStore.membership.borrowsRemaining }} borrows left</span> this month.
+        You have borrowed <span class="text-primary">{{ used }} books</span> this month.
         Returns refresh your available slots.
       </template>
       <template v-else>
