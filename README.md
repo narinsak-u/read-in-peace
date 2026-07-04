@@ -4,6 +4,19 @@
 
 A quiet library to review, borrow, return, and buy books — built with Nuxt 3 + NestJS.
 
+## Key features
+
+- **Borrow & return** — Browse the library, borrow books for 7–30 days depending on your plan, return when you're done
+- **Buy & keep** — Purchase books you love and build your personal library
+- **Discount pipeline** — Automatic quantity tiers (up to 30% off), category bonuses, and every-$100 savings
+- **Reader feed** — Share reviews, rate books, and discuss with other readers
+- **Membership plans** — Free, Curator, and Archivist tiers with escalating borrow limits and discounts
+- **Client-side cart** — localStorage-persisted cart with live discount previews
+- **Stripe checkout** — Secure payments via Stripe Checkout Sessions
+- **Admin tools** — Create, edit, and delete books with admin mode toggle
+- **Dark mode** — Full dark theme with OKLCH color tokens
+- **Responsive design** — Mobile-first layout with bottom dock navigation
+
 ## Stack
 
 - **Frontend:** Nuxt 3 (SSR), Vue 3 Composition API, Pinia, Tailwind CSS v4, shadcn-vue
@@ -30,13 +43,6 @@ npm run -w backend db:seed
 # Start development (frontend :3000 + backend :4000)
 npm run dev:all
 ```
-
-### Credentials
-
-| Email | Password | Role |
-|---|---|---|
-| `seed@readinpace.com` | `seed123` | Default user |
-| `admin@gmail.com` | `123456789` | Registered user (toggle admin mode) |
 
 ## Packages
 
