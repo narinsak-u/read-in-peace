@@ -64,6 +64,7 @@ const fmt = computed(() => ({
         </p>
       </div>
 
+      <ClientOnly>
         <div
           v-if="cart.isEmpty"
           class="flex flex-col items-center py-24 text-center"
@@ -242,6 +243,7 @@ const fmt = computed(() => ({
             </p>
           </aside>
         </div>
+      </ClientOnly>
     </main>
   </div>
 </template>
