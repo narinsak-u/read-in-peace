@@ -116,7 +116,7 @@ describe('PurchaseConfirmationService', () => {
       const result = await svc.confirm('cs_1', 'u1');
 
       expect(stripe.checkout.sessions.retrieve).toHaveBeenCalledWith('cs_1', {
-        expand: ['payment_intent'],
+        expand: ['payment_intent', 'payment_intent.latest_charge'],
       });
       expect(db.transaction).toHaveBeenCalled();
       expect(purchases.record).toHaveBeenCalledWith(

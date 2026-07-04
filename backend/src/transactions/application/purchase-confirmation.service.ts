@@ -28,7 +28,7 @@ export class PurchaseConfirmationService {
 
   async confirm(sessionId: string, userId: string): Promise<unknown> {
     const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ['payment_intent'],
+      expand: ['payment_intent', 'payment_intent.latest_charge'],
     });
     if (
       session.payment_status !== 'paid' ||
@@ -37,8 +37,11 @@ export class PurchaseConfirmationService {
       throw new BadRequestException('Invalid purchase confirmation');
     }
 
+    const pi = session.payment_intent as any;
     const receiptUrl =
-      (session as any).payment_intent?.charges?.data?.[0]?.receipt_url ?? null;
+      pi?.latest_charge?.receipt_url ??
+      pi?.charges?.data?.[0]?.receipt_url ??
+      null;
     const amountTotal = session.amount_total ?? null;
 
     return this.recordFromSession(session, receiptUrl, amountTotal);
