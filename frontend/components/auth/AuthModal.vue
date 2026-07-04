@@ -1,10 +1,41 @@
 <script setup lang="ts">
+import { onMounted, useTemplateRef } from "vue";
 import { useAuthStore } from "~/stores/auth";
 import { validateSignIn, validateSignUp } from "~/utils/auth-schemas";
 
 const emit = defineEmits<{
   close: [];
 }>();
+
+const modalRef = useTemplateRef<HTMLDivElement>("modal");
+
+onMounted(() => {
+  const firstInput = modalRef.value?.querySelector<HTMLElement>(
+    "input, button, select, textarea, [href]",
+  );
+  firstInput?.focus();
+});
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === "Escape") {
+    emit("close");
+    return;
+  }
+  if (e.key !== "Tab") return;
+  const focusable = modalRef.value?.querySelectorAll<HTMLElement>(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+  );
+  if (!focusable || focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
 
 const auth = useAuthStore();
 
@@ -65,10 +96,12 @@ function switchTab(t: "sign-in" | "sign-up") {
 
 <template>
   <div
+    ref="modalRef"
     class="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 p-4 backdrop-blur-sm"
     role="dialog"
     aria-modal="true"
     aria-labelledby="auth-title"
+    @keydown="onKeydown"
     @click.self="emit('close')"
   >
     <AuthForm

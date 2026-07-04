@@ -13,7 +13,7 @@ const props = defineProps<{
 
 const auth = useAuthStore();
 
-const { liked, likeCount, userRating, toggleLike, setRating } = useBook(
+const { liked, likeCount, userRating } = useBook(
   () => props.bookId,
 );
 

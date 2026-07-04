@@ -32,13 +32,22 @@ const planName = computed(() => {
 const discount = computed(() =>
   computeDiscount(cart.items, planDiscountPct.value),
 );
+
+const fmt = computed(() => ({
+  subtotal: (discount.value.subtotal / 100).toFixed(2),
+  tier: (discount.value.tierDiscount / 100).toFixed(2),
+  category: (discount.value.categoryBonus / 100).toFixed(2),
+  every100: (discount.value.every100Discount / 100).toFixed(2),
+  plan: (discount.value.planDiscount / 100).toFixed(2),
+  total: (discount.value.total / 100).toFixed(2),
+}));
 </script>
 
 <template>
   <div class="min-h-screen bg-background text-foreground">
     <Nav mode="cart" />
 
-    <main class="mx-auto max-w-6xl px-4 py-10 md:px-6 lg:py-14">
+    <main id="main-content" class="mx-auto max-w-6xl px-4 py-10 md:px-6 lg:py-14">
       <div class="border-b border-border pb-5">
         <p class="font-mono text-[10px] uppercase tracking-widest text-primary">
           The book bag
@@ -55,7 +64,6 @@ const discount = computed(() =>
         </p>
       </div>
 
-      <ClientOnly>
         <div
           v-if="cart.isEmpty"
           class="flex flex-col items-center py-24 text-center"
@@ -173,7 +181,7 @@ const discount = computed(() =>
 
             <div class="mt-5 flex justify-between text-sm">
               <span>Subtotal</span>
-              <strong>${{ (discount.subtotal / 100).toFixed(2) }}</strong>
+              <strong>${{ fmt.subtotal }}</strong>
             </div>
 
             <div
@@ -184,7 +192,7 @@ const discount = computed(() =>
                 >Bundle ({{ cart.itemCount }} books,
                 {{ discount.tierPercent }}%)</span
               >
-              <span>-${{ (discount.tierDiscount / 100).toFixed(2) }}</span>
+              <span>-${{ fmt.tier }}</span>
             </div>
 
             <div
@@ -192,7 +200,7 @@ const discount = computed(() =>
               class="mt-2 flex justify-between text-sm text-muted-foreground"
             >
               <span>Multi-category bonus</span>
-              <span>-${{ (discount.categoryBonus / 100).toFixed(2) }}</span>
+              <span>-${{ fmt.category }}</span>
             </div>
 
             <div
@@ -200,7 +208,7 @@ const discount = computed(() =>
               class="mt-2 flex justify-between text-sm text-muted-foreground"
             >
               <span>Every $100 discount</span>
-              <span>-${{ (discount.every100Discount / 100).toFixed(2) }}</span>
+              <span>-${{ fmt.every100 }}</span>
             </div>
 
             <div
@@ -208,7 +216,7 @@ const discount = computed(() =>
               class="mt-2 flex justify-between text-sm text-primary"
             >
               <span>{{ planName }} member ({{ planDiscountPct }}%)</span>
-              <span>-${{ (discount.planDiscount / 100).toFixed(2) }}</span>
+              <span>-${{ fmt.plan }}</span>
             </div>
 
             <div
@@ -216,7 +224,7 @@ const discount = computed(() =>
             >
               <span class="font-serif text-lg">Estimated total</span>
               <strong class="font-serif text-3xl">
-                ${{ (discount.total / 100).toFixed(2) }}
+                ${{ fmt.total }}
               </strong>
             </div>
 
@@ -234,7 +242,6 @@ const discount = computed(() =>
             </p>
           </aside>
         </div>
-      </ClientOnly>
     </main>
   </div>
 </template>

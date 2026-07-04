@@ -1,6 +1,14 @@
 <script setup lang="ts">
-import { ShoppingBag, Star, X } from "lucide-vue-next";
+import { ShoppingBag, Star } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "~/components/ui/dialog";
 import { storeToRefs } from "pinia";
 import { useCartStore } from "~/stores/cart";
 import { useBookStatusStore } from "~/stores/bookStatus";
@@ -108,43 +116,24 @@ function addToCart() {
     </div>
   </article>
 
-  <!-- Buy confirmation dialog -->
-  <div
-    v-if="showConfirmDialog"
-    class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-    @click.self="showConfirmDialog = false"
-  >
-    <div
-      class="mx-4 w-full max-w-sm rounded-sm border border-border bg-card p-6 shadow-lg"
-    >
-      <div class="flex items-start justify-between">
-        <p class="font-serif text-lg font-bold">Already in your library</p>
-        <button
-          class="cursor-pointer text-muted-foreground hover:text-foreground"
-          @click="showConfirmDialog = false"
-        >
-          <X class="size-4" />
-        </button>
-      </div>
-      <p class="mt-2 text-sm text-muted-foreground">
-        You already own {{ ownedCount }} cop{{
-          ownedCount > 1 ? "ies" : "y"
-        }}
-        of <strong>{{ book.title }}</strong
-        >. Are you sure you want to buy more?
-      </p>
-      <div class="mt-6 flex gap-3">
-        <Button variant="archival" class="flex-1" @click="confirmBuy">
-          Yes, Add More
-        </Button>
-        <Button
-          variant="archivalOutline"
-          class="flex-1"
-          @click="showConfirmDialog = false"
-        >
+  <Dialog v-model:open="showConfirmDialog">
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>Already in your library</DialogTitle>
+        <DialogDescription>
+          You already own {{ ownedCount }} cop{{
+            ownedCount > 1 ? "ies" : "y"
+          }}
+          of <strong>{{ book.title }}</strong
+          >. Are you sure you want to buy more?
+        </DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button variant="archivalOutline" @click="showConfirmDialog = false">
           Cancel
         </Button>
-      </div>
-    </div>
-  </div>
+        <Button variant="archival" @click="confirmBuy"> Yes, Add More </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </template>

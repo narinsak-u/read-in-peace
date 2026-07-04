@@ -18,6 +18,7 @@ definePageMeta({
       loop
       muted
       playsinline
+      aria-hidden="true"
       class="absolute inset-0 h-full w-full object-cover"
     >
       <source src="~/assets/background/landing-bg.mp4" type="video/mp4" />
@@ -51,7 +52,7 @@ definePageMeta({
       >
         Explore the Library
         <ArrowRight
-          class="h-4 w-4 transition-transform group-hover:translate-x-1"
+          class="size-4 transition-transform group-hover:translate-x-1"
         />
       </NuxtLink>
     </div>

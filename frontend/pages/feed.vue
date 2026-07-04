@@ -29,7 +29,7 @@ const auth = useAuthStore();
   >
     <Nav v-model:query="query" />
 
-    <main class="mx-auto grid max-w-7xl grid-cols-12 gap-10 px-4 py-8 md:px-6">
+    <main id="main-content" class="mx-auto grid max-w-7xl grid-cols-12 gap-10 px-4 py-8 md:px-6">
       <div class="col-span-12 space-y-12 lg:col-span-8">
         <ActiveLoans
           :mode="auth.signedIn ? 'loans' : 'trending'"

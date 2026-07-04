@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { getInitials, timeAgo, mapCommentToReview } from '~/composables/useBookComments'
+import { getInitials, timeAgo, mapCommentToReview } from '~/utils/comment'
 import type { ApiComment } from '~/composables/useBookComments'
 
 describe('getInitials', () => {

@@ -96,6 +96,7 @@ const emit = defineEmits<{
         v-model="email"
         type="email"
         placeholder="alex@example.com"
+        autofocus
         class="w-full rounded-sm border border-border bg-card p-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-ring"
       />
     </div>
