@@ -6,6 +6,7 @@ export interface DiscountBreakdown {
   tierDiscount: number;
   categoryBonus: number;
   every100Discount: number;
+  planDiscount: number;
   total: number;
 }
 
@@ -20,7 +21,7 @@ function getCategorySubtotals(items: readonly CartItem[]): CategorySubtotal[] {
   for (const item of items) {
     const category = item.category ?? "uncategorized";
     const existing = map.get(category) ?? { subtotal: 0, count: 0 };
-    existing.subtotal += Math.round(item.price * 100);
+    existing.subtotal += Math.round(item.price * item.quantity * 100);
     existing.count += 1;
     map.set(category, existing);
   }
@@ -31,8 +32,14 @@ function getCategorySubtotals(items: readonly CartItem[]): CategorySubtotal[] {
   }));
 }
 
-export function computeDiscount(items: readonly CartItem[]): DiscountBreakdown {
-  const subtotal = items.reduce((sum, i) => sum + Math.round(i.price * 100), 0);
+export function computeDiscount(
+  items: readonly CartItem[],
+  planDiscountPercent: number = 0,
+): DiscountBreakdown {
+  const subtotal = items.reduce(
+    (sum, i) => sum + Math.round(i.price * i.quantity * 100),
+    0,
+  );
 
   const count = items.length;
   const tierPercent = count >= 4 ? 30 : count === 3 ? 20 : count === 2 ? 10 : 0;
@@ -51,6 +58,9 @@ export function computeDiscount(items: readonly CartItem[]): DiscountBreakdown {
   const every100Discount = Math.floor(runningTotal / 10000) * 100;
   runningTotal -= every100Discount;
 
+  const planDiscount = Math.round(runningTotal * (planDiscountPercent / 100));
+  runningTotal -= planDiscount;
+
   const total = Math.max(0, runningTotal);
 
   return {
@@ -59,6 +69,7 @@ export function computeDiscount(items: readonly CartItem[]): DiscountBreakdown {
     tierDiscount,
     categoryBonus,
     every100Discount,
+    planDiscount,
     total,
   };
 }

@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { storeToRefs } from "pinia";
 import { useCartStore } from "~/stores/cart";
 import { useAuthStore } from "~/stores/auth";
+import { useMembershipStore } from "~/stores/membership";
 import { useBookStatusStore } from "~/stores/bookStatus";
 import { useBorrows } from "~/composables/useBorrows";
 import { dueInText } from "~/utils/dueDate";
@@ -17,6 +18,7 @@ const props = defineProps<{
 
 const cart = useCartStore();
 const auth = useAuthStore();
+const membership = useMembershipStore();
 const store = useBookStatusStore();
 const { borrowedSlugs, purchasedCounts } = storeToRefs(store);
 const { borrow } = store;
@@ -24,6 +26,18 @@ const purchasing = shallowRef(false);
 
 const isBorrowed = computed(() => borrowedSlugs.value.has(props.book.slug));
 const ownedCount = computed(() => purchasedCounts.value.get(props.bookId) ?? 0);
+
+const borrowDuration = computed(() => {
+  const plan = membership.membership?.plan ?? "free";
+  switch (plan) {
+    case "archivist":
+      return "Borrow for 1 month";
+    case "curator":
+      return "Borrow for 2 weeks";
+    default:
+      return "Borrow for 7 days";
+  }
+});
 
 const borrowList = useBorrows();
 const activeLoan = computed(() =>
@@ -70,7 +84,9 @@ async function buyNow() {
     );
     if (!ok) return;
   }
+
   purchasing.value = true;
+
   try {
     const res = await $fetch<{ url: string }>(
       `/api/books/${props.bookId}/create-checkout-session`,
@@ -98,6 +114,7 @@ function addToCart() {
     price: Number(props.book.price),
     cover: props.book.cover,
     crop: props.book.crop,
+    stock: props.book.inStock,
   });
   props.flash(`${props.book.title} added to your basket.`);
 }
@@ -143,11 +160,7 @@ function addToCart() {
     >
       <BookOpen />
       {{
-        isBorrowed
-          ? "Borrowed"
-          : book.inStock > 0
-            ? "Borrow for 14 days"
-            : "Join waitlist"
+        isBorrowed ? "Borrowed" : borrowDuration
       }}
     </Button>
     <div

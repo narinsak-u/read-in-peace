@@ -1,4 +1,7 @@
-import { applyDiscounts } from '../../../src/transactions/domain/pricing';
+import {
+  applyDiscounts,
+  DiscountInput,
+} from '../../../src/transactions/domain/pricing';
 
 describe('applyDiscounts', () => {
   it('applies 0% tier for 1 item', () => {
@@ -9,6 +12,7 @@ describe('applyDiscounts', () => {
       tierDiscount: 0,
       categoryBonus: 0,
       every100Discount: 0,
+      planDiscount: 0,
       total: 2500,
     });
   });
@@ -24,6 +28,7 @@ describe('applyDiscounts', () => {
       tierDiscount: 500,
       categoryBonus: 0,
       every100Discount: 0,
+      planDiscount: 0,
       total: 4500,
     });
   });
@@ -40,6 +45,7 @@ describe('applyDiscounts', () => {
       tierDiscount: 900,
       categoryBonus: 250,
       every100Discount: 0,
+      planDiscount: 0,
       total: 3350,
     });
   });
@@ -57,6 +63,7 @@ describe('applyDiscounts', () => {
       tierDiscount: 2100,
       categoryBonus: 700,
       every100Discount: 0,
+      planDiscount: 0,
       total: 4200,
     });
   });
@@ -73,6 +80,7 @@ describe('applyDiscounts', () => {
       tierDiscount: 4800,
       categoryBonus: 1500,
       every100Discount: 100,
+      planDiscount: 0,
       total: 17600,
     });
   });
@@ -80,5 +88,34 @@ describe('applyDiscounts', () => {
   it('never goes below zero', () => {
     const result = applyDiscounts([{ price: '0.50', category: 'Fiction' }]);
     expect(result.total).toBeGreaterThanOrEqual(0);
+  });
+
+  describe('plan discount', () => {
+    const oneBook: DiscountInput[] = [
+      { price: '100.00', category: 'Fiction' },
+    ];
+
+    it('applies 0% when planDiscountPercent is 0', () => {
+      const result = applyDiscounts(oneBook, 0);
+      expect(result.planDiscount).toBe(0);
+    });
+
+    it('applies 5% for free plan', () => {
+      const result = applyDiscounts(oneBook, 5);
+      expect(result.planDiscount).toBe(495);
+      expect(result.total).toBe(9405);
+    });
+
+    it('applies 15% for curator plan', () => {
+      const result = applyDiscounts(oneBook, 15);
+      expect(result.planDiscount).toBe(1485);
+      expect(result.total).toBe(8415);
+    });
+
+    it('applies 25% for archivist plan', () => {
+      const result = applyDiscounts(oneBook, 25);
+      expect(result.planDiscount).toBe(2475);
+      expect(result.total).toBe(7425);
+    });
   });
 });
