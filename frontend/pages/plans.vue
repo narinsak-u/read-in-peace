@@ -29,7 +29,7 @@ async function onSelect(plan: Plan) {
   <div class="min-h-screen bg-background pb-28 text-foreground">
     <Nav mode="cart" />
 
-    <main class="mx-auto max-w-6xl px-4 py-10 md:px-6 lg:py-14">
+    <main class="mx-auto max-w-7xl px-4 py-10 md:px-6 lg:py-14">
       <div class="border-b border-border pb-5">
         <p class="font-mono text-[10px] uppercase tracking-widest text-primary">
           Membership

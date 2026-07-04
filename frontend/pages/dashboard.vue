@@ -126,7 +126,7 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen pb-28 bg-background text-foreground">
     <Nav mode="cart" />
-    <main id="main-content" class="mx-auto max-w-6xl px-4 py-10 md:px-6 lg:py-14">
+    <main id="main-content" class="mx-auto max-w-7xl px-4 py-10 md:px-6 lg:py-14">
       <div class="border-b border-border pb-5">
         <p class="font-mono text-[10px] uppercase tracking-widest text-primary">
           Your collection
@@ -214,6 +214,7 @@ onMounted(async () => {
             :key="entry.purchase?.id ?? entry.book?.id"
             :book="mapBookResponse(entry.book as Record<string, unknown>)"
             :purchased-at="entry.purchase?.purchasedAt"
+            :receipt-url="entry.purchase?.receiptUrl"
             :actions="{
               isBorrowed: false,
               canBuy: (entry.book?.inStock ?? 0) > 1,

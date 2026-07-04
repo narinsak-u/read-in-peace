@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ShoppingBag, Star } from "lucide-vue-next";
+import { ExternalLink, ShoppingBag, Star } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -20,6 +20,7 @@ const props = defineProps<{
   actions: StockActions;
   flash: (message: string) => void;
   purchasedAt?: string;
+  receiptUrl?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -95,7 +96,18 @@ function addToCart() {
       </span>
     </div>
     <div class="mt-3 flex gap-1">
-      <template v-if="actions.isBorrowed">
+      <template v-if="actions.isPurchased && receiptUrl">
+        <Button
+          size="sm"
+          variant="archival"
+          as-child
+        >
+          <a :href="receiptUrl" target="_blank" rel="noopener noreferrer">
+            <ExternalLink class="size-3" /> Receipt
+          </a>
+        </Button>
+      </template>
+      <template v-else-if="actions.isBorrowed">
         <Button size="sm" variant="archival" @click="onReturn">Return</Button>
       </template>
       <template v-else-if="actions.canBorrow">
@@ -105,7 +117,7 @@ function addToCart() {
         <Button size="sm" variant="archival" disabled>Unavailable</Button>
       </template>
       <Button
-        v-if="actions.canBuy"
+        v-if="!actions.isPurchased && actions.canBuy"
         size="icon"
         variant="archivalGhost"
         :aria-label="`Buy ${book.title}`"

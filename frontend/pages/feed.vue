@@ -70,7 +70,7 @@ const auth = useAuthStore();
       v-if="reviewBook"
       v-model:open="reviewOpen"
       v-model:rating="rating"
-      v-model:reviewText="reviewText"
+      v-model:review-text="reviewText"
       :book="reviewBook"
       :flash="flash"
     />
