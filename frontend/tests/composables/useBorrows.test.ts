@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { mapBorrowResponse, type BorrowsResponse } from '~/composables/useBorrows';
+import { mapBorrowResponse } from '~/utils/borrow';
+import type { BorrowsResponse } from '~/composables/useBorrows';
 
 const entry: BorrowsResponse['data'][number] = {
   borrow: { id: 'br1', dueAt: '2026-07-18T12:00:00Z', currentPage: 42, totalPages: 200 },
