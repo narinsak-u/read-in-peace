@@ -11,11 +11,8 @@ A quiet library to review, borrow, return, and buy books — built with Nuxt 3 +
 - **Discount pipeline** — Automatic quantity tiers (up to 30% off), category bonuses, and every-$100 savings
 - **Reader feed** — Share reviews, rate books, and discuss with other readers
 - **Membership plans** — Free, Curator, and Archivist tiers with escalating borrow limits and discounts
-- **Client-side cart** — localStorage-persisted cart with live discount previews
+- **Client-side cart** — localStorage-persisted cart with live discount previews and guest cart merge on sign-in
 - **Stripe checkout** — Secure payments via Stripe Checkout Sessions
-- **Admin tools** — Create, edit, and delete books with admin mode toggle
-- **Dark mode** — Full dark theme with OKLCH color tokens
-- **Responsive design** — Mobile-first layout with bottom dock navigation
 
 ## Stack
 
