@@ -12,6 +12,7 @@ export interface CartItem {
   cover: string;
   crop: number | null;
   quantity: number;
+  stock: number;
   category?: string;
 }
 
@@ -50,7 +51,9 @@ export const useCartStore = defineStore(
     function addItem(item: Omit<CartItem, "quantity">) {
       const existing = items.value.find((i) => i.id === item.id);
       if (existing) {
-        existing.quantity++;
+        if (existing.quantity < existing.stock) {
+          existing.quantity++;
+        }
       } else {
         items.value.push({ ...item, quantity: 1 });
       }
@@ -67,13 +70,13 @@ export const useCartStore = defineStore(
       }
       const item = items.value.find((i) => i.id === id);
       if (item) {
-        item.quantity = quantity;
+        item.quantity = Math.min(quantity, item.stock);
       }
     }
 
     function incrementQuantity(id: string) {
       const item = items.value.find((i) => i.id === id);
-      if (item) {
+      if (item && item.quantity < item.stock) {
         item.quantity++;
       }
     }

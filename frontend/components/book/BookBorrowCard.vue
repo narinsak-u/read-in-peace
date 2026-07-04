@@ -98,6 +98,7 @@ function addToCart() {
     price: Number(props.book.price),
     cover: props.book.cover,
     crop: props.book.crop,
+    stock: props.book.inStock,
   });
   props.flash(`${props.book.title} added to your basket.`);
 }

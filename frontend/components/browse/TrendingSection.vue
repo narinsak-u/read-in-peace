@@ -23,7 +23,7 @@ function actions(book: Book): StockActions {
 }
 
 function buy(book: Book) {
-  cart.addItem({ id: book.id, title: book.title, author: book.author, price: Number(book.price), cover: book.cover, crop: book.crop });
+  cart.addItem({ id: book.id, title: book.title, author: book.author, price: Number(book.price), cover: book.cover, crop: book.crop, stock: book.inStock });
   props.flash(`${book.title} added to your cart.`);
 }
 </script>

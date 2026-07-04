@@ -71,9 +71,9 @@ const discount = computed(() => computeDiscount(cart.items, planDiscountPct.valu
               </div>
               <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <div class="flex items-center border border-border">
-                  <Button size="icon" variant="archivalGhost" :aria-label="`Decrease ${item.title} quantity`" @click="cart.setQuantity(item.id, item.quantity - 1)"><Minus /></Button>
-                  <span class="w-8 text-center font-mono text-xs">{{ item.quantity }}</span>
-                  <Button size="icon" variant="archivalGhost" :aria-label="`Increase ${item.title} quantity`" @click="cart.setQuantity(item.id, item.quantity + 1)"><Plus /></Button>
+                  <Button size="icon" variant="archivalGhost" :disabled="item.quantity <= 1" :aria-label="`Decrease ${item.title} quantity`" @click="cart.setQuantity(item.id, item.quantity - 1)"><Minus /></Button>
+                  <span class="w-8 text-center font-mono text-xs">{{ item.quantity }}<span v-if="item.stock" class="text-muted-foreground">/{{ item.stock }}</span></span>
+                  <Button size="icon" variant="archivalGhost" :disabled="item.quantity >= (item.stock || Infinity)" :aria-label="`Increase ${item.title} quantity`" @click="cart.setQuantity(item.id, item.quantity + 1)"><Plus /></Button>
                 </div>
                 <Button size="sm" variant="archivalGhost" @click="cart.removeItem(item.id)"><Trash2 /> Remove</Button>
               </div>

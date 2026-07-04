@@ -130,7 +130,10 @@ function toBook(loan: LoanItem) {
     </template>
 
     <template #actions="{ book }">
-      <Button variant="archival" @click="emit('return', book.id, book.title, book.bookSlug)">
+      <Button
+        variant="archival"
+        @click="emit('return', book.id, book.title, book.bookSlug)"
+      >
         Return Book
       </Button>
       <Button
@@ -158,6 +161,7 @@ function toBook(loan: LoanItem) {
               price: Number(book.price),
               cover: book.cover,
               crop: book.crop,
+              stock: loanByBookId(book.id).inStock,
             });
             flash(`${book.title} added to your cart.`);
           }
@@ -203,6 +207,7 @@ function toBook(loan: LoanItem) {
                 price: Number(book.price),
                 cover: book.cover,
                 crop: book.crop,
+                stock: loanByBookId(book.id).inStock,
               });
               flash(`${book.title} added to your cart.`);
             }

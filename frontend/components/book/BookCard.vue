@@ -56,6 +56,7 @@ function addToCart() {
     price: Number(props.book.price),
     cover: props.book.cover,
     crop: props.book.crop,
+    stock: props.book.inStock,
   });
   props.flash(`${props.book.title} added to your cart.`);
 }
@@ -78,16 +79,10 @@ function addToCart() {
     <p class="text-xs text-muted-foreground my-1">{{ book.author }}</p>
     <div class="mt-1 flex items-center gap-1 text-[10px] text-primary">
       <Star class="size-3 fill-current" /> {{ book.avgRating.toFixed(2) }}
-      <span
-        v-if="purchasedAt"
-        class="ml-auto font-mono text-muted-foreground"
-      >
+      <span v-if="purchasedAt" class="ml-auto font-mono text-muted-foreground">
         Purchased {{ new Date(purchasedAt).toLocaleDateString() }}
       </span>
-      <span
-        v-else-if="book.inStock > 0"
-        class="ml-auto text-muted-foreground"
-      >
+      <span v-else-if="book.inStock > 0" class="ml-auto text-muted-foreground">
         {{ book.inStock }} cop{{ book.inStock > 1 ? "ies" : "y" }} left
       </span>
     </div>
@@ -119,21 +114,34 @@ function addToCart() {
     class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
     @click.self="showConfirmDialog = false"
   >
-    <div class="mx-4 w-full max-w-sm rounded-sm border border-border bg-card p-6 shadow-lg">
+    <div
+      class="mx-4 w-full max-w-sm rounded-sm border border-border bg-card p-6 shadow-lg"
+    >
       <div class="flex items-start justify-between">
         <p class="font-serif text-lg font-bold">Already in your library</p>
-        <button class="cursor-pointer text-muted-foreground hover:text-foreground" @click="showConfirmDialog = false">
+        <button
+          class="cursor-pointer text-muted-foreground hover:text-foreground"
+          @click="showConfirmDialog = false"
+        >
           <X class="size-4" />
         </button>
       </div>
       <p class="mt-2 text-sm text-muted-foreground">
-        You already own {{ ownedCount }} cop{{ ownedCount > 1 ? "ies" : "y" }} of <strong>{{ book.title }}</strong>. Are you sure you want to buy more?
+        You already own {{ ownedCount }} cop{{
+          ownedCount > 1 ? "ies" : "y"
+        }}
+        of <strong>{{ book.title }}</strong
+        >. Are you sure you want to buy more?
       </p>
       <div class="mt-6 flex gap-3">
         <Button variant="archival" class="flex-1" @click="confirmBuy">
           Yes, Add More
         </Button>
-        <Button variant="archivalOutline" class="flex-1" @click="showConfirmDialog = false">
+        <Button
+          variant="archivalOutline"
+          class="flex-1"
+          @click="showConfirmDialog = false"
+        >
           Cancel
         </Button>
       </div>
