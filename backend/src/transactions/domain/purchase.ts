@@ -22,8 +22,8 @@ export interface PurchaseRepository {
     bookId: string,
     userId: string,
     stripeSessionId?: string,
-    receiptUrl?: string,
-    amountTotal?: number,
+    receiptUrl?: string | null,
+    amountTotal?: number | null,
     tx?: DatabaseOrTransaction,
   ): Promise<PurchaseRow>;
   listForUser(

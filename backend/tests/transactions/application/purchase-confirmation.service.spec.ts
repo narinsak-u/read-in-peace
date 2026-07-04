@@ -16,10 +16,7 @@ import {
   STRIPE,
   type StripeClient,
 } from '../../../src/transactions/infrastructure/stripe.provider';
-import {
-  DATABASE,
-  type Database,
-} from '../../../src/core/database/database.provider';
+import { DATABASE } from '../../../src/core/database/database.provider';
 
 const fakePurchase = (
   id: string,
@@ -118,9 +115,18 @@ describe('PurchaseConfirmationService', () => {
 
       const result = await svc.confirm('cs_1', 'u1');
 
-      expect(stripe.checkout.sessions.retrieve).toHaveBeenCalledWith('cs_1', { expand: ['payment_intent'] });
+      expect(stripe.checkout.sessions.retrieve).toHaveBeenCalledWith('cs_1', {
+        expand: ['payment_intent'],
+      });
       expect(db.transaction).toHaveBeenCalled();
-      expect(purchases.record).toHaveBeenCalledWith('b1', 'u1', 'cs_1', null, null, mockTx);
+      expect(purchases.record).toHaveBeenCalledWith(
+        'b1',
+        'u1',
+        'cs_1',
+        null,
+        null,
+        mockTx,
+      );
       expect(books.decrementStock).toHaveBeenCalledWith('b1', mockTx);
       expect(result).toMatchObject({ bookId: 'b1', userId: 'u1' });
     });

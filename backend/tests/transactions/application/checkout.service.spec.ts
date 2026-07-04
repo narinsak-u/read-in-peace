@@ -69,9 +69,7 @@ const buildService = (books: BookPricing[]) =>
       {
         provide: MembershipService,
         useValue: {
-          getOrCreate: jest
-            .fn()
-            .mockResolvedValue({ plan: 'free' }),
+          getOrCreate: jest.fn().mockResolvedValue({ plan: 'free' }),
           getMembershipWithBorrows: jest.fn(),
           createCheckoutSession: jest.fn(),
           cancel: jest.fn(),

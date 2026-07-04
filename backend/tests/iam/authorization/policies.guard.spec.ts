@@ -1,7 +1,6 @@
 import { ExecutionContext, UnauthorizedException } from '@nestjs/common';
 import { ModuleRef, Reflector } from '@nestjs/core';
 import { PoliciesGuard } from '../../../src/iam/authorization/policies.guard';
-import { POLICIES_KEY } from '../../../src/iam/authorization/policies.decorator';
 import type { Policy } from '../../../src/iam/authorization/policy.types';
 
 const makeUser = (id: string) => ({

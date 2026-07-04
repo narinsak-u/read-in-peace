@@ -6,17 +6,13 @@ import {
   BOOK_READ_MODEL,
   type BookRepository,
   type BookReadModel,
-  type BookProjection,
 } from '../../../src/books/domain/book.repository';
 import {
   BORROW_REPOSITORY,
   type BorrowRepository,
   type BorrowRow,
 } from '../../../src/transactions/domain/borrow';
-import {
-  DATABASE,
-  type Database,
-} from '../../../src/core/database/database.provider';
+import { DATABASE } from '../../../src/core/database/database.provider';
 import type { BookRow } from '../../../src/books/domain/book';
 import { MembershipService } from '../../../src/membership/application/membership.service';
 

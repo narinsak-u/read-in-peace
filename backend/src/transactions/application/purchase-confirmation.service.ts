@@ -63,29 +63,46 @@ export class PurchaseConfirmationService {
       for (let i = 0; i < bookCount; i++) {
         bookIds.push(session.metadata[`b${i}`]);
       }
-      return this.recordBatchPurchases(bookIds, userId, sessionId, receiptUrl, amountTotal);
+      return this.recordBatchPurchases(
+        bookIds,
+        userId,
+        sessionId,
+        receiptUrl,
+        amountTotal,
+      );
     }
 
     const bookId: string | undefined = session.metadata?.bookId;
     if (!bookId) {
       throw new BadRequestException('No book IDs found in session metadata');
     }
-    return this.recordSinglePurchase(bookId, userId, sessionId, receiptUrl, amountTotal);
+    return this.recordSinglePurchase(
+      bookId,
+      userId,
+      sessionId,
+      receiptUrl,
+      amountTotal,
+    );
   }
 
   private async recordSinglePurchase(
     bookId: string,
     userId: string,
     stripeSessionId?: string,
-    receiptUrl?: string,
-    amountTotal?: number,
+    receiptUrl?: string | null,
+    amountTotal?: number | null,
   ) {
     return this.db.transaction(async (tx) => {
       const existing = await this.purchases.findExisting(bookId, userId, tx);
       if (existing) return existing;
 
       const purchase = await this.purchases.record(
-        bookId, userId, stripeSessionId, receiptUrl, amountTotal, tx,
+        bookId,
+        userId,
+        stripeSessionId,
+        receiptUrl,
+        amountTotal,
+        tx,
       );
       await this.books.decrementStock(bookId, tx);
 
@@ -97,8 +114,8 @@ export class PurchaseConfirmationService {
     bookIds: string[],
     userId: string,
     stripeSessionId?: string,
-    receiptUrl?: string,
-    amountTotal?: number,
+    receiptUrl?: string | null,
+    amountTotal?: number | null,
   ) {
     return this.db.transaction(async (tx) => {
       const inserted: string[] = [];
@@ -106,7 +123,12 @@ export class PurchaseConfirmationService {
         const existing = await this.purchases.findExisting(bookId, userId, tx);
         if (existing) continue;
         await this.purchases.record(
-          bookId, userId, stripeSessionId, receiptUrl, amountTotal, tx,
+          bookId,
+          userId,
+          stripeSessionId,
+          receiptUrl,
+          amountTotal,
+          tx,
         );
         inserted.push(bookId);
       }
