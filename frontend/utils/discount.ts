@@ -6,6 +6,7 @@ export interface DiscountBreakdown {
   tierDiscount: number;
   categoryBonus: number;
   every100Discount: number;
+  planDiscount: number;
   total: number;
 }
 
@@ -31,7 +32,10 @@ function getCategorySubtotals(items: readonly CartItem[]): CategorySubtotal[] {
   }));
 }
 
-export function computeDiscount(items: readonly CartItem[]): DiscountBreakdown {
+export function computeDiscount(
+  items: readonly CartItem[],
+  planDiscountPercent: number = 0,
+): DiscountBreakdown {
   const subtotal = items.reduce((sum, i) => sum + Math.round(i.price * 100), 0);
 
   const count = items.length;
@@ -51,6 +55,9 @@ export function computeDiscount(items: readonly CartItem[]): DiscountBreakdown {
   const every100Discount = Math.floor(runningTotal / 10000) * 100;
   runningTotal -= every100Discount;
 
+  const planDiscount = Math.round(runningTotal * (planDiscountPercent / 100));
+  runningTotal -= planDiscount;
+
   const total = Math.max(0, runningTotal);
 
   return {
@@ -59,6 +66,7 @@ export function computeDiscount(items: readonly CartItem[]): DiscountBreakdown {
     tierDiscount,
     categoryBonus,
     every100Discount,
+    planDiscount,
     total,
   };
 }

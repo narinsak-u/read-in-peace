@@ -5,6 +5,9 @@ import { buttonVariants } from '~/components/ui/button/variants';
 import { storeToRefs } from 'pinia';
 import { useCartStore } from '~/stores/cart';
 import { useBookStatusStore } from '~/stores/bookStatus';
+import { useMembershipStore } from '~/stores/membership';
+import { computeDiscount } from '~/utils/discount';
+import { plans } from '~/utils/plans';
 
 definePageMeta({
   title: 'Your Cart — Read in Peace',
@@ -12,7 +15,21 @@ definePageMeta({
 });
 
 const cart = useCartStore();
+const membershipStore = useMembershipStore();
 const { purchasedCounts } = storeToRefs(useBookStatusStore());
+
+const planDiscountPct = computed(() => {
+  const plan = membershipStore.membership?.plan ?? 'free';
+  const pct: Record<string, number> = { free: 5, curator: 15, archivist: 25 };
+  return pct[plan] ?? 5;
+});
+
+const planName = computed(() => {
+  const plan = membershipStore.membership?.plan;
+  return plans.find((p) => p.id === plan)?.name ?? 'Free';
+});
+
+const discount = computed(() => computeDiscount(cart.items, planDiscountPct.value));
 </script>
 
 <template>
@@ -63,18 +80,37 @@ const { purchasedCounts } = storeToRefs(useBookStatusStore());
 
         <aside class="h-fit border border-border bg-card p-6 lg:sticky lg:top-8">
           <p class="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Order summary</p>
-          <div class="mt-5 flex justify-between border-b border-border pb-5 text-sm">
+
+          <div class="mt-5 flex justify-between text-sm">
             <span>Subtotal</span>
-            <strong>${{ cart.subtotal.toFixed(2) }}</strong>
+            <strong>${{ (discount.subtotal / 100).toFixed(2) }}</strong>
           </div>
-          <div class="flex justify-between border-b border-border py-5 text-sm">
-            <span>Shipping</span>
-            <span class="text-muted-foreground">Calculated at checkout</span>
+
+          <div v-if="discount.tierDiscount > 0" class="mt-2 flex justify-between text-sm text-muted-foreground">
+            <span>Bundle ({{ cart.itemCount }} books, {{ discount.tierPercent }}%)</span>
+            <span>-${{ (discount.tierDiscount / 100).toFixed(2) }}</span>
           </div>
-          <div class="flex items-end justify-between pt-5">
+
+          <div v-if="discount.categoryBonus > 0" class="mt-2 flex justify-between text-sm text-muted-foreground">
+            <span>Multi-category bonus</span>
+            <span>-${{ (discount.categoryBonus / 100).toFixed(2) }}</span>
+          </div>
+
+          <div v-if="discount.every100Discount > 0" class="mt-2 flex justify-between text-sm text-muted-foreground">
+            <span>Every $100 discount</span>
+            <span>-${{ (discount.every100Discount / 100).toFixed(2) }}</span>
+          </div>
+
+          <div v-if="discount.planDiscount > 0" class="mt-2 flex justify-between text-sm text-primary">
+            <span>{{ planName }} member ({{ planDiscountPct }}%)</span>
+            <span>-${{ (discount.planDiscount / 100).toFixed(2) }}</span>
+          </div>
+
+          <div class="mt-5 flex items-end justify-between border-t border-border pt-5">
             <span class="font-serif text-lg">Estimated total</span>
-            <strong class="font-serif text-3xl">${{ cart.subtotal.toFixed(2) }}</strong>
+            <strong class="font-serif text-3xl">${{ (discount.total / 100).toFixed(2) }}</strong>
           </div>
+
           <Button class="mt-6 w-full" variant="archival" @click="cart.checkout()">Proceed to checkout</Button>
           <p class="mt-3 text-center text-[11px] leading-5 text-muted-foreground">Secure checkout will be available when payments are enabled.</p>
         </aside>
