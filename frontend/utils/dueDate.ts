@@ -1,7 +1,9 @@
 export function daysUntilDue(dueAt: string): number {
   const due = new Date(dueAt);
   const now = new Date();
-  return Math.ceil((due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  const dueDate = Date.UTC(due.getUTCFullYear(), due.getUTCMonth(), due.getUTCDate());
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
 }
 
 export function dueLabel(dueAt: string): { text: string; urgent: boolean } {
