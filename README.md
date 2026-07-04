@@ -13,6 +13,7 @@ A quiet library to review, borrow, return, and buy books — built with Nuxt 3 +
 - **Membership plans** — Free, Curator, and Archivist tiers with escalating borrow limits and discounts
 - **Client-side cart** — localStorage-persisted cart with live discount previews and guest cart merge on sign-in
 - **Stripe checkout** — Secure payments via Stripe Checkout Sessions
+- **Book club** — Comming soon!
 
 ## Stack
 
@@ -57,3 +58,12 @@ npm run dev:backend    # NestJS watch mode only
 ```
 
 See `frontend/README.md` and `backend/README.md` for package-specific commands.
+
+## Environment
+
+See `.env.example` in each package for required variables:
+
+| File | Variables |
+|------|-----------|
+| `frontend/.env.example` | `NUXT_PUBLIC_BACKEND_URL`, `NUXT_PUBLIC_SITE_URL` |
+| `backend/.env.example` | `DATABASE_URL`, `BETTER_AUTH_SECRET`, `STRIPE_SECRET_KEY` |
