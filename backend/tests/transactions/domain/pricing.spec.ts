@@ -102,20 +102,20 @@ describe('applyDiscounts', () => {
 
     it('applies 5% for free plan', () => {
       const result = applyDiscounts(oneBook, 5);
-      expect(result.planDiscount).toBe(500);
-      expect(result.total).toBe(9500);
+      expect(result.planDiscount).toBe(495);
+      expect(result.total).toBe(9405);
     });
 
     it('applies 15% for curator plan', () => {
       const result = applyDiscounts(oneBook, 15);
-      expect(result.planDiscount).toBe(1500);
-      expect(result.total).toBe(8500);
+      expect(result.planDiscount).toBe(1485);
+      expect(result.total).toBe(8415);
     });
 
     it('applies 25% for archivist plan', () => {
       const result = applyDiscounts(oneBook, 25);
-      expect(result.planDiscount).toBe(2500);
-      expect(result.total).toBe(7500);
+      expect(result.planDiscount).toBe(2475);
+      expect(result.total).toBe(7425);
     });
   });
 });

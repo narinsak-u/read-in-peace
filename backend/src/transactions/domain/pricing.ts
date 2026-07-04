@@ -59,12 +59,12 @@ export function applyDiscounts(
   }
   runningTotal -= categoryBonus;
 
-  const planDiscount = Math.round(runningTotal * (planDiscountPercent / 100));
-  runningTotal -= planDiscount;
-
   const every100Discount =
     Math.floor(runningTotal / EVERY_X_CENTS) * EVERY_X_DISCOUNT_CENTS;
   runningTotal -= every100Discount;
+
+  const planDiscount = Math.round(runningTotal * (planDiscountPercent / 100));
+  runningTotal -= planDiscount;
 
   const total = Math.max(0, runningTotal);
 
