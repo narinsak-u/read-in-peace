@@ -30,22 +30,22 @@ export interface BorrowsResponse {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
-const borrows = shallowRef<BorrowItem[]>([]);
-const borrowsPage = shallowRef(1);
-const borrowsMeta = shallowRef<{
-  page: number;
-  limit: number;
-  total: number;
-  totalPages: number;
-} | null>(null);
-const borrowsLoaded = shallowRef(false);
-const borrowError = shallowRef<unknown>(null);
-
-let lastBorrowsLimit = 3;
-
 export function useBorrows() {
   const auth = useAuthStore();
   const { invalidate, onInvalidate } = useInvalidate();
+
+  const borrows = shallowRef<BorrowItem[]>([]);
+  const borrowsPage = shallowRef(1);
+  const borrowsMeta = shallowRef<{
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  } | null>(null);
+  const borrowsLoaded = shallowRef(false);
+  const borrowError = shallowRef<unknown>(null);
+
+  let lastBorrowsLimit = 3;
 
   const hasMoreBorrows = computed(() => {
     if (!borrowsMeta.value) return false;
