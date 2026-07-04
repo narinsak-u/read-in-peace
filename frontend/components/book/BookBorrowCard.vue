@@ -44,12 +44,6 @@ const activeLoan = computed(() =>
   borrowList.borrows.value.find((l) => l.bookId === props.bookId),
 );
 
-onMounted(() => {
-  if (auth.signedIn) {
-    borrowList.fetchBorrows(1);
-  }
-});
-
 async function borrowBookAction() {
   if (!auth.signedIn) {
     auth.openAuthModal(() => {
