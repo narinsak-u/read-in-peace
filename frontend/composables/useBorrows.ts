@@ -102,7 +102,7 @@ export function useBorrows() {
   };
 }
 
-function mapBorrowResponse(
+export function mapBorrowResponse(
   entry: BorrowsResponse['data'][number],
 ): BorrowItem {
   return {
