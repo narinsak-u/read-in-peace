@@ -1,0 +1,2 @@
+CREATE INDEX "borrows_user_id_returned_at_idx" ON "borrows" USING btree ("user_id","returned_at");--> statement-breakpoint
+CREATE INDEX "memberships_stripe_subscription_id_idx" ON "memberships" USING btree ("stripe_subscription_id") WHERE "memberships"."stripe_subscription_id" IS NOT NULL;

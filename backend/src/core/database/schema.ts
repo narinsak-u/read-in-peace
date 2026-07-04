@@ -10,6 +10,7 @@ import {
   timestamp,
   integer,
   varchar,
+  index,
 } from 'drizzle-orm/pg-core';
 import { numeric, primaryKey } from 'drizzle-orm/pg-core';
 
@@ -168,22 +169,31 @@ export const ratings = pgTable(
   (table) => [primaryKey({ columns: [table.bookId, table.userId] })],
 );
 
-export const borrows = pgTable('borrows', {
-  id: text('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  bookId: text('book_id')
-    .notNull()
-    .references(() => books.id, { onDelete: 'cascade' }),
-  userId: text('user_id')
-    .notNull()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  borrowedAt: timestamp('borrowed_at').notNull().defaultNow(),
-  returnedAt: timestamp('returned_at'),
-  dueAt: timestamp('due_at').notNull(),
-  currentPage: integer('current_page').notNull().default(0),
-  totalPages: integer('total_pages').notNull().default(300),
-});
+export const borrows = pgTable(
+  'borrows',
+  {
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    bookId: text('book_id')
+      .notNull()
+      .references(() => books.id, { onDelete: 'cascade' }),
+    userId: text('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    borrowedAt: timestamp('borrowed_at').notNull().defaultNow(),
+    returnedAt: timestamp('returned_at'),
+    dueAt: timestamp('due_at').notNull(),
+    currentPage: integer('current_page').notNull().default(0),
+    totalPages: integer('total_pages').notNull().default(300),
+  },
+  (table) => ({
+    userReturnedIdx: index('borrows_user_id_returned_at_idx').on(
+      table.userId,
+      table.returnedAt,
+    ),
+  }),
+);
 
 export const purchases = pgTable('purchases', {
   id: text('id')
@@ -214,28 +224,36 @@ export const readingGoals = pgTable('reading_goals', {
     .$onUpdate(() => new Date()),
 });
 
-export const memberships = pgTable('memberships', {
-  id: text('id')
-    .primaryKey()
-    .default(sql`gen_random_uuid()`),
-  userId: text('user_id')
-    .notNull()
-    .unique()
-    .references(() => user.id, { onDelete: 'cascade' }),
-  plan: varchar('plan', { length: 20 }).notNull().default('free'),
-  status: varchar('status', { length: 20 }).notNull().default('active'),
-  stripeSubscriptionId: text('stripe_subscription_id'),
-  stripePriceId: text('stripe_price_id'),
-  currentPeriodStart: timestamp('current_period_start'),
-  currentPeriodEnd: timestamp('current_period_end'),
-  cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
-  itemLimit: integer('item_limit').notNull().default(15),
-  createdAt: timestamp('created_at').notNull().defaultNow(),
-  updatedAt: timestamp('updated_at')
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
-});
+export const memberships = pgTable(
+  'memberships',
+  {
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: text('user_id')
+      .notNull()
+      .unique()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    plan: varchar('plan', { length: 20 }).notNull().default('free'),
+    status: varchar('status', { length: 20 }).notNull().default('active'),
+    stripeSubscriptionId: text('stripe_subscription_id'),
+    stripePriceId: text('stripe_price_id'),
+    currentPeriodStart: timestamp('current_period_start'),
+    currentPeriodEnd: timestamp('current_period_end'),
+    cancelAtPeriodEnd: boolean('cancel_at_period_end').notNull().default(false),
+    itemLimit: integer('item_limit').notNull().default(15),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+    updatedAt: timestamp('updated_at')
+      .notNull()
+      .defaultNow()
+      .$onUpdate(() => new Date()),
+  },
+  (table) => ({
+    stripeSubscriptionIdIdx: index('memberships_stripe_subscription_id_idx')
+      .on(table.stripeSubscriptionId)
+      .where(sql`${table.stripeSubscriptionId} IS NOT NULL`),
+  }),
+);
 
 export const posts = pgTable('posts', {
   id: text('id')
@@ -283,4 +301,9 @@ export const postReplies = pgTable('post_replies', {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
+});
+
+export const stripeEvents = pgTable('stripe_events', {
+  id: text('id').primaryKey(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });

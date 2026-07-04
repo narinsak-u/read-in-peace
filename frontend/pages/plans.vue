@@ -56,6 +56,7 @@ async function onSelect(plan: Plan) {
           :key="plan.name"
           :plan="plan"
           :is-current="plan.id === membershipStore.membership?.plan"
+          :loading="membershipStore.loading"
           @select="onSelect"
         />
       </div>

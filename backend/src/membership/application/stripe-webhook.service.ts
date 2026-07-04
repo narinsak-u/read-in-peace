@@ -6,10 +6,11 @@
 //   invoice.paid → extend current subscription period
 //   customer.subscription.updated → sync cancelAtPeriodEnd / status
 //   customer.subscription.deleted → downgrade to free plan
-// Idempotency: tracks processed event IDs in memory to guard against
-// duplicate deliveries.
+// Idempotency: persists event IDs in `stripe_events` table to survive
+// restarts. Inserting the event ID atomically acts as a distributed lock.
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
+import { PinoLogger } from 'nestjs-pino';
 import { DATABASE, type Database } from '../../core/database/database.provider';
 import * as schema from '../../core/database/schema';
 import {
@@ -25,37 +26,66 @@ import { PurchaseConfirmationService } from '../../transactions/application/purc
 
 @Injectable()
 export class StripeWebhookService {
-  private readonly processedEventIds = new Set<string>();
-
   constructor(
     @Inject(MEMBERSHIP_REPOSITORY) private readonly repo: MembershipRepository,
     @Inject(STRIPE) private readonly stripe: StripeClient,
     @Inject(DATABASE) private readonly db: Database,
     private readonly purchaseConfirmation: PurchaseConfirmationService,
+    private readonly logger: PinoLogger,
   ) {}
 
   async handleEvent(event: any): Promise<void> {
     const eventId: string | undefined = event.id;
-    if (eventId && this.processedEventIds.has(eventId)) return;
-
-    switch (event.type) {
-      case 'checkout.session.completed':
-        await this.handleCheckoutCompleted(event.data.object);
-        break;
-      case 'invoice.paid':
-        await this.handleInvoicePaid(event.data.object);
-        break;
-      case 'customer.subscription.updated':
-        await this.handleSubscriptionUpdated(event.data.object);
-        break;
-      case 'customer.subscription.deleted':
-        await this.handleSubscriptionDeleted(event.data.object);
-        break;
-      default:
-        break;
+    if (!eventId) {
+      this.logger.warn({ eventType: event.type }, 'Webhook event missing id');
+      return;
     }
 
-    if (eventId) this.processedEventIds.add(eventId);
+    const alreadyProcessed = await this.markProcessed(eventId);
+    if (!alreadyProcessed) return;
+
+    try {
+      switch (event.type) {
+        case 'checkout.session.completed':
+          await this.handleCheckoutCompleted(event.data.object);
+          break;
+        case 'invoice.paid':
+          await this.handleInvoicePaid(event.data.object);
+          break;
+        case 'customer.subscription.updated':
+          await this.handleSubscriptionUpdated(event.data.object);
+          break;
+        case 'customer.subscription.deleted':
+          await this.handleSubscriptionDeleted(event.data.object);
+          break;
+        default:
+          this.logger.debug(
+            { eventType: event.type },
+            'Unhandled webhook event',
+          );
+      }
+    } catch (err: any) {
+      this.logger.error(
+        { eventId, eventType: event.type, err: err?.message },
+        'Webhook handler failed',
+      );
+    }
+  }
+
+  private async markProcessed(eventId: string): Promise<boolean> {
+    try {
+      await this.db
+        .insert(schema.stripeEvents)
+        .values({ id: eventId })
+        .onConflictDoNothing();
+      return true;
+    } catch (err: any) {
+      this.logger.error(
+        { eventId, err: err?.message },
+        'Failed to persist event id',
+      );
+      return false;
+    }
   }
 
   private async findMembershipBySubId(subId: string) {

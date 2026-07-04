@@ -6,6 +6,7 @@ import { features, type Plan } from '~/utils/plans';
 defineProps<{
   plan: Plan;
   isCurrent: boolean;
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -61,7 +62,7 @@ const emit = defineEmits<{
     <Button
       class="mt-8 w-full"
       :variant="plan.highlighted ? 'archival' : 'archivalOutline'"
-      :disabled="isCurrent"
+      :disabled="isCurrent || loading"
       @click="emit('select', plan)"
     >
       {{ plan.id === 'free' ? 'Get Started' : isCurrent ? 'Current' : 'Subscribe' }}

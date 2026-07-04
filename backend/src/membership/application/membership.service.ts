@@ -9,7 +9,11 @@
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { and, count, eq, isNull } from 'drizzle-orm';
 import { CoreConfigService } from '../../core/config/config.provider';
-import { DATABASE, type Database } from '../../core/database/database.provider';
+import {
+  DATABASE,
+  type Database,
+  type DatabaseOrTransaction,
+} from '../../core/database/database.provider';
 import * as schema from '../../core/database/schema';
 import {
   STRIPE,
@@ -133,7 +137,18 @@ export class MembershipService {
         membership.stripeSubscriptionId,
         { cancel_at_period_end: true },
       );
-    } catch {
+    } catch (err: any) {
+      if (
+        err?.code === 'resource_missing' ||
+        /No such subscription/i.test(err?.message ?? '')
+      ) {
+        await this.repo.upsert(userId, {
+          cancelAtPeriodEnd: true,
+          stripeSubscriptionId: null,
+          status: 'canceled',
+        });
+        return { effectiveDate: new Date().toISOString() };
+      }
       throw new BadRequestException('Failed to cancel subscription');
     }
     const sub = subscription as unknown as StripeSubSnapshot;
@@ -181,9 +196,12 @@ export class MembershipService {
     return membership.itemLimit;
   }
 
-  async enforceBorrowLimit(userId: string): Promise<void> {
+  async enforceBorrowLimit(
+    userId: string,
+    tx?: DatabaseOrTransaction,
+  ): Promise<void> {
     const limit = await this.getLimit(userId);
-    const activeCount = await this.countActiveBorrows(userId);
+    const activeCount = await this.countActiveBorrows(userId, tx);
     if (activeCount >= limit) {
       throw new BadRequestException(
         `You've reached your plan's borrow limit of ${limit} books. Upgrade to borrow more.`,
@@ -191,8 +209,12 @@ export class MembershipService {
     }
   }
 
-  private async countActiveBorrows(userId: string): Promise<number> {
-    const [result] = await this.db
+  private async countActiveBorrows(
+    userId: string,
+    tx?: DatabaseOrTransaction,
+  ): Promise<number> {
+    const db = tx ?? this.db;
+    const [result] = await db
       .select({ value: count() })
       .from(schema.borrows)
       .where(

@@ -38,8 +38,9 @@ async function handleCancel() {
   cancelling.value = false;
 }
 
-function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString();
+function formatDate(iso: string | null | undefined) {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('en-US');
 }
 </script>
 
@@ -113,7 +114,7 @@ function formatDate(iso: string) {
         class="text-sm text-muted-foreground"
       >
         Cancel will take effect on
-        {{ membershipStore.membership?.currentPeriodEnd ? formatDate(membershipStore.membership.currentPeriodEnd) : '-' }}.
+        {{ cancelDate ?? (membershipStore.membership?.currentPeriodEnd ? formatDate(membershipStore.membership.currentPeriodEnd) : '-') }}.
         You can continue borrowing until then.
       </p>
     </div>
