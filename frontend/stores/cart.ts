@@ -16,7 +16,7 @@ export interface CartItem {
   category?: string;
 }
 
-function mergeGuestCart(existing: CartItem[], guest: CartItem[]): CartItem[] {
+export function mergeGuestCart(existing: CartItem[], guest: CartItem[]): CartItem[] {
   const map = new Map(existing.map((item) => [item.id, item]));
   for (const guestItem of guest) {
     const existingItem = map.get(guestItem.id);

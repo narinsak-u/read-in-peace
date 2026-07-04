@@ -35,11 +35,11 @@ export interface Review {
   readonly replies: readonly string[]
 }
 
-function getInitials(name: string): string {
+export function getInitials(name: string): string {
   return name.toUpperCase().slice(0, 2)
 }
 
-function timeAgo(dateStr: string): string {
+export function timeAgo(dateStr: string): string {
   const seconds = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000)
   if (seconds < 60) return 'just now'
   const minutes = Math.floor(seconds / 60)
@@ -51,7 +51,7 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`
 }
 
-function mapCommentToReview(comment: ApiComment): Review {
+export function mapCommentToReview(comment: ApiComment): Review {
   return {
     id: comment.id,
     initials: getInitials(comment.user.name),

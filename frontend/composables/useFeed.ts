@@ -88,7 +88,7 @@ export function useFeed() {
   };
 }
 
-function mapFeedPost(raw: Record<string, unknown>): FeedPost {
+export function mapFeedPost(raw: Record<string, unknown>): FeedPost {
   const replies = (raw.replies as Record<string, unknown>[] | undefined) ?? [];
   return {
     id: raw.id as string,
