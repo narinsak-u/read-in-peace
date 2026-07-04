@@ -10,7 +10,12 @@ import {
 import { CoreConfigService } from '../../core/config/config.provider';
 import { BOOK_REPOSITORY } from '../../books/domain/book.repository';
 import type { BookRepository } from '../../books/domain/book.repository';
-import { applyDiscounts } from '../domain/pricing';
+import { MembershipService } from '../../membership/application/membership.service';
+import {
+  applyDiscounts,
+  PLAN_DISCOUNT,
+  type DiscountResult,
+} from '../domain/pricing';
 import { STRIPE, type StripeClient } from '../infrastructure/stripe.provider';
 
 const SUCCESS_PATH =
@@ -22,6 +27,7 @@ export class CheckoutService {
     private readonly config: CoreConfigService,
     @Inject(BOOK_REPOSITORY) private readonly books: BookRepository,
     @Inject(STRIPE) private readonly stripe: StripeClient,
+    private readonly membership: MembershipService,
   ) {}
 
   async forBook(bookId: string, userId: string): Promise<{ url: string }> {
@@ -33,6 +39,13 @@ export class CheckoutService {
       );
     }
 
+    const membershipRow = await this.membership.getOrCreate(userId);
+    const planPct = PLAN_DISCOUNT[membershipRow.plan] ?? 0;
+    const discount = applyDiscounts(
+      [{ price: book.price, category: book.category }],
+      planPct,
+    );
+
     let session;
     try {
       session = await this.stripe.checkout.sessions.create({
@@ -42,7 +55,7 @@ export class CheckoutService {
             price_data: {
               currency: 'usd',
               product_data: { name: book.title },
-              unit_amount: Math.round(Number(book.price) * 100),
+              unit_amount: discount.total,
             },
             quantity: 1,
           },
@@ -80,8 +93,11 @@ export class CheckoutService {
       );
     }
 
+    const membershipRow = await this.membership.getOrCreate(userId);
+    const planPct = PLAN_DISCOUNT[membershipRow.plan] ?? 0;
     const discount = applyDiscounts(
       books.map((b) => ({ price: b.price, category: b.category })),
+      planPct,
     );
 
     let session;
@@ -118,5 +134,18 @@ export class CheckoutService {
       throw new BadRequestException('Stripe checkout session has no URL');
     }
     return { url: session.url };
+  }
+
+  async computeDiscount(
+    bookIds: string[],
+    userId: string,
+  ): Promise<DiscountResult> {
+    const books = await this.books.findPricingForPurchase(bookIds);
+    const membershipRow = await this.membership.getOrCreate(userId);
+    const planPct = PLAN_DISCOUNT[membershipRow.plan] ?? 0;
+    return applyDiscounts(
+      books.map((b) => ({ price: b.price, category: b.category })),
+      planPct,
+    );
   }
 }

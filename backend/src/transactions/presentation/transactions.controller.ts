@@ -58,6 +58,15 @@ export class TransactionsController {
     return this.checkout.forCart(body.bookIds, user.id);
   }
 
+  @Post('api/cart/discount-preview')
+  @UseGuards(AuthGuard)
+  discountPreview(
+    @Body() body: { bookIds: string[] },
+    @CurrentUser() user: { id: string },
+  ) {
+    return this.checkout.computeDiscount(body.bookIds, user.id);
+  }
+
   @Post('api/confirm-purchase')
   @UseGuards(AuthGuard)
   confirmPurchase(

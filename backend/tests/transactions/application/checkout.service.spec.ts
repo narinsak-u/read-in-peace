@@ -21,6 +21,7 @@ import {
   type BookRepository,
 } from '../../../src/books/domain/book.repository';
 import { STRIPE } from '../../../src/transactions/infrastructure/stripe.provider';
+import { MembershipService } from '../../../src/membership/application/membership.service';
 
 const fakeBook = (id: string, inStock: number, price: string): BookPricing => ({
   id,
@@ -63,6 +64,20 @@ const buildService = (books: BookPricing[]) =>
         provide: STRIPE,
         useValue: {
           checkout: { sessions: { create: mockStripeCreate } },
+        },
+      },
+      {
+        provide: MembershipService,
+        useValue: {
+          getOrCreate: jest
+            .fn()
+            .mockResolvedValue({ plan: 'free' }),
+          getMembershipWithBorrows: jest.fn(),
+          createCheckoutSession: jest.fn(),
+          cancel: jest.fn(),
+          reactivate: jest.fn(),
+          getLimit: jest.fn(),
+          enforceBorrowLimit: jest.fn(),
         },
       },
     ],
@@ -157,14 +172,16 @@ describe('CheckoutService', () => {
       // 3 books at $20 = $60.
       // Tier discount (3 books) = 20% = $12.
       // Category bonus (3 books in same cat) = 10% = $6.
-      // Total = $60 - $12 - $6 = $42.
+      // Running total = $60 - $12 - $6 = $42.
+      // Plan discount (free = 5%) = $2.10.
+      // Total = $42 - $2.10 = $39.90 = 3990 cents.
       await svc.forCart(['b1', 'b2', 'b3'], 'u1');
       expect(mockStripeCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           line_items: [
             expect.objectContaining({
               price_data: expect.objectContaining({
-                unit_amount: 4200,
+                unit_amount: 3990,
               }),
             }),
           ],
