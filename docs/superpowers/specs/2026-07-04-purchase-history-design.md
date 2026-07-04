@@ -1,6 +1,6 @@
 # Purchase History Design
 
-**Goal:** Allow users to view past purchases with Stripe receipt links on a standalone `/history` page.
+**Goal:** Allow users to view past purchases with Stripe receipt links on the dashboard's "Purchased" tab.
 
 **Architecture:** Add `stripe_session_id`, `receipt_url`, and `amount_total` columns to the existing `purchases` table. Extract the receipt URL during purchase confirmation by expanding the Stripe session's payment intent. Serve via the existing `GET /api/user/purchases` endpoint (extended with new fields). New `/history` page lists purchases chronologically with book metadata and a receipt link.
 
@@ -100,50 +100,60 @@ No changes needed — the session is already created with the correct metadata. 
 
 ## Frontend changes
 
-### 1. New page: `pages/history.vue`
+### 1. Dashboard "Purchased" tab: `pages/dashboard.vue`
 
-```
-/history
-  ├── Header: "Purchase History (N)"
-  └── List of purchases (newest first)
-       └── Each row:
-            ├── Book cover thumbnail
-            ├── Title + author
-            ├── Purchase date
-            ├── Amount paid ($25.00)
-            └── Receipt link (external, opens in new tab)
-```
+For each purchased book, replace the existing borrow button + purchase icon button with a single "View Receipt" button that opens the Stripe receipt URL in a new tab.
 
-Empty state: illustration + "No purchases yet" + link to `/feed`.
+The dashboard already receives purchase data with the book entries. The existing `BookCard` or purchase listing component needs to detect that a book is purchased (rather than borrowed) and render a receipt link instead of borrow/buy actions.
 
-Uses the existing `usePurchases` composable, calling `fetchPurchases()` on mount. The composable already returns `purchases` as `readonly(...)` — just needs its types updated to include the new fields.
+### 2. Component update: `PurchaseHistoryItem.vue` (modify existing purchase card)
 
-### 2. New component: `PurchaseHistoryItem.vue`
+The current dashboard likely maps over purchased books and renders a card with:
+- Book cover, title, author
+- Purchase date
+- Borrow button (disabled / irrelevant for purchased books)
+- Buy icon button (already purchased — redundant)
 
-Prop type:
-```ts
-{
-  purchase: {
-    id: string;
-    bookId: string;
-    purchasedAt: string;
-    stripeSessionId: string | null;
-    receiptUrl: string | null;
-    amountTotal: number | null;
-  };
-  book: Book;
-}
+Replace those action buttons with:
+
+```vue
+<Button
+  variant="archival"
+  size="sm"
+  :disabled="!receiptUrl"
+  @click="openReceipt"
+>
+  <ExternalLink /> View Receipt
+</Button>
 ```
 
-Renders a row with cover, title/author, date, price, and receipt link button. Links to Stripe receipt in a new tab with `target="_blank" rel="noopener noreferrer"`. Uses `ExternalLink` icon from `lucide-vue-next`.
+`openReceipt()` calls `window.open(receiptUrl, '_blank', 'noopener,noreferrer')` or uses `<a href target="_blank">`.
 
-### 3. Navigation
+If `receiptUrl` is null (legacy purchase before this feature), disable the button with title "Receipt not available".
 
-Add `/history` to `BottomDock.vue` and the dashboard's nav section. The dashboard "Purchased" tab gets a "View full history" link at the bottom.
+### 3. Data flow
 
-### 4. Query params
+The `usePurchases` composable is already called in `pages/dashboard.vue` (via `dashboard.fetchPurchases()`). The existing `GET /api/user/purchases` endpoint now returns the new fields (`stripeSessionId`, `receiptUrl`, `amountTotal`). The dashboard's purchase data will automatically include them after the backend migration — no additional fetch needed.
 
-After Stripe redirects to `/dashboard?tab=purchased&session_id=cs_test_...`, the purchase confirmation trigger remains unchanged. The user would need to navigate to `/history` manually or via a link.
+The dashboard already has query param handling: `session_id` in the URL triggers `confirmPurchase()`. After confirmation, `fetchPurchases()` refetches and the receipt URL will be present.
+
+### 4. Dashboard layout
+
+```
+Purchased tab:
+  ┌─────────────────────────────────┐
+  │ Cover  Title              View  │
+  │        Author             Receipt│
+  │        Purchased Jul 4    ───── │
+  │        $25.00            [Link] │
+  ├─────────────────────────────────┤
+  │ Cover  ...                    │
+  └─────────────────────────────────┘
+```
+
+### 5. Remove `/history` page (not needed)
+
+No new page. No new nav entries. No BottomDock changes.
 
 ---
 
@@ -170,5 +180,5 @@ A new Drizzle migration adds the three columns. Existing rows get `null` for all
 
 ### Frontend
 - Unit test: `usePurchases` fetch returns new fields
-- Unit test: `PurchaseHistoryItem` renders receipt link when present, hides when null
-- Unit test: empty history shows empty state
+- Unit test: receipt link button renders when `receiptUrl` is present, disabled when null
+- Integration: dashboard "Purchased" tab renders receipt button for each purchased book
