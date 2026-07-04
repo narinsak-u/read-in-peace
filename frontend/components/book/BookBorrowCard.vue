@@ -9,6 +9,7 @@ import { useBookStatusStore } from "~/stores/bookStatus";
 import { useBorrows } from "~/composables/useBorrows";
 import { dueInText } from "~/utils/dueDate";
 import type { Book } from "~/types/book";
+import ConfirmDialog from "~/components/ui/ConfirmDialog.vue";
 
 const props = defineProps<{
   book: Book;
@@ -23,6 +24,7 @@ const store = useBookStatusStore();
 const { borrowedSlugs, purchasedCounts } = storeToRefs(store);
 const { borrow } = store;
 const purchasing = shallowRef(false);
+const showBuyConfirm = shallowRef(false);
 
 const isBorrowed = computed(() => borrowedSlugs.value.has(props.book.slug));
 const ownedCount = computed(() => purchasedCounts.value.get(props.bookId) ?? 0);
@@ -65,22 +67,8 @@ async function borrowBookAction() {
   }
 }
 
-async function buyNow() {
-  if (!auth.signedIn) {
-    auth.openAuthModal(() => {
-      void buyNow();
-    });
-    return;
-  }
-  if (ownedCount.value > 0) {
-    const ok = window.confirm(
-      `You already own ${ownedCount.value} cop${ownedCount.value > 1 ? "ies" : "y"}. Are you sure you want to buy more?`,
-    );
-    if (!ok) return;
-  }
-
+async function doBuy() {
   purchasing.value = true;
-
   try {
     const res = await $fetch<{ url: string }>(
       `/api/books/${props.bookId}/create-checkout-session`,
@@ -90,7 +78,7 @@ async function buyNow() {
   } catch (e: any) {
     if (e?.status === 401) {
       auth.openAuthModal(() => {
-        void buyNow();
+        void doBuy();
       });
     } else {
       props.flash(e?.data?.message || "Could not start checkout.");
@@ -98,6 +86,20 @@ async function buyNow() {
   } finally {
     purchasing.value = false;
   }
+}
+
+async function buyNow() {
+  if (!auth.signedIn) {
+    auth.openAuthModal(() => {
+      void buyNow();
+    });
+    return;
+  }
+  if (ownedCount.value > 0) {
+    showBuyConfirm.value = true;
+    return;
+  }
+  await doBuy();
 }
 
 function addToCart() {
@@ -207,5 +209,13 @@ function addToCart() {
     >
       <ShoppingCart /> Add to cart
     </Button>
+    <ConfirmDialog
+      v-model:open="showBuyConfirm"
+      title="Already in your library"
+      :description="`You already own ${ownedCount} cop${ownedCount > 1 ? 'ies' : 'y'} of ${book.title}. Are you sure you want to buy more?`"
+      confirm-label="Yes, Add More"
+      cancel-label="Cancel"
+      @confirm="showBuyConfirm = false; doBuy()"
+    />
   </aside>
 </template>
