@@ -31,17 +31,17 @@ function mergeGuestCart(existing: CartItem[], guest: CartItem[]): CartItem[] {
   return Array.from(map.values());
 }
 
-function loadInitialItems(): CartItem[] {
-  if (typeof localStorage === "undefined") return [];
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {}
-  return [];
-}
-
 export const useCartStore = defineStore("cart", () => {
-  const items = ref<CartItem[]>(loadInitialItems());
+  const items = ref<CartItem[]>([]);
+
+  if (import.meta.client) {
+    nextTick(() => {
+      try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) items.value = JSON.parse(stored);
+      } catch {}
+    });
+  }
   const { flash } = useFlash();
 
   const itemCount = computed(() =>
