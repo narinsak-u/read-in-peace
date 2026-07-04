@@ -34,8 +34,18 @@ export class PurchaseConfirmationService {
     ) {
       throw new BadRequestException('Invalid purchase confirmation');
     }
+    return this.recordFromSession(session);
+  }
 
-    const bookCount = Number(session.metadata.bc);
+  async recordFromSession(session: any): Promise<unknown> {
+    if (session.payment_status !== 'paid') {
+      return { skipped: 'not paid' };
+    }
+
+    const userId: string | undefined = session.metadata?.userId;
+    if (!userId) return { skipped: 'no userId' };
+
+    const bookCount = Number(session.metadata?.bc);
     if (bookCount > 0) {
       const bookIds: string[] = [];
       for (let i = 0; i < bookCount; i++) {
@@ -44,7 +54,7 @@ export class PurchaseConfirmationService {
       return this.recordBatchPurchases(bookIds, userId);
     }
 
-    const bookId = session.metadata.bookId;
+    const bookId: string | undefined = session.metadata?.bookId;
     if (!bookId) {
       throw new BadRequestException('No book IDs found in session metadata');
     }

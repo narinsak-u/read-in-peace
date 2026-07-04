@@ -9,10 +9,13 @@
 5. [Purchase (Stripe Checkout)](#5-purchase-stripe-checkout)
 6. [Cart Checkout with Discounts](#6-cart-checkout-with-discounts)
 7. [Purchase Confirmation](#7-purchase-confirmation)
-8. [Social Feed](#8-social-feed)
-9. [Authentication](#9-authentication)
-10. [Authorization (Policies)](#10-authorization-policies)
-11. [Error Handling](#11-error-handling)
+8. [Membership & Subscription](#7-membership--subscription)
+9. [Social Feed](#8-social-feed)
+10. [Authentication](#9-authentication)
+11. [Authorization (Policies)](#10-authorization-policies)
+12. [Error Handling](#11-error-handling)
+13. [Database Architecture](#12-database-architecture)
+14. [Config & Environment](#13-config--environment)
 
 ---
 
@@ -288,9 +291,94 @@ Body: `{ session_id: string }`
 
 ---
 
-## 7. Social Feed
+## 7. Membership & Subscription
 
-### 7.1 Get Feed
+### 7.1 Get Membership
+
+**Endpoint**: `GET /api/membership/me` (auth required)
+
+**Flow**:
+1. `AuthGuard` validates session
+2. `MembershipController.getMembership(user)` → `MembershipService.getMembershipWithBorrows(userId)`
+3. `MembershipService.getOrCreate(userId)` lazy-assigns a free plan on first access if no row exists
+4. Counts active borrows via `countActiveBorrows(userId)` (raw SQL count on `borrows` with `returnedAt IS NULL`)
+5. Returns `MembershipWithBorrows` — extends `MembershipRow` with `activeBorrows` and `borrowsRemaining`
+
+### 7.2 Subscribe (Stripe Checkout)
+
+**Endpoint**: `POST /api/membership/checkout` (auth required)
+
+Body: `{ plan: "curator" | "archivist" }`
+
+**Flow**:
+1. `AuthGuard` validates session
+2. `MembershipController.createCheckoutSession(plan, user)` → `MembershipService.createCheckoutSession(plan, userId)`
+3. Throws `BadRequestException` if `plan === 'free'`
+4. Resolves plan config from `PLAN_CONFIG` map — throws if plan key not found
+5. Checks current membership: throws if already on a paid active plan (not cancel-at-period-end)
+6. Calls `stripe.checkout.sessions.create()`:
+   - `mode: 'subscription'`
+   - Single `line_item` with `unit_amount` from plan config, `recurring: { interval: 'month' }`
+   - `metadata`: `{ userId, plan }`
+   - `success_url`: `${frontendUrl}/dashboard?membership=success`
+   - `cancel_url`: `${frontendUrl}/plans`
+7. Returns `{ url: session.url }`
+
+### 7.3 Cancel Subscription
+
+**Endpoint**: `POST /api/membership/cancel` (auth required)
+
+**Flow**:
+1. `AuthGuard` validates session
+2. `MembershipController.cancel(user)` → `MembershipService.cancel(userId)`
+3. Fetches current membership — continues without Stripe if `stripeSubscriptionId` is null (local dev fallback)
+4. If Stripe sub exists: calls `stripe.subscriptions.update(subId, { cancel_at_period_end: true })`
+5. Extracts `current_period_end` from returned subscription for effective date
+6. `MembershipRepository.upsert(userId, { cancelAtPeriodEnd: true, currentPeriodEnd })` marks cancellation in DB
+7. Returns `{ effectiveDate: string }` — ISO date when access ends
+
+### 7.4 Reactivate Subscription
+
+**Endpoint**: `POST /api/membership/reactivate` (auth required)
+
+**Flow**:
+1. `AuthGuard` validates session
+2. `MembershipController.reactivate(user)` → `MembershipService.reactivate(userId)`
+3. Throws `BadRequestException` if `cancelAtPeriodEnd` is not currently set
+4. If Stripe sub exists: calls `stripe.subscriptions.update(subId, { cancel_at_period_end: false })`
+5. `MembershipRepository.upsert(userId, { cancelAtPeriodEnd: false })` clears cancellation
+6. Returns void
+
+### 7.5 Plan Config
+
+Defined in `membership/domain/plans.ts` as a `PLAN_CONFIG` map:
+
+| Plan Key  | Name            | Monthly Price | Item Limit | Stripe Price ID |
+|-----------|-----------------|--------------|------------|-----------------|
+| `free`    | The Bibliophile | $0           | 15         | —               |
+| `curator` | The Curator     | $5           | 25         | Configurable    |
+| `archivist` | The Archivist | $10          | 50         | Configurable    |
+
+Plan limits gate the borrow flow: `MembershipService.enforceBorrowLimit(userId)` checks active borrows against the plan's `itemLimit` before allowing new borrows.
+
+### 7.6 Stripe Webhook Events
+
+Handled by `StripeWebhookService` in `membership/application/stripe-webhook.service.ts`:
+
+| Event | Handler | Action |
+|-------|---------|--------|
+| `checkout.session.completed` | `handleMembershipCheckout` | Sets plan, itemLimit, status=active; retrieves subscription for period dates |
+| `invoice.paid` | `handleInvoicePaid` | Extends `currentPeriodEnd` from subscription |
+| `customer.subscription.updated` | `handleSubscriptionUpdated` | Syncs `cancelAtPeriodEnd`, `currentPeriodEnd`, status |
+| `customer.subscription.deleted` | `handleSubscriptionDeleted` | Downgrades to free plan, clears Stripe fields |
+
+Idempotency: tracks processed event IDs in a `Set<string>` to guard against duplicate deliveries.
+
+---
+
+## 8. Social Feed
+
+### 8.1 Get Feed
 
 **Endpoint**: `GET /api/feed` (auth required)
 
@@ -305,7 +393,7 @@ Body: `{ session_id: string }`
    - `ORDER BY createdAt DESC`, `LIMIT 20`
 4. Returns `PostWithUser[]` with `user`, `likeCount`, `replyCount`, `liked`
 
-### 7.2 Create Post
+### 8.2 Create Post
 
 **Endpoint**: `POST /api/feed` (auth required)
 
@@ -317,7 +405,7 @@ Body: `{ text: string, rating?: number }`
 3. `PostRepository.create(userId, text, rating?)` inserts into `posts` table
 4. Returns the created post
 
-### 7.3 Like Post
+### 8.3 Like Post
 
 **Endpoint**: `POST /api/feed/:id/like` (auth required)
 
@@ -327,7 +415,7 @@ Body: `{ text: string, rating?: number }`
 3. `PostRepository.toggleLike(postId, userId)` checks existence then inserts or deletes from `post_likes`
 4. Returns `{ liked: boolean, likeCount: number }`
 
-### 7.4 Reply to Post
+### 8.4 Reply to Post
 
 **Endpoint**: `POST /api/feed/:id/reply` (auth required)
 
@@ -340,7 +428,7 @@ Body: `{ text: string }`
 4. `PostRepository.createReply(postId, userId, text)` inserts into `post_replies`
 5. Returns the created reply
 
-### 7.5 Get Replies
+### 8.5 Get Replies
 
 **Endpoint**: `GET /api/feed/:id/replies`
 
@@ -352,9 +440,9 @@ Body: `{ text: string }`
 
 ---
 
-## 8. Authentication
+## 9. Authentication
 
-### 8.1 Better Auth Setup
+### 9.1 Better Auth Setup
 
 - Instance created at bootstrap in `src/iam/auth/better-auth.ts`
 - Drizzle adapter connected to the same PostgreSQL database
@@ -362,20 +450,20 @@ Body: `{ text: string }`
 - Mounted on `/api/auth/*` in `main.ts` via `auth.handler → toNodeHandler`
 - Config: `baseURL` from `BETTER_AUTH_URL`, `trustedOrigins` from `CORS_ORIGINS`
 
-### 8.2 Auth Flow
+### 9.2 Auth Flow
 
 1. **Sign up**: `POST /api/auth/sign-up` with `{ email, password, name }`
 2. **Sign in**: `POST /api/auth/sign-in` with `{ email, password }` → returns session cookie
 3. **Session check**: `GET /api/auth/session` returns `{ user, session }` or `null`
 4. **Sign out**: `POST /api/auth/sign-out` clears session
 
-### 8.3 Auth Guard
+### 9.3 Auth Guard
 
 - `AuthGuard`: Required auth — if `AuthPort.getSession(headers)` returns null, throws `UnauthorizedException`
 - `OptionalAuthGuard`: Optional auth — if session exists, sets `request.user`; if not, continues without user
 - `@CurrentUser()` decorator extracts `request.user` (type `AuthUser | undefined`)
 
-### 8.4 AuthPort (Testability Abstraction)
+### 9.4 AuthPort (Testability Abstraction)
 
 - Interface defined in `src/iam/auth/auth.port.ts`
 - `getSession(headers): Promise<AuthSession | null>`
@@ -384,9 +472,9 @@ Body: `{ text: string }`
 
 ---
 
-## 9. Authorization (Policies)
+## 10. Authorization (Policies)
 
-### 9.1 Policy Framework
+### 10.1 Policy Framework
 
 Located in `src/iam/authorization/`. Uses NestJS `moduleRef` to dynamically resolve policy instances.
 
@@ -402,7 +490,7 @@ Located in `src/iam/authorization/`. Uses NestJS `moduleRef` to dynamically reso
 { user: AuthUser, params: Record<string, string>, body: unknown }
 ```
 
-### 9.2 Available Policies
+### 10.2 Available Policies
 
 | Token | Action | Logic | File |
 |-------|--------|-------|------|
@@ -410,16 +498,16 @@ Located in `src/iam/authorization/`. Uses NestJS `moduleRef` to dynamically reso
 | `CAN_DELETE_BOOK` | `delete_book` | Same owner check, different error message | `books/authorization/delete-book.policy.ts` |
 | `CAN_DELETE_COMMENT` | `delete_comment` | `CommentRepository.findRaw(commentId)` → verify `userId === user.id` | `books/authorization/delete-comment.policy.ts` |
 
-### 9.3 Error Handling in Policies
+### 10.3 Error Handling in Policies
 
 - `NotFoundException` — resource or param `id` missing
 - `ForbiddenException` — user is not the resource owner
 
 ---
 
-## 10. Error Handling
+## 11. Error Handling
 
-### 10.1 Global Exception Filter
+### 11.1 Global Exception Filter
 
 `AllExceptionsFilter` (`src/core/http/all-exceptions.filter.ts`) catches every unhandled exception.
 
@@ -429,7 +517,7 @@ Located in `src/iam/authorization/`. Uses NestJS `moduleRef` to dynamically reso
 3. If unknown: returns 500 with `{ statusCode: 500, error: "Internal Server Error", message, requestId, timestamp, path }`
 4. Logs via `PinoLogger` with structured metadata
 
-### 10.2 Exception Map
+### 11.2 Exception Map
 
 | HTTP Status | Error Text | When |
 |-------------|-----------|------|
@@ -439,7 +527,7 @@ Located in `src/iam/authorization/`. Uses NestJS `moduleRef` to dynamically reso
 | 404 | Not Found | Missing book, comment, post, user |
 | 500 | Internal Server Error | Unhandled exceptions |
 
-### 10.3 Error Response Shape
+### 11.3 Error Response Shape
 
 ```json
 {
@@ -454,9 +542,9 @@ Located in `src/iam/authorization/`. Uses NestJS `moduleRef` to dynamically reso
 
 ---
 
-## 11. Database Architecture
+## 12. Database Architecture
 
-### 11.1 Tables
+### 12.1 Tables
 
 | Table | Purpose | Key Relationships |
 |-------|---------|-------------------|
@@ -472,11 +560,12 @@ Located in `src/iam/authorization/`. Uses NestJS `moduleRef` to dynamically reso
 | `borrows` | Book borrowing | FK → books + user |
 | `purchases` | Book purchases | FK → books + user |
 | `reading_goals` | User reading goals | FK → user |
+| `memberships` | Subscription plan per user | FK → user (unique) |
 | `posts` | Social feed posts | FK → user |
 | `post_likes` | Social post likes | Composite FK → posts + user |
 | `post_replies` | Social post replies | FK → posts + user |
 
-### 11.2 Repository Pattern
+### 12.2 Repository Pattern
 
 Every data access layer follows **Interface → Drizzle Implementation → In-Memory Fake**:
 
@@ -490,14 +579,15 @@ Every data access layer follows **Interface → Drizzle Implementation → In-Me
 | Borrow | `BORROW_REPOSITORY` | `DrizzleBorrowRepository` | — |
 | Purchase | `PURCHASE_REPOSITORY` | `DrizzlePurchaseRepository` | — |
 | Post (Social) | `POST_REPOSITORY` | `DrizzlePostRepository` | — |
+| Membership | `MEMBERSHIP_REPOSITORY` | `DrizzleMembershipRepository` | — |
 
 Repositories that accept an optional `tx` parameter participate in database transactions. Services coordinate multi-step workflows using Drizzle transactions (e.g., borrow + stock decrement, comment + rating creation).
 
 ---
 
-## 12. Config & Environment
+## 13. Config & Environment
 
-### 12.1 Env Variables
+### 13.1 Env Variables
 
 | Variable | Default | Required | Used By |
 |----------|---------|----------|---------|
@@ -510,8 +600,9 @@ Repositories that accept an optional `tx` parameter participate in database tran
 | `BETTER_AUTH_URL` | — | No | Auth base URL (defaults to FRONTEND_URL) |
 | `FRONTEND_URL` | `http://localhost:3000` | No | Stripe redirect URLs |
 | `AUTH_SECRET` | — | No | Better Auth secret key |
+| `STRIPE_WEBHOOK_SECRET` | — | No | Stripe webhook signature verification |
 
-### 12.2 Config Slices
+### 13.2 Config Slices
 
 ```typescript
 config.db            → { url: string }

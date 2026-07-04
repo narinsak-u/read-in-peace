@@ -12,6 +12,7 @@ import { AUTH } from './iam/auth/better-auth';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     bufferLogs: true,
+    rawBody: true,
   });
   app.useLogger(app.get(PinoNestLogger));
   const config = app.get(CoreConfigService);

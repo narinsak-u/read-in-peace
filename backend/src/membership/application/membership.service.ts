@@ -1,7 +1,19 @@
+// MembershipService — domain logic for membership lifecycle.
+// Responsibilities:
+//   - getOrCreate: lazy-assign a free plan on first access
+//   - getMembershipWithBorrows: return membership + active borrow count
+//   - createCheckoutSession: create Stripe subscription, return redirect URL
+//   - cancel: mark Stripe sub as cancel_at_period_end, persist effective date
+//   - reactivate: unset cancel_at_period_end on Stripe
+//   - getLimit / enforceBorrowLimit: gate the borrow flow by plan limits
 import { Inject, Injectable, BadRequestException } from '@nestjs/common';
 import { and, count, eq, isNull } from 'drizzle-orm';
 import { CoreConfigService } from '../../core/config/config.provider';
-import { DATABASE, type Database } from '../../core/database/database.provider';
+import {
+  DATABASE,
+  type Database,
+  type DatabaseOrTransaction,
+} from '../../core/database/database.provider';
 import * as schema from '../../core/database/schema';
 import {
   STRIPE,
@@ -72,48 +84,80 @@ export class MembershipService {
       throw new BadRequestException('Already subscribed to a plan');
     }
 
-    const session = await this.stripe.checkout.sessions.create({
-      mode: 'subscription',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: { name: `Read in Peace — ${plan}` },
-            unit_amount: config.monthlyPriceCents,
-            recurring: { interval: 'month' as const },
+    let session;
+    try {
+      session = await this.stripe.checkout.sessions.create({
+        mode: 'subscription',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: { name: `Read in Peace — ${plan}` },
+              unit_amount: config.monthlyPriceCents,
+              recurring: { interval: 'month' as const },
+            },
+            quantity: 1,
           },
-          quantity: 1,
-        },
-      ],
-      metadata: { userId, plan },
-      success_url: `${this.config.frontend.url}${SUCCESS_PATH}`,
-      cancel_url: `${this.config.frontend.url}${CANCEL_PATH}`,
-    });
+        ],
+        metadata: { userId, plan },
+        success_url: `${this.config.frontend.url}${SUCCESS_PATH}`,
+        cancel_url: `${this.config.frontend.url}${CANCEL_PATH}`,
+      });
+    } catch {
+      throw new BadRequestException(
+        'Could not create checkout session. Please try again.',
+      );
+    }
 
-    return { url: session.url ?? '' };
+    if (!session.url) {
+      throw new BadRequestException('Checkout session has no URL');
+    }
+    return { url: session.url };
   }
 
   async cancel(userId: string): Promise<{ effectiveDate: string }> {
     const membership = await this.repo.findByUserId(userId);
+    const effectiveDate = new Date().toISOString();
+
     if (!membership?.stripeSubscriptionId) {
-      throw new BadRequestException('No active subscription');
+      await this.repo.upsert(userId, {
+        cancelAtPeriodEnd: true,
+        currentPeriodEnd: new Date(),
+      });
+      return { effectiveDate };
     }
 
     interface StripeSubSnapshot {
       current_period_end: number | null;
       current_period_start: number | null;
     }
-    const subscription = await this.stripe.subscriptions.update(
-      membership.stripeSubscriptionId,
-      { cancel_at_period_end: true },
-    );
+    let subscription;
+    try {
+      subscription = await this.stripe.subscriptions.update(
+        membership.stripeSubscriptionId,
+        { cancel_at_period_end: true },
+      );
+    } catch (err: any) {
+      if (
+        err?.code === 'resource_missing' ||
+        /No such subscription/i.test(err?.message ?? '')
+      ) {
+        await this.repo.upsert(userId, {
+          cancelAtPeriodEnd: true,
+          stripeSubscriptionId: null,
+          status: 'canceled',
+        });
+        return { effectiveDate: new Date().toISOString() };
+      }
+      throw new BadRequestException('Failed to cancel subscription');
+    }
     const sub = subscription as unknown as StripeSubSnapshot;
     const periodEnd = sub.current_period_end;
 
-    const effectiveDate =
+    const effectiveDateFormatted =
       periodEnd != null && isFinite(periodEnd)
         ? new Date(periodEnd * 1000).toISOString()
-        : new Date().toISOString();
+        : effectiveDate;
 
     await this.repo.upsert(userId, {
       cancelAtPeriodEnd: true,
@@ -123,18 +167,19 @@ export class MembershipService {
           : undefined,
     });
 
-    return { effectiveDate };
+    return { effectiveDate: effectiveDateFormatted };
   }
 
   async reactivate(userId: string): Promise<void> {
     const membership = await this.repo.findByUserId(userId);
-    if (!membership?.stripeSubscriptionId) {
-      throw new BadRequestException('No subscription to reactivate');
-    }
-    if (!membership.cancelAtPeriodEnd) {
+    if (!membership?.cancelAtPeriodEnd) {
       throw new BadRequestException(
         'Subscription is not scheduled for cancellation',
       );
+    }
+    if (!membership?.stripeSubscriptionId) {
+      await this.repo.upsert(userId, { cancelAtPeriodEnd: false });
+      return;
     }
     try {
       await this.stripe.subscriptions.update(membership.stripeSubscriptionId, {
@@ -151,9 +196,12 @@ export class MembershipService {
     return membership.itemLimit;
   }
 
-  async enforceBorrowLimit(userId: string): Promise<void> {
+  async enforceBorrowLimit(
+    userId: string,
+    tx?: DatabaseOrTransaction,
+  ): Promise<void> {
     const limit = await this.getLimit(userId);
-    const activeCount = await this.countActiveBorrows(userId);
+    const activeCount = await this.countActiveBorrows(userId, tx);
     if (activeCount >= limit) {
       throw new BadRequestException(
         `You've reached your plan's borrow limit of ${limit} books. Upgrade to borrow more.`,
@@ -161,8 +209,12 @@ export class MembershipService {
     }
   }
 
-  private async countActiveBorrows(userId: string): Promise<number> {
-    const [result] = await this.db
+  private async countActiveBorrows(
+    userId: string,
+    tx?: DatabaseOrTransaction,
+  ): Promise<number> {
+    const db = tx ?? this.db;
+    const [result] = await db
       .select({ value: count() })
       .from(schema.borrows)
       .where(

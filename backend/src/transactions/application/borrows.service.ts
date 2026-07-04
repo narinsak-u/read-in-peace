@@ -56,7 +56,7 @@ export class BorrowsService {
         throw new BadRequestException('Book already borrowed');
       }
 
-      await this.membership.enforceBorrowLimit(userId);
+      await this.membership.enforceBorrowLimit(userId, tx);
 
       const remaining = book.inStock - 1;
       await this.books.update(

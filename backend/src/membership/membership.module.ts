@@ -1,3 +1,10 @@
+// MembershipModule — subscription plans, Stripe subscription checkout, and
+// borrow-limit enforcement. Imports:
+//   IamModule — for AuthGuard and CurrentUser decorator
+//   TransactionsModule (forwardRef) — for the shared Stripe client (STRIPE)
+//     and PurchaseConfirmationService (used by the webhook for book purchases)
+// Exposes MembershipService for cross-module use by BorrowsService.
+
 import { Module, forwardRef } from '@nestjs/common';
 import { IamModule } from '../iam/iam.module';
 import { TransactionsModule } from '../transactions/transactions.module';

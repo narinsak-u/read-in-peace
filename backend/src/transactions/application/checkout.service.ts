@@ -33,24 +33,34 @@ export class CheckoutService {
       );
     }
 
-    const session = await this.stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: { name: book.title },
-            unit_amount: Math.round(Number(book.price) * 100),
+    let session;
+    try {
+      session = await this.stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: { name: book.title },
+              unit_amount: Math.round(Number(book.price) * 100),
+            },
+            quantity: 1,
           },
-          quantity: 1,
-        },
-      ],
-      metadata: { bookId, userId },
-      success_url: `${this.config.frontend.url}${SUCCESS_PATH}`,
-      cancel_url: `${this.config.frontend.url}/book/${bookId}`,
-    });
+        ],
+        metadata: { bookId, userId },
+        success_url: `${this.config.frontend.url}${SUCCESS_PATH}`,
+        cancel_url: `${this.config.frontend.url}/book/${bookId}`,
+      });
+    } catch {
+      throw new BadRequestException(
+        'Could not create checkout session. Please try again.',
+      );
+    }
 
-    return { url: session.url ?? '' };
+    if (!session.url) {
+      throw new BadRequestException('Stripe checkout session has no URL');
+    }
+    return { url: session.url };
   }
 
   async forCart(bookIds: string[], userId: string): Promise<{ url: string }> {
@@ -74,29 +84,39 @@ export class CheckoutService {
       books.map((b) => ({ price: b.price, category: b.category })),
     );
 
-    const session = await this.stripe.checkout.sessions.create({
-      mode: 'payment',
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `Read in Peace — ${bookIds.length} book${bookIds.length > 1 ? 's' : ''}`,
+    let session;
+    try {
+      session = await this.stripe.checkout.sessions.create({
+        mode: 'payment',
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: `Read in Peace — ${bookIds.length} book${bookIds.length > 1 ? 's' : ''}`,
+              },
+              unit_amount: discount.total,
             },
-            unit_amount: discount.total,
+            quantity: 1,
           },
-          quantity: 1,
+        ],
+        metadata: {
+          userId,
+          bc: String(bookIds.length),
+          ...Object.fromEntries(bookIds.map((id, i) => [`b${i}`, id])),
         },
-      ],
-      metadata: {
-        userId,
-        bc: String(bookIds.length),
-        ...Object.fromEntries(bookIds.map((id, i) => [`b${i}`, id])),
-      },
-      success_url: `${this.config.frontend.url}${SUCCESS_PATH}`,
-      cancel_url: `${this.config.frontend.url}/feed`,
-    });
+        success_url: `${this.config.frontend.url}${SUCCESS_PATH}`,
+        cancel_url: `${this.config.frontend.url}/feed`,
+      });
+    } catch {
+      throw new BadRequestException(
+        'Could not create checkout session. Please try again.',
+      );
+    }
 
-    return { url: session.url ?? '' };
+    if (!session.url) {
+      throw new BadRequestException('Stripe checkout session has no URL');
+    }
+    return { url: session.url };
   }
 }

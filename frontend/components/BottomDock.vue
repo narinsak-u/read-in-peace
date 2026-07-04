@@ -29,12 +29,9 @@ defineProps<{
         Social
       </span>
     </Button>
-    <Button
-      variant="archivalDock"
-      @click="flash('The feature is coming soon!')"
-    >
+    <Button variant="archivalDock" @click="navigateTo('/plans')">
       <Settings /><span class="font-mono text-[8px] uppercase opacity-60">
-        Prefs
+        Plans
       </span>
     </Button>
   </div>

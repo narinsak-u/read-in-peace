@@ -13,5 +13,9 @@ export const stripeProvider: Provider = {
   provide: STRIPE,
   inject: [CoreConfigService],
   useFactory: (config: CoreConfigService): StripeClient =>
-    new StripeConstructor(config.stripe.secretKey),
+    new StripeConstructor(config.stripe.secretKey, {
+      apiVersion: '2026-06-24.dahlia',
+      maxNetworkRetries: 2,
+      appInfo: { name: 'read-in-peace' },
+    }),
 };
