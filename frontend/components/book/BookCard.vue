@@ -117,9 +117,7 @@ function addToCart() {
   </article>
 
   <Dialog v-model:open="showConfirmDialog">
-    <DialogContent
-      class="data-[state=open]:slide-in-from-bottom-[30%] sm:data-[state=open]:slide-in-from-bottom-[15%] data-[state=closed]:slide-out-to-bottom-[30%] sm:data-[state=closed]:slide-out-to-bottom-[15%]"
-    >
+    <DialogContent>
       <DialogHeader>
         <DialogTitle>Already in your library</DialogTitle>
         <DialogDescription>
