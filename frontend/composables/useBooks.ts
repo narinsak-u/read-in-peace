@@ -10,7 +10,7 @@ export function useBooks(options?: {
   query?: Ref<string> | string;
   trending?: boolean;
 }) {
-  const { invalidate, onInvalidate } = useInvalidate();
+  const { onInvalidate } = useInvalidate();
 
   const trendingMode = options?.trending ?? false;
   const page = ref(options?.page ?? 1);

@@ -11,7 +11,7 @@ const props = defineProps<{
   flash: (message: string) => void;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   borrow: [slug: string, bookId: string];
   return: [slug: string, bookId: string];
 }>();

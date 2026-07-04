@@ -1,4 +1,4 @@
-import { ref, shallowRef, computed, readonly } from 'vue';
+import { shallowRef, computed, readonly } from 'vue';
 import { useAuthStore } from '~/stores/auth';
 import { useInvalidate } from '~/composables/useInvalidate';
 import { mapBorrowResponse } from '~/utils/borrow';
@@ -32,7 +32,7 @@ export interface BorrowsResponse {
 
 export function useBorrows() {
   const auth = useAuthStore();
-  const { invalidate, onInvalidate } = useInvalidate();
+  const { onInvalidate } = useInvalidate();
 
   const borrows = shallowRef<BorrowItem[]>([]);
   const borrowsPage = shallowRef(1);

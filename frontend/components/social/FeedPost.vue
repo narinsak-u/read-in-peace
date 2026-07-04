@@ -55,7 +55,7 @@ watch(
   },
 );
 
-async function toggleLike() {
+async function onToggleLike() {
   if (!auth.signedIn) {
     auth.openAuthModal();
     return;
@@ -125,7 +125,7 @@ async function postReply() {
           <Button
             variant="archivalGhost"
             size="sm"
-            @click="toggleLike"
+            @click="onToggleLike"
             :class="liked ? 'text-primary' : ''"
           >
             {{ liked ? "Liked" : "Like" }} ({{ localLikeCount }})

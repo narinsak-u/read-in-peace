@@ -6,6 +6,7 @@ export default defineNuxtConfig({
   css: ["~/assets/css/main.css"],
   modules: [
     "@pinia/nuxt",
+    "@nuxt/eslint",
     "shadcn-nuxt",
     "@stefanobartoletti/nuxt-social-share",
   ],

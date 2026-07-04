@@ -19,7 +19,7 @@ const reviewBook = shallowRef<{
 } | null>(null);
 const rating = shallowRef(0);
 const reviewText = shallowRef("");
-const { notice, flash } = useFlash();
+const { flash } = useFlash();
 const auth = useAuthStore();
 </script>
 

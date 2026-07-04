@@ -2,7 +2,7 @@
 import { Button } from '~/components/ui/button';
 import { buttonVariants } from '~/components/ui/button/variants';
 
-const props = defineProps<{
+defineProps<{
   error?: { statusCode?: number; message?: string };
 }>();
 

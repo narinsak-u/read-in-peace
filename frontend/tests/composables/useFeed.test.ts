@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { mapFeedPost } from "~/utils/feed";
-import type { FeedPost } from "~/composables/useFeed";
 
 describe("mapFeedPost", () => {
   it("maps a complete feed post entry", () => {

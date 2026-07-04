@@ -12,7 +12,7 @@ import {
 import { storeToRefs } from "pinia";
 import { useCartStore } from "~/stores/cart";
 import { useBookStatusStore } from "~/stores/bookStatus";
-import { stockActions, type StockActions } from "~/utils/stock";
+import type { StockActions } from "~/utils/stock";
 import type { Book } from "~/types/book";
 
 const props = defineProps<{

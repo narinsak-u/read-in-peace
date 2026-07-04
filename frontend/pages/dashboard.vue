@@ -213,7 +213,7 @@ onMounted(async () => {
             v-for="entry in purchases"
             :key="entry.purchase?.id ?? entry.book?.id"
             :book="mapBookResponse(entry.book as Record<string, unknown>)"
-            :purchased-at="entry.purchase?.purchasedAt as string | undefined"
+            :purchased-at="entry.purchase?.purchasedAt"
             :actions="{
               isBorrowed: false,
               canBuy: (entry.book?.inStock ?? 0) > 1,

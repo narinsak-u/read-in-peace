@@ -7,7 +7,7 @@ import { useCartStore } from "~/stores/cart";
 const query = defineModel<string>("query", { default: "" });
 const cart = useCartStore();
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     mode?: "feed" | "book" | "cart";
   }>(),
