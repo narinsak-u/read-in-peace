@@ -61,9 +61,9 @@ See `frontend/README.md` and `backend/README.md` for package-specific commands.
 
 ## Environment
 
-See `.env.example` in each package for required variables:
+Copy `.env.example` from each package to `.env` and fill in the values.
 
-| File | Variables |
-|------|-----------|
-| `frontend/.env.example` | `NUXT_PUBLIC_BACKEND_URL`, `NUXT_PUBLIC_SITE_URL` |
-| `backend/.env.example` | `DATABASE_URL`, `BETTER_AUTH_SECRET`, `STRIPE_SECRET_KEY` |
+| Package | Key variables |
+|---------|--------------|
+| `frontend/` | `NUXT_PUBLIC_BACKEND_URL`, `NUXT_PUBLIC_SITE_URL` |
+| `backend/` | `DATABASE_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BETTER_AUTH_URL`, `AUTH_SECRET`, `PORT`, `NODE_ENV`, `LOG_LEVEL`, `CORS_ORIGINS`, `FRONTEND_URL` |
