@@ -1,5 +1,7 @@
 # Read in Peace
 
+![Screenshot](frontend/public/Screenshot.png)
+
 A quiet library to review, borrow, return, and buy books — built with Nuxt 3 + NestJS.
 
 ## Stack

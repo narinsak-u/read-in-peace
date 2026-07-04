@@ -1,5 +1,7 @@
 # Read in Peace — Frontend
 
+![Screenshot](public/Screenshot.png)
+
 Nuxt 3 SSR application with Vue 3 Composition API, Pinia, Tailwind CSS v4, and shadcn-vue.
 
 ## Tech stack

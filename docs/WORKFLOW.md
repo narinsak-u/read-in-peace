@@ -1,5 +1,7 @@
 # Workflows
 
+![Screenshot](../frontend/public/Screenshot.png)
+
 This document traces each user-facing workflow end-to-end: from UI interaction
 through the full stack (frontend → composable → store → API proxy → NestJS
 controller → service → database) and back to the UI.
