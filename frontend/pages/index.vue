@@ -52,7 +52,7 @@ definePageMeta({
       >
         Explore the Library
         <ArrowRight
-          class="h-4 w-4 transition-transform group-hover:translate-x-1"
+          class="size-4 transition-transform group-hover:translate-x-1"
         />
       </NuxtLink>
     </div>
