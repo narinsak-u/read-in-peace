@@ -21,7 +21,7 @@ function getCategorySubtotals(items: readonly CartItem[]): CategorySubtotal[] {
   for (const item of items) {
     const category = item.category ?? "uncategorized";
     const existing = map.get(category) ?? { subtotal: 0, count: 0 };
-    existing.subtotal += Math.round(item.price * 100);
+    existing.subtotal += Math.round(item.price * item.quantity * 100);
     existing.count += 1;
     map.set(category, existing);
   }
@@ -36,7 +36,10 @@ export function computeDiscount(
   items: readonly CartItem[],
   planDiscountPercent: number = 0,
 ): DiscountBreakdown {
-  const subtotal = items.reduce((sum, i) => sum + Math.round(i.price * 100), 0);
+  const subtotal = items.reduce(
+    (sum, i) => sum + Math.round(i.price * i.quantity * 100),
+    0,
+  );
 
   const count = items.length;
   const tierPercent = count >= 4 ? 30 : count === 3 ? 20 : count === 2 ? 10 : 0;

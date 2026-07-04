@@ -1,8 +1,8 @@
-import { defineStore } from 'pinia';
-import { useAuthStore } from '~/stores/auth';
-import { useFlash } from '~/composables/useFlash';
+import { defineStore } from "pinia";
+import { useAuthStore } from "~/stores/auth";
+import { useFlash } from "~/composables/useFlash";
 
-const STORAGE_KEY = 'read-in-peace-cart';
+const STORAGE_KEY = "read-in-peace-cart";
 
 export interface CartItem {
   id: string;
@@ -15,10 +15,7 @@ export interface CartItem {
   category?: string;
 }
 
-function mergeGuestCart(
-  existing: CartItem[],
-  guest: CartItem[],
-): CartItem[] {
+function mergeGuestCart(existing: CartItem[], guest: CartItem[]): CartItem[] {
   const map = new Map(existing.map((item) => [item.id, item]));
   for (const guestItem of guest) {
     const existingItem = map.get(guestItem.id);
@@ -34,8 +31,17 @@ function mergeGuestCart(
   return Array.from(map.values());
 }
 
-export const useCartStore = defineStore('cart', () => {
-  const items = ref<CartItem[]>([]);
+function loadInitialItems(): CartItem[] {
+  if (typeof localStorage === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return [];
+}
+
+export const useCartStore = defineStore("cart", () => {
+  const items = ref<CartItem[]>(loadInitialItems());
   const { flash } = useFlash();
 
   const itemCount = computed(() =>
@@ -63,7 +69,7 @@ export const useCartStore = defineStore('cart', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items.value));
   }
 
-  function addItem(item: Omit<CartItem, 'quantity'>) {
+  function addItem(item: Omit<CartItem, "quantity">) {
     const existing = items.value.find((i) => i.id === item.id);
     if (existing) {
       existing.quantity++;
@@ -120,23 +126,22 @@ export const useCartStore = defineStore('cart', () => {
       return;
     }
     try {
-      const res = await $fetch<{ url: string }>('/api/cart/checkout', {
-        method: 'POST',
+      const res = await $fetch<{ url: string }>("/api/cart/checkout", {
+        method: "POST",
         body: { bookIds: items.value.map((i) => i.id) },
       });
       await navigateTo(res.url, { external: true });
     } catch (e: any) {
       if (e?.statusCode === 401) {
-        flash('Please sign in to checkout');
+        flash("Please sign in to checkout");
       } else if (e?.data?.message) {
         flash(e.data.message);
       } else {
-        flash('Failed to start checkout');
+        flash("Failed to start checkout");
       }
     }
   }
 
-  hydrateFromStorage();
   watch(items, persist, { deep: true });
 
   const auth = useAuthStore();
