@@ -117,23 +117,24 @@ function addToCart() {
   </article>
 
   <Dialog v-model:open="showConfirmDialog">
-    <DialogContent>
+    <DialogContent
+      class="data-[state=open]:slide-in-from-bottom-[30%] sm:data-[state=open]:slide-in-from-bottom-[15%] data-[state=closed]:slide-out-to-bottom-[30%] sm:data-[state=closed]:slide-out-to-bottom-[15%]"
+    >
       <DialogHeader>
         <DialogTitle>Already in your library</DialogTitle>
         <DialogDescription>
           You already own {{ ownedCount }} cop{{
             ownedCount > 1 ? "ies" : "y"
           }}
-          of <strong>{{ book.title }}</strong>. Are you sure you want to buy more?
+          of <strong>{{ book.title }}</strong
+          >. Are you sure you want to buy more?
         </DialogDescription>
       </DialogHeader>
       <DialogFooter>
         <Button variant="archivalOutline" @click="showConfirmDialog = false">
           Cancel
         </Button>
-        <Button variant="archival" @click="confirmBuy">
-          Yes, Add More
-        </Button>
+        <Button variant="archival" @click="confirmBuy"> Yes, Add More </Button>
       </DialogFooter>
     </DialogContent>
   </Dialog>
