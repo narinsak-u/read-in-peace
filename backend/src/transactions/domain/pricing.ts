@@ -12,13 +12,23 @@ export interface DiscountResult {
   tierDiscount: number;
   categoryBonus: number;
   every100Discount: number;
+  planDiscount: number;
   total: number;
 }
+
+export const PLAN_DISCOUNT: Record<string, number> = {
+  free: 5,
+  curator: 15,
+  archivist: 25,
+};
 
 const EVERY_X_CENTS = 10000;
 const EVERY_X_DISCOUNT_CENTS = 100;
 
-export function applyDiscounts(books: DiscountInput[]): DiscountResult {
+export function applyDiscounts(
+  books: DiscountInput[],
+  planDiscountPercent: number = 0,
+): DiscountResult {
   const subtotal = books.reduce(
     (sum, b) => sum + Math.round(Number(b.price) * 100),
     0,
@@ -49,6 +59,9 @@ export function applyDiscounts(books: DiscountInput[]): DiscountResult {
   }
   runningTotal -= categoryBonus;
 
+  const planDiscount = Math.round(runningTotal * (planDiscountPercent / 100));
+  runningTotal -= planDiscount;
+
   const every100Discount =
     Math.floor(runningTotal / EVERY_X_CENTS) * EVERY_X_DISCOUNT_CENTS;
   runningTotal -= every100Discount;
@@ -61,6 +74,7 @@ export function applyDiscounts(books: DiscountInput[]): DiscountResult {
     tierDiscount,
     categoryBonus,
     every100Discount,
+    planDiscount,
     total,
   };
 }
