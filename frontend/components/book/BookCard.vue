@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ExternalLink, ShoppingBag, Star } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button/variants";
 import {
   Dialog,
   DialogContent,
@@ -97,15 +98,14 @@ function addToCart() {
     </div>
     <div class="mt-3 flex gap-1">
       <template v-if="actions.isPurchased && receiptUrl">
-        <Button
-          size="sm"
-          variant="archival"
-          as-child
+        <a
+          :href="receiptUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          :class="buttonVariants({ variant: 'archival', size: 'sm' })"
         >
-          <a :href="receiptUrl" target="_blank" rel="noopener noreferrer">
-            <ExternalLink class="size-3" /> Receipt
-          </a>
-        </Button>
+          <ExternalLink class="size-3" /> Receipt
+        </a>
       </template>
       <template v-else-if="actions.isBorrowed">
         <Button size="sm" variant="archival" @click="onReturn">Return</Button>
