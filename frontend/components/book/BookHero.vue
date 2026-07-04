@@ -61,7 +61,7 @@ function scrollTo(id: string) {
         @click="flash('This feature is coming soon!')"
       >
         <Heart :class="liked ? 'fill-current text-primary' : ''" />
-        Save to list
+        Join waitlist
       </Button>
       <Button variant="archivalGhost" @click="scrollTo('discussion')">
         <MessageCircle /> Read discussion
