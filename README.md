@@ -1,6 +1,19 @@
 # Read in Peace
 
+![Screenshot](frontend/public/Screenshot.png)
+
 A quiet library to review, borrow, return, and buy books — built with Nuxt 3 + NestJS.
+
+## Key features
+
+- **Borrow & return** — Browse the library, borrow books for 7–30 days depending on your plan, return when you're done
+- **Buy & keep** — Purchase books you love and build your personal library
+- **Discount pipeline** — Automatic quantity tiers (up to 30% off), category bonuses, and every-$100 savings
+- **Reader feed** — Share reviews, rate books, and discuss with other readers
+- **Membership plans** — Free, Curator, and Archivist tiers with escalating borrow limits and discounts
+- **Client-side cart** — localStorage-persisted cart with live discount previews and guest cart merge on sign-in
+- **Stripe checkout** — Secure payments via Stripe Checkout Sessions
+- **Book club** — Comming soon!
 
 ## Stack
 
@@ -29,13 +42,6 @@ npm run -w backend db:seed
 npm run dev:all
 ```
 
-### Credentials
-
-| Email | Password | Role |
-|---|---|---|
-| `seed@readinpace.com` | `seed123` | Default user |
-| `admin@gmail.com` | `123456789` | Registered user (toggle admin mode) |
-
 ## Packages
 
 | Package | Description | Port |
@@ -52,3 +58,12 @@ npm run dev:backend    # NestJS watch mode only
 ```
 
 See `frontend/README.md` and `backend/README.md` for package-specific commands.
+
+## Environment
+
+Copy `.env.example` from each package to `.env` and fill in the values.
+
+| Package | Key variables |
+|---------|--------------|
+| `frontend/` | `NUXT_PUBLIC_BACKEND_URL`, `NUXT_PUBLIC_SITE_URL` |
+| `backend/` | `DATABASE_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `BETTER_AUTH_URL`, `AUTH_SECRET`, `PORT`, `NODE_ENV`, `LOG_LEVEL`, `CORS_ORIGINS`, `FRONTEND_URL` |
