@@ -1,7 +1,5 @@
 # Read in Peace — Backend
 
-![Screenshot](../frontend/public/Screenshot.png)
-
 NestJS v11 REST API with Better Auth, Drizzle ORM, and PostgreSQL, organized as
 per-feature modules with a clean-architecture layer split (domain /
 application / infrastructure / presentation).
