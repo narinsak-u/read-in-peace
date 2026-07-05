@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { BookOpen } from "lucide-vue-next";
 import { useAuthStore } from "~/stores/auth";
 import { useBookStatusStore } from "~/stores/bookStatus";
+import { useCartStore } from "~/stores/cart";
 import { usePurchases } from "~/composables/usePurchases";
 import { useBorrows } from "~/composables/useBorrows";
 import type { StockActions } from "~/utils/stock";
@@ -37,6 +38,7 @@ const {
 const { borrows, borrowsLoaded, borrowsPage, borrowsMeta, fetchBorrows } =
   useBorrows();
 const { returnBook } = useBookStatusStore();
+const cart = useCartStore();
 
 const pageNumbers = computed(() => {
   const total = borrowsMeta.value?.totalPages ?? 1;
@@ -94,6 +96,7 @@ async function onConfirmPurchase(sessionId: string) {
   confirming.value = true;
   try {
     await confirmPurchase(sessionId);
+    cart.clear();
     flash("Purchase confirmed! Welcome to your library.");
     await router.replace({ query: {} });
   } catch (e: any) {
