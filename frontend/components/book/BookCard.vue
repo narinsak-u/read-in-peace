@@ -117,7 +117,7 @@ function addToCart() {
         <Button size="sm" variant="archival" disabled>Unavailable</Button>
       </template>
       <Button
-        v-if="!actions.isPurchased && actions.canBuy"
+        v-if="actions.canBuy"
         size="icon"
         variant="archivalGhost"
         :aria-label="`Buy ${book.title}`"
@@ -128,6 +128,7 @@ function addToCart() {
     </div>
   </article>
 
+  <!-- confirm dialog -->
   <Dialog v-model:open="showConfirmDialog">
     <DialogContent>
       <DialogHeader>
