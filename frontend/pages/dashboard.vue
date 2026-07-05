@@ -96,7 +96,10 @@ async function onConfirmPurchase(sessionId: string) {
   confirming.value = true;
   try {
     await confirmPurchase(sessionId);
-    cart.clear();
+    if (localStorage.getItem("pending-cart-checkout")) {
+      cart.clear();
+      localStorage.removeItem("pending-cart-checkout");
+    }
     flash("Purchase confirmed! Welcome to your library.");
     await router.replace({ query: {} });
   } catch (e: any) {
