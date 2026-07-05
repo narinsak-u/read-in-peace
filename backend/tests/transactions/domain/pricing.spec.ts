@@ -91,9 +91,7 @@ describe('applyDiscounts', () => {
   });
 
   describe('plan discount', () => {
-    const oneBook: DiscountInput[] = [
-      { price: '100.00', category: 'Fiction' },
-    ];
+    const oneBook: DiscountInput[] = [{ price: '100.00', category: 'Fiction' }];
 
     it('applies 0% when planDiscountPercent is 0', () => {
       const result = applyDiscounts(oneBook, 0);

@@ -19,7 +19,7 @@ const reviewBook = shallowRef<{
 } | null>(null);
 const rating = shallowRef(0);
 const reviewText = shallowRef("");
-const { notice, flash } = useFlash();
+const { flash } = useFlash();
 const auth = useAuthStore();
 </script>
 
@@ -70,7 +70,7 @@ const auth = useAuthStore();
       v-if="reviewBook"
       v-model:open="reviewOpen"
       v-model:rating="rating"
-      v-model:reviewText="reviewText"
+      v-model:review-text="reviewText"
       :book="reviewBook"
       :flash="flash"
     />

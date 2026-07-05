@@ -206,6 +206,9 @@ export const purchases = pgTable('purchases', {
     .notNull()
     .references(() => user.id, { onDelete: 'cascade' }),
   purchasedAt: timestamp('purchased_at').notNull().defaultNow(),
+  stripeSessionId: text('stripe_session_id'),
+  receiptUrl: text('receipt_url'),
+  amountTotal: integer('amount_total'),
 });
 
 export const readingGoals = pgTable('reading_goals', {

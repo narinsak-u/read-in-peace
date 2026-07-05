@@ -47,7 +47,7 @@ const fmt = computed(() => ({
   <div class="min-h-screen bg-background text-foreground">
     <Nav mode="cart" />
 
-    <main id="main-content" class="mx-auto max-w-6xl px-4 py-10 md:px-6 lg:py-14">
+    <main id="main-content" class="mx-auto max-w-7xl px-4 py-10 md:px-6 lg:py-14">
       <div class="border-b border-border pb-5">
         <p class="font-mono text-[10px] uppercase tracking-widest text-primary">
           The book bag
@@ -64,6 +64,7 @@ const fmt = computed(() => ({
         </p>
       </div>
 
+      <ClientOnly>
         <div
           v-if="cart.isEmpty"
           class="flex flex-col items-center py-24 text-center"
@@ -242,6 +243,7 @@ const fmt = computed(() => ({
             </p>
           </aside>
         </div>
+      </ClientOnly>
     </main>
   </div>
 </template>

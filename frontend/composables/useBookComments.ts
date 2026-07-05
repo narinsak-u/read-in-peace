@@ -1,7 +1,7 @@
 import { ref, shallowRef, readonly, watch, toRef } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { useInvalidate } from '~/composables/useInvalidate'
-import { getInitials, timeAgo, mapCommentToReview } from '~/utils/comment'
+import { mapCommentToReview } from '~/utils/comment'
 
 export interface CommentUser {
   id: string

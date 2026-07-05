@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ShoppingBag, Star } from "lucide-vue-next";
+import { ExternalLink, ShoppingBag, Star } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
+import { buttonVariants } from "~/components/ui/button/variants";
 import {
   Dialog,
   DialogContent,
@@ -12,7 +13,7 @@ import {
 import { storeToRefs } from "pinia";
 import { useCartStore } from "~/stores/cart";
 import { useBookStatusStore } from "~/stores/bookStatus";
-import { stockActions, type StockActions } from "~/utils/stock";
+import type { StockActions } from "~/utils/stock";
 import type { Book } from "~/types/book";
 
 const props = defineProps<{
@@ -20,6 +21,7 @@ const props = defineProps<{
   actions: StockActions;
   flash: (message: string) => void;
   purchasedAt?: string;
+  receiptUrl?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -95,7 +97,17 @@ function addToCart() {
       </span>
     </div>
     <div class="mt-3 flex gap-1">
-      <template v-if="actions.isBorrowed">
+      <template v-if="actions.isPurchased && receiptUrl">
+        <a
+          :href="receiptUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          :class="buttonVariants({ variant: 'archival', size: 'sm' })"
+        >
+          <ExternalLink class="size-3" /> Receipt
+        </a>
+      </template>
+      <template v-else-if="actions.isBorrowed">
         <Button size="sm" variant="archival" @click="onReturn">Return</Button>
       </template>
       <template v-else-if="actions.canBorrow">
@@ -116,6 +128,7 @@ function addToCart() {
     </div>
   </article>
 
+  <!-- confirm dialog -->
   <Dialog v-model:open="showConfirmDialog">
     <DialogContent>
       <DialogHeader>

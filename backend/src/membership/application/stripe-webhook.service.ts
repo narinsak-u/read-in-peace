@@ -103,7 +103,7 @@ export class StripeWebhookService {
       return;
     }
     if (session.metadata?.bookId || session.metadata?.bc) {
-      await this.purchaseConfirmation.recordFromSession(session);
+      await this.purchaseConfirmation.recordFromSession(session, null, null);
     }
   }
 

@@ -7,7 +7,7 @@ import { useCartStore } from "~/stores/cart";
 const query = defineModel<string>("query", { default: "" });
 const cart = useCartStore();
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
     mode?: "feed" | "book" | "cart";
   }>(),
@@ -53,7 +53,7 @@ const props = withDefaults(
       <div
         :class="
           mode === 'feed'
-            ? 'flex shrink-0 items-center gap-3 md:px-6'
+            ? 'ml-auto flex shrink-0 items-center gap-3 md:px-6'
             : 'ml-auto flex shrink-0 items-center gap-3 md:px-6'
         "
       >

@@ -33,12 +33,15 @@ export class DrizzlePurchaseRepository implements PurchaseRepository {
   async record(
     bookId: string,
     userId: string,
+    stripeSessionId?: string,
+    receiptUrl?: string | null,
+    amountTotal?: number | null,
     tx?: DatabaseOrTransaction,
   ): Promise<PurchaseRow> {
     const db = tx ?? this.db;
     const [row] = await db
       .insert(schema.purchases)
-      .values({ bookId, userId })
+      .values({ bookId, userId, stripeSessionId, receiptUrl, amountTotal })
       .returning();
     return row;
   }
@@ -52,6 +55,9 @@ export class DrizzlePurchaseRepository implements PurchaseRepository {
         bookId: schema.purchases.bookId,
         userId: schema.purchases.userId,
         purchasedAt: schema.purchases.purchasedAt,
+        stripeSessionId: schema.purchases.stripeSessionId,
+        receiptUrl: schema.purchases.receiptUrl,
+        amountTotal: schema.purchases.amountTotal,
       })
       .from(schema.purchases)
       .where(eq(schema.purchases.userId, userId))

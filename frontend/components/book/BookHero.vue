@@ -2,7 +2,6 @@
 import { Heart, MessageCircle } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import { useBook } from "~/composables/useBook";
-import { useAuthStore } from "~/stores/auth";
 import type { Book } from "~/types/book";
 
 const props = defineProps<{
@@ -11,9 +10,7 @@ const props = defineProps<{
   flash: (message: string) => void;
 }>();
 
-const auth = useAuthStore();
-
-const { liked, likeCount, userRating } = useBook(
+const { liked } = useBook(
   () => props.bookId,
 );
 

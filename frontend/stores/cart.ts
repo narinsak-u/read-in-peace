@@ -105,6 +105,7 @@ export const useCartStore = defineStore(
           method: "POST",
           body: { bookIds: items.value.map((i) => i.id) },
         });
+        localStorage.setItem("pending-cart-checkout", "true");
         await navigateTo(res.url, { external: true });
       } catch (e: any) {
         if (e?.statusCode === 401) {

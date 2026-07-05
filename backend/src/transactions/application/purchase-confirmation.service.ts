@@ -27,23 +27,38 @@ export class PurchaseConfirmationService {
   ) {}
 
   async confirm(sessionId: string, userId: string): Promise<unknown> {
-    const session = await this.stripe.checkout.sessions.retrieve(sessionId);
+    const session = await this.stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ['payment_intent', 'payment_intent.latest_charge'],
+    });
     if (
       session.payment_status !== 'paid' ||
       session.metadata?.userId !== userId
     ) {
       throw new BadRequestException('Invalid purchase confirmation');
     }
-    return this.recordFromSession(session);
+
+    const pi = session.payment_intent as any;
+    const receiptUrl =
+      pi?.latest_charge?.receipt_url ??
+      pi?.charges?.data?.[0]?.receipt_url ??
+      null;
+    const amountTotal = session.amount_total ?? null;
+
+    return this.recordFromSession(session, receiptUrl, amountTotal);
   }
 
-  async recordFromSession(session: any): Promise<unknown> {
+  async recordFromSession(
+    session: any,
+    receiptUrl: string | null,
+    amountTotal: number | null,
+  ): Promise<unknown> {
     if (session.payment_status !== 'paid') {
       return { skipped: 'not paid' };
     }
 
     const userId: string | undefined = session.metadata?.userId;
     if (!userId) return { skipped: 'no userId' };
+    const sessionId: string = session.id;
 
     const bookCount = Number(session.metadata?.bc);
     if (bookCount > 0) {
@@ -51,35 +66,73 @@ export class PurchaseConfirmationService {
       for (let i = 0; i < bookCount; i++) {
         bookIds.push(session.metadata[`b${i}`]);
       }
-      return this.recordBatchPurchases(bookIds, userId);
+      return this.recordBatchPurchases(
+        bookIds,
+        userId,
+        sessionId,
+        receiptUrl,
+        amountTotal,
+      );
     }
 
     const bookId: string | undefined = session.metadata?.bookId;
     if (!bookId) {
       throw new BadRequestException('No book IDs found in session metadata');
     }
-    return this.recordSinglePurchase(bookId, userId);
+    return this.recordSinglePurchase(
+      bookId,
+      userId,
+      sessionId,
+      receiptUrl,
+      amountTotal,
+    );
   }
 
-  private async recordSinglePurchase(bookId: string, userId: string) {
+  private async recordSinglePurchase(
+    bookId: string,
+    userId: string,
+    stripeSessionId?: string,
+    receiptUrl?: string | null,
+    amountTotal?: number | null,
+  ) {
     return this.db.transaction(async (tx) => {
       const existing = await this.purchases.findExisting(bookId, userId, tx);
       if (existing) return existing;
 
-      const purchase = await this.purchases.record(bookId, userId, tx);
+      const purchase = await this.purchases.record(
+        bookId,
+        userId,
+        stripeSessionId,
+        receiptUrl,
+        amountTotal,
+        tx,
+      );
       await this.books.decrementStock(bookId, tx);
 
       return purchase;
     });
   }
 
-  private async recordBatchPurchases(bookIds: string[], userId: string) {
+  private async recordBatchPurchases(
+    bookIds: string[],
+    userId: string,
+    stripeSessionId?: string,
+    receiptUrl?: string | null,
+    amountTotal?: number | null,
+  ) {
     return this.db.transaction(async (tx) => {
       const inserted: string[] = [];
       for (const bookId of bookIds) {
         const existing = await this.purchases.findExisting(bookId, userId, tx);
         if (existing) continue;
-        await this.purchases.record(bookId, userId, tx);
+        await this.purchases.record(
+          bookId,
+          userId,
+          stripeSessionId,
+          receiptUrl,
+          amountTotal,
+          tx,
+        );
         inserted.push(bookId);
       }
       for (const bookId of inserted) {

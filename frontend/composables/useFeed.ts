@@ -27,7 +27,7 @@ export interface FeedPost {
 }
 
 export function useFeed() {
-  const { invalidate, onInvalidate } = useInvalidate();
+  const { onInvalidate } = useInvalidate();
   const { books: trendingBooks, loading: trendingLoading } = useBooks({
     trending: true,
   });

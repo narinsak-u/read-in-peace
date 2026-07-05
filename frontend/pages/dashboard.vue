@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { BookOpen } from "lucide-vue-next";
 import { useAuthStore } from "~/stores/auth";
 import { useBookStatusStore } from "~/stores/bookStatus";
+import { useCartStore } from "~/stores/cart";
 import { usePurchases } from "~/composables/usePurchases";
 import { useBorrows } from "~/composables/useBorrows";
 import type { StockActions } from "~/utils/stock";
@@ -37,6 +38,7 @@ const {
 const { borrows, borrowsLoaded, borrowsPage, borrowsMeta, fetchBorrows } =
   useBorrows();
 const { returnBook } = useBookStatusStore();
+const cart = useCartStore();
 
 const pageNumbers = computed(() => {
   const total = borrowsMeta.value?.totalPages ?? 1;
@@ -94,6 +96,10 @@ async function onConfirmPurchase(sessionId: string) {
   confirming.value = true;
   try {
     await confirmPurchase(sessionId);
+    if (localStorage.getItem("pending-cart-checkout")) {
+      cart.clear();
+      localStorage.removeItem("pending-cart-checkout");
+    }
     flash("Purchase confirmed! Welcome to your library.");
     await router.replace({ query: {} });
   } catch (e: any) {
@@ -126,7 +132,7 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen pb-28 bg-background text-foreground">
     <Nav mode="cart" />
-    <main id="main-content" class="mx-auto max-w-6xl px-4 py-10 md:px-6 lg:py-14">
+    <main id="main-content" class="mx-auto max-w-7xl px-4 py-10 md:px-6 lg:py-14">
       <div class="border-b border-border pb-5">
         <p class="font-mono text-[10px] uppercase tracking-widest text-primary">
           Your collection
@@ -213,7 +219,8 @@ onMounted(async () => {
             v-for="entry in purchases"
             :key="entry.purchase?.id ?? entry.book?.id"
             :book="mapBookResponse(entry.book as Record<string, unknown>)"
-            :purchased-at="entry.purchase?.purchasedAt as string | undefined"
+            :purchased-at="entry.purchase?.purchasedAt"
+            :receipt-url="entry.purchase?.receiptUrl"
             :actions="{
               isBorrowed: false,
               canBuy: (entry.book?.inStock ?? 0) > 1,
