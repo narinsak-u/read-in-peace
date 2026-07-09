@@ -58,6 +58,13 @@ function signOut() {
       >
         My Library
       </NuxtLink>
+      <NuxtLink
+        :to="`/profile/${auth.user?.id}`"
+        class="flex w-full items-center px-3 py-2 text-sm hover:bg-accent rounded-sm"
+        @click="show = false"
+      >
+        View Profile
+      </NuxtLink>
       <hr class="border-border" />
       <Button
         variant="archivalGhost"
