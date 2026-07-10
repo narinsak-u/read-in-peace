@@ -1,4 +1,9 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+} from '@nestjs/common';
 import type { ProfileResponse } from '../domain/profile';
 import { PROFILE_REPOSITORY } from '../domain/profile';
 import type { ProfileRepository } from '../domain/profile';
@@ -9,11 +14,38 @@ export class ProfileService {
     @Inject(PROFILE_REPOSITORY) private readonly profiles: ProfileRepository,
   ) {}
 
-  async getProfile(profileId: string): Promise<ProfileResponse> {
+  async getProfile(
+    profileId: string,
+    currentUserId?: string,
+  ): Promise<ProfileResponse> {
     const user = await this.profiles.findById(profileId);
     if (!user) throw new NotFoundException('User not found');
 
-    const categoryStats = await this.profiles.getCategoryStats(profileId);
-    return { user, categoryStats };
+    const [categoryStats, follow] = await Promise.all([
+      this.profiles.getCategoryStats(profileId),
+      currentUserId
+        ? this.profiles
+            .isFollowing(currentUserId, profileId)
+            .then(async (following) => {
+              const followerCount =
+                await this.profiles.countFollowers(profileId);
+              return { following, followerCount };
+            })
+        : null,
+    ]);
+
+    return { user, categoryStats, follow };
+  }
+
+  async toggleFollow(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ following: boolean; followerCount: number }> {
+    if (followerId === followingId) {
+      throw new ForbiddenException('You cannot follow yourself');
+    }
+    const target = await this.profiles.findById(followingId);
+    if (!target) throw new NotFoundException('User not found');
+    return this.profiles.toggleFollow(followerId, followingId);
   }
 }

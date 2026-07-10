@@ -7,6 +7,11 @@ export interface ProfileUser {
   createdAt: Date;
 }
 
+export interface FollowInfo {
+  following: boolean;
+  followerCount: number;
+}
+
 export interface CategoryStat {
   category: string;
   borrowCount: number;
@@ -16,9 +21,16 @@ export interface CategoryStat {
 export interface ProfileResponse {
   user: ProfileUser;
   categoryStats: CategoryStat[];
+  follow: FollowInfo | null;
 }
 
 export interface ProfileRepository {
   findById(id: string): Promise<ProfileUser | null>;
   getCategoryStats(userId: string): Promise<CategoryStat[]>;
+  isFollowing(followerId: string, followingId: string): Promise<boolean>;
+  countFollowers(userId: string): Promise<number>;
+  toggleFollow(
+    followerId: string,
+    followingId: string,
+  ): Promise<{ following: boolean; followerCount: number }>;
 }

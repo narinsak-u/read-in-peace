@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { IamModule } from '../iam/iam.module';
 import { DrizzleProfileRepository } from './infrastructure/drizzle-profile.repository';
 import { PROFILE_REPOSITORY } from './domain/profile';
 import { ProfileService } from './application/profile.service';
@@ -10,7 +11,7 @@ const alias = (token: symbol, impl: unknown) => ({
 });
 
 @Module({
-  imports: [],
+  imports: [IamModule],
   controllers: [ProfileController],
   providers: [
     DrizzleProfileRepository,
