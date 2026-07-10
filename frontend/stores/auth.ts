@@ -4,6 +4,7 @@ import { authClient, signIn, signUp, signOut } from '~/lib/auth-client';
 import { useFlash } from '~/composables/useFlash';
 
 export interface User {
+  id: string;
   name: string;
   email: string;
 }

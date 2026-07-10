@@ -1,10 +1,13 @@
 <script setup lang="ts">
-import { Home, Library, MessageCircle, Settings } from "lucide-vue-next";
+import { Home, Library, MessageCircle, Settings, User } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
+import { useAuthStore } from "~/stores/auth";
 
 defineProps<{
   flash: (message: string) => void;
 }>();
+
+const auth = useAuthStore();
 </script>
 
 <template>
@@ -19,6 +22,14 @@ defineProps<{
     <Button variant="archivalDock" @click="navigateTo('/dashboard')">
       <Library /><span class="font-mono text-[8px] uppercase opacity-60">
         Shelf
+      </span>
+    </Button>
+    <Button
+      variant="archivalDock"
+      @click="navigateTo(auth.user?.id ? `/profile/${auth.user.id}` : '/feed')"
+    >
+      <User /><span class="font-mono text-[8px] uppercase opacity-60">
+        Profile
       </span>
     </Button>
     <Button

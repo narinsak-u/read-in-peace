@@ -10,10 +10,14 @@ export function mapFeedPost(raw: Record<string, unknown>): FeedPost {
     user: raw.user as FeedPost['user'],
     likeCount: (raw.likeCount as number) ?? 0,
     replyCount: replies.length,
-    replies: replies.map((r) => ({
-      name: ((r.user as Record<string, unknown>)?.name as string) ?? 'Unknown',
-      text: r.text as string,
-    })),
+    replies: replies.map((r) => {
+      const replyUser = (r.user as Record<string, unknown> | undefined) ?? {};
+      return {
+        userId: (replyUser.id as string) ?? '',
+        name: (replyUser.name as string) ?? 'Unknown',
+        text: r.text as string,
+      };
+    }),
     liked: (raw.likedByUser as boolean) ?? false,
   };
 }

@@ -27,7 +27,7 @@ describe("mapFeedPost", () => {
     expect(post.likeCount).toBe(15);
     expect(post.liked).toBe(true);
     expect(post.replies).toHaveLength(1);
-    expect(post.replies[0]).toEqual({ name: "Bob", text: "Totally agree" });
+    expect(post.replies[0]).toEqual({ name: "Bob", text: "Totally agree", userId: "" });
   });
 
   it("handles no rating", () => {

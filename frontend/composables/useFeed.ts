@@ -10,6 +10,7 @@ export interface FeedUser {
 }
 
 export interface FeedReply {
+  userId: string;
   name: string;
   text: string;
 }

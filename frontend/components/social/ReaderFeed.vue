@@ -78,6 +78,7 @@ function onToggleLike(postId: string): () => Promise<void> {
         :key="post.id"
         :initials="getInitials(post.user.name)"
         :name="post.user.name"
+        :user-id="post.user.id"
         :time="timeAgo(post.createdAt)"
         :like-count="post.likeCount"
         :liked="post.liked"

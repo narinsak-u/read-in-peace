@@ -2,8 +2,15 @@
 import { Button } from "~/components/ui/button";
 import { useAuthStore } from "~/stores/auth";
 
+interface Reply {
+  userId: string;
+  name: string;
+  text: string;
+}
+
 interface Review {
   id: string;
+  userId: string;
   initials: string;
   name: string;
   time: string;
@@ -11,7 +18,7 @@ interface Review {
   text: string;
   likes: number;
   likedByUser: boolean;
-  readonly replies: readonly string[];
+  readonly replies: readonly Reply[];
 }
 
 defineProps<{
@@ -41,10 +48,15 @@ const replyText = shallowRef("");
       </span>
       <div class="min-w-0 flex-1">
         <div class="flex flex-wrap items-center gap-2">
-          <strong class="text-sm">{{ review.name }}</strong>
-          <span class="font-mono text-[10px] text-muted-foreground">{{
-            review.time
-          }}</span>
+          <NuxtLink
+            :to="`/profile/${review.userId}`"
+            class="text-sm font-bold hover:text-primary transition-colors"
+          >
+            {{ review.name }}
+          </NuxtLink>
+          <span class="font-mono text-[10px] text-muted-foreground">
+            {{ review.time }}
+          </span>
           <span
             v-if="review.rating > 0"
             class="ml-auto text-sm text-primary"
@@ -60,52 +72,66 @@ const replyText = shallowRef("");
           {{ review.text }}
         </p>
         <div class="mt-3 flex gap-2">
-          <Button size="sm" variant="archivalGhost" @click="emit('like')" :class="review.likedByUser ? 'text-primary' : ''">
-            {{ review.likedByUser ? 'Liked' : 'Like' }} ({{ review.likes }})
+          <Button
+            size="sm"
+            variant="archivalGhost"
+            @click="emit('like')"
+            :class="review.likedByUser ? 'text-primary' : ''"
+          >
+            {{ review.likedByUser ? "Liked" : "Like" }} ({{ review.likes }})
           </Button>
           <Button size="sm" variant="archivalGhost" @click="emit('reply')">
             Reply ({{ review.replies.length }})
           </Button>
         </div>
+
+        <!-- replies -->
         <div
           v-if="review.replies.length > 0"
           class="mt-4 space-y-3 border-l border-primary/20 pl-4"
         >
           <p
-            v-for="(text, i) in review.replies"
+            v-for="(reply, i) in review.replies"
             :key="i"
             class="text-sm leading-6 text-muted-foreground"
           >
-            {{ text }}
+            {{ reply.text }}
+            <NuxtLink
+              :to="`/profile/${reply.userId}`"
+              class="hover:text-primary transition-colors"
+            >
+              — {{ reply.name }}
+            </NuxtLink>
           </p>
         </div>
         <div v-if="isReplying" class="mt-4">
           <template v-if="auth.signedIn">
-          <textarea
-            v-model="replyText"
-            rows="2"
-            placeholder="Write your reply..."
-            class="w-full resize-none rounded-sm border border-border bg-card p-3 text-sm focus:ring-1 focus:ring-ring"
-          />
-          <div class="mt-2 flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="archivalGhost"
-              @click="emit('cancel-reply')"
-              >Cancel</Button
-            >
-            <Button
-              size="sm"
-              variant="archival"
-              :disabled="!replyText.trim() || replySubmitting"
-              @click="
-                emit('publish-reply', replyText.trim());
-                replyText = '';
-              "
-            >
-              Post Reply
-            </Button>
-          </div>
+            <textarea
+              v-model="replyText"
+              rows="2"
+              placeholder="Write your reply..."
+              class="w-full resize-none rounded-sm border border-border bg-card p-3 text-sm focus:ring-1 focus:ring-ring"
+            />
+            <div class="mt-2 flex justify-end gap-2">
+              <Button
+                size="sm"
+                variant="archivalGhost"
+                @click="emit('cancel-reply')"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="archival"
+                :disabled="!replyText.trim() || replySubmitting"
+                @click="
+                  emit('publish-reply', replyText.trim());
+                  replyText = '';
+                "
+              >
+                Post Reply
+              </Button>
+            </div>
           </template>
         </div>
       </div>

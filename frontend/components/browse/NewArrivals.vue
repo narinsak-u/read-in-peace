@@ -16,7 +16,13 @@ const store = useBookStatusStore();
 const { borrowedSlugs, purchasedCounts } = storeToRefs(store);
 const { borrow, returnBook } = store;
 const { filtered, meta, page, category, pageNumbers } = useBooks({ query });
-const categories = ["How-to", "Fiction", "Manga"] as const;
+const categories = [
+  "How-to",
+  "Fiction",
+  "Manga",
+  "History",
+  "Business",
+] as const;
 
 async function onBorrow(slug: string, bookId: string) {
   if (!auth.signedIn) {
