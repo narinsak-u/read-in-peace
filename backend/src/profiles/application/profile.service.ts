@@ -4,7 +4,7 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
-import type { ProfileResponse } from '../domain/profile';
+import type { ProfileResponse, FollowInfo } from '../domain/profile';
 import { PROFILE_REPOSITORY } from '../domain/profile';
 import type { ProfileRepository } from '../domain/profile';
 
@@ -23,18 +23,21 @@ export class ProfileService {
 
     const [categoryStats, follow] = await Promise.all([
       this.profiles.getCategoryStats(profileId),
-      currentUserId
-        ? this.profiles
-            .isFollowing(currentUserId, profileId)
-            .then(async (following) => {
-              const followerCount =
-                await this.profiles.countFollowers(profileId);
-              return { following, followerCount };
-            })
-        : null,
+      currentUserId ? this.getFollowStatus(currentUserId, profileId) : null,
     ]);
 
     return { user, categoryStats, follow };
+  }
+
+  private async getFollowStatus(
+    followerId: string,
+    profileId: string,
+  ): Promise<FollowInfo> {
+    const [following, followerCount] = await Promise.all([
+      this.profiles.isFollowing(followerId, profileId),
+      this.profiles.countFollowers(profileId),
+    ]);
+    return { following, followerCount };
   }
 
   async toggleFollow(

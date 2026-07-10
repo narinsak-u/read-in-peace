@@ -88,7 +88,7 @@ describe('mapCommentToReview', () => {
     expect(review.rating).toBe(5)
     expect(review.likes).toBe(10)
     expect(review.likedByUser).toBe(true)
-    expect(review.replies).toEqual(['I agree! — Bob'])
+    expect(review.replies).toEqual([{ userId: 'u2', name: 'Bob', text: 'I agree!' }])
   })
 
   it('handles null rating', () => {
