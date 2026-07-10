@@ -19,6 +19,7 @@ export function mapCommentToReview(
 ): import('~/composables/useBookComments').Review {
   return {
     id: comment.id,
+    userId: comment.user.id,
     initials: getInitials(comment.user.name),
     name: comment.user.name,
     time: timeAgo(comment.createdAt),
@@ -26,8 +27,10 @@ export function mapCommentToReview(
     text: comment.text,
     likes: comment.likeCount ?? 0,
     likedByUser: comment.likedByUser,
-    replies: (comment.replies ?? []).map(
-      (r) => `${r.text} — ${r.user.name}`,
-    ),
+    replies: (comment.replies ?? []).map((r) => ({
+      userId: r.user.id,
+      name: r.user.name,
+      text: r.text,
+    })),
   };
 }

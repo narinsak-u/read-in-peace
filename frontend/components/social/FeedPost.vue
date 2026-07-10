@@ -4,6 +4,7 @@ import { Button } from "~/components/ui/button";
 import { useAuthStore } from "~/stores/auth";
 
 interface Reply {
+  userId: string;
   name: string;
   text: string;
   pending?: boolean;
@@ -12,6 +13,7 @@ interface Reply {
 const props = defineProps<{
   initials: string;
   name: string;
+  userId: string;
   time: string;
   likeCount: number;
   liked?: boolean;
@@ -79,7 +81,13 @@ async function postReply() {
   if (!replyText.value.trim() || props.submitting) return;
   const text = replyText.value.trim();
   const authorName = auth.user?.name ?? "You";
-  const optimistic: Reply = { name: authorName, text, pending: true };
+  const authorId = auth.user?.id ?? "";
+  const optimistic: Reply = {
+    name: authorName,
+    userId: authorId,
+    text,
+    pending: true,
+  };
   optimisticReplies.value = [...optimisticReplies.value, optimistic];
   replyText.value = "";
 
@@ -106,7 +114,12 @@ async function postReply() {
       >
         {{ initials }}
       </span>
-      <span class="text-[11px] font-bold uppercase">{{ name }}</span>
+      <NuxtLink
+        :to="`/profile/${userId}`"
+        class="text-[11px] font-bold uppercase hover:text-primary transition-colors"
+      >
+        {{ name }}
+      </NuxtLink>
       <span class="font-mono text-[10px] text-muted-foreground">
         {{ time }}
       </span>
@@ -145,7 +158,13 @@ async function postReply() {
               :class="reply.pending ? 'opacity-60' : ''"
             >
               <span class="ml-1 text-foreground/70">
-                {{ `${reply.text} — ${reply.name}` }}
+                {{ reply.text }}
+                <NuxtLink
+                  :to="`/profile/${reply.userId}`"
+                  class="hover:text-primary transition-colors"
+                >
+                  — {{ reply.name }}
+                </NuxtLink>
               </span>
               <span
                 v-if="reply.pending"

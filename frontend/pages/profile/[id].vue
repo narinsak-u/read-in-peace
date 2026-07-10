@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { BookOpen } from "lucide-vue-next";
 import { useProfile } from "~/composables/useProfile";
+import { useFollow } from "~/composables/useFollow";
 import ProfileInfo from "~/components/profile/ProfileInfo.vue";
 import StatsRadar from "~/components/profile/StatsRadar.vue";
 
@@ -13,20 +14,39 @@ const { flash } = useFlash();
 const route = useRoute();
 const userId = computed(() => route.params.id as string);
 const { profile, loading, error, refresh } = useProfile(userId.value);
+const { error: followError, toggle } = useFollow();
 
 watch(error, (err) => {
   if (err) flash("Could not load profile");
 });
 
+watch(followError, (err) => {
+  if (err) flash(err);
+});
+
 watch(userId, () => refresh());
+
+function onFollow() {
+  toggle(userId.value, (result) => {
+    if (profile.value) {
+      profile.value = {
+        ...profile.value,
+        follow: {
+          following: result.following,
+          followerCount: result.followerCount,
+        },
+      };
+    }
+  });
+}
 </script>
 
 <template>
   <div class="min-h-screen bg-background pb-28 text-foreground">
-    <Nav mode="feed" />
+    <Nav mode="profile" />
     <main
       id="main-content"
-      class="mx-auto max-w-6xl px-4 py-10 md:px-6 lg:py-14"
+      class="mx-auto max-w-7xl px-4 py-10 md:px-6 lg:py-14"
     >
       <div v-if="loading" class="mt-16 text-center">
         <p class="font-serif italic text-muted-foreground">
@@ -35,21 +55,19 @@ watch(userId, () => refresh());
       </div>
 
       <template v-else-if="profile">
-        <!-- Section 1: Avatar + user info -->
         <section>
-          <ProfileInfo :user="profile.user" />
+          <ProfileInfo
+            :user="profile.user"
+            :following="profile.follow?.following ?? null"
+            :follower-count="profile.follow?.followerCount ?? 0"
+            @follow="onFollow"
+          />
         </section>
 
-        <!-- Section 2: Radar chart -->
         <section
           v-if="profile.categoryStats.length > 0"
-          class="mt-14 border-t border-border pt-10"
+          class="mt-14 pt-10"
         >
-          <!-- <h2
-            class="mb-8 text-center font-serif text-xl font-semibold sm:text-left"
-          >
-            Characteristics
-          </h2> -->
           <StatsRadar :categories="profile.categoryStats" />
         </section>
 

@@ -24,8 +24,15 @@ export interface ApiComment {
   replies?: ApiComment[]
 }
 
+export interface CommentReply {
+  userId: string;
+  name: string;
+  text: string;
+}
+
 export interface Review {
   id: string
+  userId: string
   initials: string
   name: string
   time: string
@@ -33,7 +40,7 @@ export interface Review {
   text: string
   likes: number
   likedByUser: boolean
-  readonly replies: readonly string[]
+  readonly replies: readonly CommentReply[]
 }
 
 export function useBookComments(bookId: string | Ref<string> | (() => string)) {

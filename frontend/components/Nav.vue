@@ -9,7 +9,7 @@ const cart = useCartStore();
 
 withDefaults(
   defineProps<{
-    mode?: "feed" | "book" | "cart";
+    mode?: "feed" | "book" | "cart" | "profile";
   }>(),
   { mode: "feed" },
 );

@@ -11,7 +11,13 @@ export interface CategoryStat {
   purchaseCount: number;
 }
 
+export interface FollowInfo {
+  following: boolean;
+  followerCount: number;
+}
+
 export interface ProfileResponse {
   user: ProfileUser;
   categoryStats: CategoryStat[];
+  follow: FollowInfo | null;
 }
