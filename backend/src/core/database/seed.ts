@@ -48,11 +48,11 @@ const categories = [
   'Fiction',
   'How-to',
   'Fiction',
-  'How-to',
+  'History',
   'Fiction',
   'Fiction',
   'Fiction',
-  'How-to',
+  'Business',
   'Fiction',
   'Manga',
   'Fiction',
@@ -78,19 +78,6 @@ const synopses = [
   'Deep in the rainforest, two strangers find shelter and each other.',
   'A gritty coastal noir about a former boxer who becomes an unlikely saint.',
   'A magical realist romance spanning two continents and one orchid species.',
-];
-
-const commentTexts = [
-  'Read it in two sittings. The prose has a hush to it.',
-  'Beautifully restrained. The second act drifts a little but the ending earned it.',
-  "One of those books I'll keep on the nightstand.",
-  'Devastating and tender in equal measure.',
-  'Could not put this down. The atmosphere is unforgettable.',
-  'A slow burn that rewards patience. The last chapter broke me.',
-  'Perfect for a rainy weekend. Lyrical and haunting.',
-  'Not my usual genre but I was hooked from page one.',
-  'The world-building is subtle and masterful.',
-  "I've recommended this to everyone I know.",
 ];
 
 async function seed() {
