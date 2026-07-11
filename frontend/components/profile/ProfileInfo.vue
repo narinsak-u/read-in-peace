@@ -3,6 +3,7 @@ import { Calendar, MessageCircle, UserCheck, UserPlus } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import type { ProfileUser } from "~/types/profile";
 import { useAuthStore } from "~/stores/auth";
+import { useChatStore } from "~/stores/chat";
 
 const props = defineProps<{
   user: ProfileUser;
@@ -14,7 +15,6 @@ const emit = defineEmits<{
   follow: [];
 }>();
 
-const { flash } = useFlash();
 const auth = useAuthStore();
 
 const bio = ref(
@@ -47,7 +47,12 @@ function onFollowClick() {
 }
 
 function onMessageClick() {
-  flash("The feature is coming soon!");
+  if (auth.signedIn) {
+    const chatStore = useChatStore();
+    chatStore.openConversation(props.user.id);
+  } else {
+    auth.openAuthModal();
+  }
 }
 </script>
 

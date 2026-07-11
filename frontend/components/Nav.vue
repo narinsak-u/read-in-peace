@@ -1,11 +1,17 @@
 <script setup lang="ts">
-import { ArrowLeft, Library, ShoppingBag } from "lucide-vue-next";
+import { ArrowLeft, Library, MessageCircle, ShoppingBag } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import { buttonVariants } from "~/components/ui/button/variants";
+import { useAuthStore } from "~/stores/auth";
 import { useCartStore } from "~/stores/cart";
+import { useChatStore } from "~/stores/chat";
+import { useConversations } from "~/composables/useConversations";
 
 const query = defineModel<string>("query", { default: "" });
+const auth = useAuthStore();
 const cart = useCartStore();
+const chat = useChatStore();
+const { unreadCount } = useConversations();
 
 withDefaults(
   defineProps<{
@@ -13,6 +19,14 @@ withDefaults(
   }>(),
   { mode: "feed" },
 );
+
+function onMessagesClick() {
+  if (auth.signedIn) {
+    chat.toggle();
+  } else {
+    auth.openAuthModal();
+  }
+}
 </script>
 
 <template>
@@ -80,6 +94,23 @@ withDefaults(
               {{ cart.itemCount }}
             </span>
           </NuxtLink>
+        </Button>
+
+        <Button
+          v-if="auth.signedIn"
+          variant="archivalGhost"
+          size="icon"
+          :aria-label="`Messages${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`"
+          class="relative"
+          @click="onMessagesClick"
+        >
+          <MessageCircle class="size-5" />
+          <span
+            v-if="unreadCount > 0"
+            class="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground"
+          >
+            {{ unreadCount > 9 ? '9+' : unreadCount }}
+          </span>
         </Button>
 
         <ProfileDropdown />
