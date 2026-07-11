@@ -123,4 +123,14 @@ describe('ChatService', () => {
       expect(result).toBe(3);
     });
   });
+
+  describe('markAsRead', () => {
+    it('calls repository markAsRead', async () => {
+      chatRepo.markAsRead.mockResolvedValue(undefined);
+
+      await svc.markAsRead('u1', 'u2');
+
+      expect(chatRepo.markAsRead).toHaveBeenCalledWith('u1', 'u2');
+    });
+  });
 });
