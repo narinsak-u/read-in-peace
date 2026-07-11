@@ -1,22 +1,27 @@
 <script setup lang="ts">
-import { MessageCircle, X } from 'lucide-vue-next';
-import { useChatStore } from '~/stores/chat';
-import { useConversations } from '~/composables/useConversations';
-import { useChatMessages } from '~/composables/useChatMessages';
-import ConversationList from './ConversationList.vue';
-import MessageThread from './MessageThread.vue';
+import { MessageCircle, X } from "lucide-vue-next";
+import { useChatStore } from "~/stores/chat";
+import { useConversations } from "~/composables/useConversations";
+import { useChatMessages } from "~/composables/useChatMessages";
+import ConversationList from "./ConversationList.vue";
+import MessageThread from "./MessageThread.vue";
 
 const chat = useChatStore();
-const { conversations, unreadCount, loading: convsLoading } = useConversations();
+const {
+  conversations,
+  unreadCount,
+  loading: convsLoading,
+} = useConversations();
 
 const activeUser = computed(() => {
-  if (!chat.activeUserId.value) return null;
-  return conversations.value.find((c) => c.userId === chat.activeUserId.value) ?? null;
+  if (!chat.activeUserId) return null;
+  const found = conversations.value.find((c) => c.userId === chat.activeUserId);
+  return found ?? { userId: chat.activeUserId, name: chat.activeUserId, image: null, lastMessage: '', lastMessageAt: new Date(), unreadCount: 0 };
 });
 
 const messagesApi = computed(() => {
-  if (!chat.activeUserId.value) return null;
-  return useChatMessages(chat.activeUserId.value);
+  if (!chat.activeUserId) return null;
+  return useChatMessages(chat.activeUserId);
 });
 
 function onSelect(userId: string) {
@@ -61,9 +66,11 @@ function onLoadMore() {
       v-else
       class="fixed bottom-0 right-0 z-50 flex h-[500px] w-[360px] flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-2xl md:bottom-4 md:right-4 md:rounded-xl"
     >
-      <div class="flex items-center justify-between border-b border-border px-4 py-3">
+      <div
+        class="flex items-center justify-between border-b border-border px-4 py-3"
+      >
         <h3 class="text-sm font-semibold">
-          {{ chat.activeUserId ? activeUser?.name ?? 'Chat' : 'Messages' }}
+          {{ chat.activeUserId ? activeUser?.name : "Messages" }}
         </h3>
         <button
           class="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
@@ -81,9 +88,9 @@ function onLoadMore() {
           @select="onSelect"
         />
         <MessageThread
-          v-else-if="messagesApi && activeUser"
-          :user-id="chat.activeUserId"
-          :user-name="activeUser.name"
+          v-else-if="messagesApi"
+          :user-id="chat.activeUserId!"
+          :user-name="activeUser?.name || chat.activeUserId!"
           :messages="messagesApi.messages.value"
           :loading="messagesApi.loading.value"
           :sending="messagesApi.sending.value"
