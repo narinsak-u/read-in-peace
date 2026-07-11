@@ -49,7 +49,9 @@ describe('ChatService', () => {
     });
 
     it('throws Error when text is empty', async () => {
-      await expect(svc.send('u1', 'u2', '')).rejects.toThrow('Message cannot be empty');
+      await expect(svc.send('u1', 'u2', '')).rejects.toThrow(
+        'Message cannot be empty',
+      );
       expect(chatRepo.send).not.toHaveBeenCalled();
     });
 
@@ -110,7 +112,12 @@ describe('ChatService', () => {
       const result = await svc.getHistory('u1', 'u2');
 
       expect(result).toEqual([mockMessage]);
-      expect(chatRepo.getHistory).toHaveBeenCalledWith('u1', 'u2', undefined, 50);
+      expect(chatRepo.getHistory).toHaveBeenCalledWith(
+        'u1',
+        'u2',
+        undefined,
+        50,
+      );
     });
   });
 

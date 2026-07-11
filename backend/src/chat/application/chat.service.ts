@@ -8,9 +8,7 @@ import {
 
 @Injectable()
 export class ChatService {
-  constructor(
-    @Inject(CHAT_REPOSITORY) private readonly repo: ChatRepository,
-  ) {}
+  constructor(@Inject(CHAT_REPOSITORY) private readonly repo: ChatRepository) {}
 
   async send(
     senderId: string,

@@ -150,10 +150,8 @@ git commit -m "feat: add chat domain types and repository interface"
 
 ```typescript
 import { Test } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/common';
+import { DATABASE } from '../../../src/core/database/database.provider';
 import { DrizzleChatRepository } from '../../../src/chat/infrastructure/drizzle-chat.repository';
-import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
-import * as schema from '../../../src/core/database/schema';
 
 // We test the repository logic by mocking the Drizzle db instance.
 // The repository delegates to db.insert/db.select/db.update — we verify
@@ -161,7 +159,7 @@ import * as schema from '../../../src/core/database/schema';
 
 describe('DrizzleChatRepository', () => {
   let repo: DrizzleChatRepository;
-  let db: jest.Mocked<Pick<NodePgDatabase<typeof schema>, 'insert' | 'select' | 'update'>>;
+  let db: jest.Mocked<{ insert: jest.Mock; select: jest.Mock; update: jest.Mock }>;
 
   const mockMessage = {
     id: 'msg-1',
@@ -182,7 +180,7 @@ describe('DrizzleChatRepository', () => {
     const mod = await Test.createTestingModule({
       providers: [
         DrizzleChatRepository,
-        { provide: 'DRIZZLE_DB', useValue: db },
+        { provide: DATABASE, useValue: db },
       ],
     }).compile();
 
@@ -260,10 +258,9 @@ Expected: FAIL because `DrizzleChatRepository` module does not exist yet.
 ```typescript
 import { Injectable, Inject } from '@nestjs/common';
 import { and, eq, or, desc, sql, count } from 'drizzle-orm';
-import { NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { DATABASE, type Database } from '../../core/database/database.provider';
 import * as schema from '../../core/database/schema';
 import {
-  CHAT_REPOSITORY,
   type ChatRepository,
   type DirectMessage,
   type Conversation,
@@ -273,7 +270,7 @@ import {
 @Injectable()
 export class DrizzleChatRepository implements ChatRepository {
   constructor(
-    @Inject('DRIZZLE_DB') private readonly db: NodePgDatabase<typeof schema>,
+    @Inject(DATABASE) private readonly db: Database,
   ) {}
 
   async send(input: SendMessageInput): Promise<DirectMessage> {
