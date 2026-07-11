@@ -23,6 +23,7 @@ export function useConversations() {
         conversations.value = data.conversations;
         unreadCount.value = data.unreadCount;
         loading.value = false;
+        error.value = null;
       },
     );
 
@@ -35,15 +36,17 @@ export function useConversations() {
       emit("chat:unread");
     });
 
-    socket.on("chat:error", () => {
-      // Reset loading if backend returns an error
+    socket.on("chat:error", (data: { code: string; message: string }) => {
       loading.value = false;
+      error.value = data.message ?? "Failed to load conversations";
     });
 
-    // If the socket fails to connect (or drops mid-session) the connect
-    // handler below never fires, so loading would be stuck at true after a
-    // retry. Reset it here so the UI doesn't hang on "Loading...".
-    socket.on("connect_error", () => {
+    socket.on("connect_error", (err: Error) => {
+      loading.value = false;
+      error.value = err.message;
+    });
+
+    socket.on("disconnect", () => {
       loading.value = false;
     });
 

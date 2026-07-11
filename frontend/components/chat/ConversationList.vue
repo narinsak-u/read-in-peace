@@ -13,16 +13,10 @@ const emit = defineEmits<{
 
 <template>
   <div class="flex flex-col">
-    <div
-      v-if="loading"
-      class="flex items-center justify-center py-12 text-sm text-muted-foreground"
-    >
+    <div v-if="loading" class="flex items-center justify-center py-12 text-sm text-muted-foreground">
       Loading...
     </div>
-    <div
-      v-else-if="conversations.length === 0"
-      class="flex flex-col items-center justify-center py-12 px-4 text-sm text-muted-foreground"
-    >
+    <div v-else-if="conversations.length === 0" class="flex flex-col items-center justify-center py-12 px-4 text-sm text-muted-foreground">
       <p>No conversations yet.</p>
       <p class="mt-1 text-xs">Start one from a profile page.</p>
     </div>
