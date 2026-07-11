@@ -1,0 +1,98 @@
+<script setup lang="ts">
+import { MessageCircle, X } from 'lucide-vue-next';
+import { useChatStore } from '~/stores/chat';
+import { useConversations } from '~/composables/useConversations';
+import { useChatMessages } from '~/composables/useChatMessages';
+import ConversationList from './ConversationList.vue';
+import MessageThread from './MessageThread.vue';
+
+const chat = useChatStore();
+const { conversations, unreadCount, loading: convsLoading } = useConversations();
+
+const activeUser = computed(() => {
+  if (!chat.activeUserId.value) return null;
+  return conversations.value.find((c) => c.userId === chat.activeUserId.value) ?? null;
+});
+
+const messagesApi = computed(() => {
+  if (!chat.activeUserId.value) return null;
+  return useChatMessages(chat.activeUserId.value);
+});
+
+function onSelect(userId: string) {
+  chat.openConversation(userId);
+}
+
+function onClose() {
+  chat.closeConversation();
+}
+
+function onSend(text: string) {
+  messagesApi.value?.send(text);
+}
+
+function onLoadMore() {
+  // Cursor pagination TBD
+}
+</script>
+
+<template>
+  <div>
+    <!-- Collapsed pill -->
+    <button
+      v-if="!chat.showModal"
+      class="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 shadow-lg transition-colors hover:bg-accent"
+      @click="chat.open()"
+    >
+      <div class="relative">
+        <MessageCircle class="size-5" />
+        <span
+          v-if="unreadCount > 0"
+          class="absolute -right-2 -top-2 flex size-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground"
+        >
+          {{ unreadCount }}
+        </span>
+      </div>
+      <span class="text-sm">Messages</span>
+    </button>
+
+    <!-- Expanded modal -->
+    <div
+      v-else
+      class="fixed bottom-0 right-0 z-50 flex h-[500px] w-[360px] flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-2xl md:bottom-4 md:right-4 md:rounded-xl"
+    >
+      <div class="flex items-center justify-between border-b border-border px-4 py-3">
+        <h3 class="text-sm font-semibold">
+          {{ chat.activeUserId ? activeUser?.name ?? 'Chat' : 'Messages' }}
+        </h3>
+        <button
+          class="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+          @click="chat.close()"
+        >
+          <X class="size-4" />
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-hidden">
+        <ConversationList
+          v-if="!chat.activeUserId"
+          :conversations="conversations"
+          :loading="convsLoading"
+          @select="onSelect"
+        />
+        <MessageThread
+          v-else-if="messagesApi && activeUser"
+          :user-id="chat.activeUserId"
+          :user-name="activeUser.name"
+          :messages="messagesApi.messages.value"
+          :loading="messagesApi.loading.value"
+          :sending="messagesApi.sending.value"
+          :has-more="messagesApi.hasMore.value"
+          @send="onSend"
+          @load-more="onLoadMore"
+          @close="onClose"
+        />
+      </div>
+    </div>
+  </div>
+</template>
