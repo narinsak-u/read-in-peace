@@ -13,6 +13,7 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { SocialModule } from './social/social.module';
 import { MembershipModule } from './membership/membership.module';
 import { ProfilesModule } from './profiles/profiles.module';
+import { ChatModule } from './chat/chat.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -28,6 +29,7 @@ import { AppService } from './app.service';
     SocialModule,
     MembershipModule,
     ProfilesModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService],
