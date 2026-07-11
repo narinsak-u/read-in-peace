@@ -46,4 +46,20 @@ describe('useChatStore', () => {
     expect(store.showModal).toBe(true);
     expect(store.activeUserId).toBeNull();
   });
+
+  it('toggle opens when closed', () => {
+    const store = useChatStore();
+    store.toggle();
+    expect(store.showModal).toBe(true);
+  });
+
+  it('toggle closes and resets active user', () => {
+    const store = useChatStore();
+    store.open();
+    store.openConversation('u2');
+    store.toggle();
+
+    expect(store.showModal).toBe(false);
+    expect(store.activeUserId).toBeNull();
+  });
 });
