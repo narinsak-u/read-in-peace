@@ -1,5 +1,5 @@
-import { ref, readonly, onUnmounted } from 'vue';
-import { io, type Socket } from 'socket.io-client';
+import { ref, readonly, onUnmounted } from "vue";
+import { io, type Socket } from "socket.io-client";
 
 let socket: Socket | null = null;
 let connectionCount = 0;
@@ -10,25 +10,25 @@ export function useChatSocket() {
   const config = useRuntimeConfig();
 
   function connect(): Socket {
-    if (socket?.connected) return socket;
+    if (socket) return socket;
 
     connectionCount++;
 
     socket = io(`${config.public.backendUrl}/chat`, {
       withCredentials: true,
-      transports: ['websocket', 'polling'],
+      transports: ["websocket", "polling"],
     });
 
-    socket.on('connect', () => {
+    socket.on("connect", () => {
       connected.value = true;
       error.value = null;
     });
 
-    socket.on('disconnect', () => {
+    socket.on("disconnect", () => {
       connected.value = false;
     });
 
-    socket.on('connect_error', (err: Error) => {
+    socket.on("connect_error", (err: Error) => {
       error.value = err.message;
     });
 
@@ -37,6 +37,7 @@ export function useChatSocket() {
 
   function disconnect(): void {
     connectionCount--;
+
     if (connectionCount <= 0) {
       connectionCount = 0;
       socket?.disconnect();
