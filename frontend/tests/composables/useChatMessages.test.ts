@@ -69,4 +69,74 @@ describe('useChatMessages', () => {
 
     expect(mockEmit).not.toHaveBeenCalled();
   });
+
+  it('markAsRead emits chat:read event', async () => {
+    const { useChatMessages } = await import('~/composables/useChatMessages');
+    const chat = useChatMessages('u2');
+
+    mockEmit.mockClear();
+    chat.markAsRead();
+
+    expect(mockEmit).toHaveBeenCalledWith('chat:read', { userId: 'u2' });
+  });
+
+  it('handles incoming message updates via history event', async () => {
+    const { useChatMessages } = await import('~/composables/useChatMessages');
+    const chat = useChatMessages('u2');
+
+    const historyHandler = mockSocket.on.mock.calls.find(
+      (c: any[]) => c[0] === 'chat:history',
+    );
+    expect(historyHandler).toBeDefined();
+
+    historyHandler[1]({
+      messages: [
+        { id: 'm1', senderId: 'u2', receiverId: 'u1', text: 'Hi!', read: false, createdAt: new Date() },
+      ],
+      userId: 'u2',
+    });
+
+    expect(chat.messages.value.length).toBe(1);
+    expect(chat.messages.value[0].text).toBe('Hi!');
+  });
+
+  it('handles sent acknowledgement replacing temp ID', async () => {
+    const { useChatMessages } = await import('~/composables/useChatMessages');
+    const chat = useChatMessages('u2');
+
+    chat.send('Hello!');
+
+    const tempMsg = chat.messages.value.find((m) => m.id.startsWith('temp-'));
+    expect(tempMsg).toBeDefined();
+
+    const sentHandler = mockSocket.on.mock.calls.find(
+      (c: any[]) => c[0] === 'chat:sent',
+    );
+    expect(sentHandler).toBeDefined();
+
+    sentHandler[1]({ id: 'server-msg-1', createdAt: new Date().toISOString() });
+
+    const updated = chat.messages.value.find((m) => m.id === 'server-msg-1');
+    expect(updated).toBeDefined();
+    expect(chat.sending.value).toBe(false);
+  });
+
+  it('handles error event clearing optimistic messages', async () => {
+    const { useChatMessages } = await import('~/composables/useChatMessages');
+    const chat = useChatMessages('u2');
+
+    chat.send('Hello!');
+    expect(chat.messages.value.some((m) => m.id.startsWith('temp-'))).toBe(true);
+
+    const errorHandler = mockSocket.on.mock.calls.find(
+      (c: any[]) => c[0] === 'chat:error',
+    );
+    expect(errorHandler).toBeDefined();
+
+    errorHandler[1]({ code: 'SEND_FAILED', message: 'Failed' });
+
+    expect(chat.messages.value.some((m) => m.id.startsWith('temp-'))).toBe(false);
+    expect(chat.sending.value).toBe(false);
+    expect(chat.error.value).toBe('Failed');
+  });
 });
