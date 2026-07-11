@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DirectMessage } from '~/types/chat';
+import type { DirectMessage } from "~/types/chat";
 
 const props = withDefaults(
   defineProps<{
@@ -9,12 +9,12 @@ const props = withDefaults(
   { isOwn: false },
 );
 
-const isError = computed(() => props.message.senderId === '');
+const isError = computed(() => props.message.senderId === "");
 
 function formatTime(date: Date): string {
-  return new Date(date).toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
+  return new Date(date).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 </script>

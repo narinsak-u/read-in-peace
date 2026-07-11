@@ -1,6 +1,6 @@
-import { ref, readonly } from 'vue';
-import { useChatSocket } from './useChatSocket';
-import type { Conversation } from '~/types/chat';
+import { ref, readonly } from "vue";
+import { useChatSocket } from "./useChatSocket";
+import type { Conversation } from "~/types/chat";
 
 const conversations = ref<Conversation[]>([]);
 const unreadCount = ref(0);
@@ -17,34 +17,49 @@ export function useConversations() {
 
     const socket = connect();
 
-    socket.on('chat:conversations', (data: { conversations: Conversation[]; unreadCount: number }) => {
-      conversations.value = data.conversations;
-      unreadCount.value = data.unreadCount;
-      loading.value = false;
-    });
+    socket.on(
+      "chat:conversations",
+      (data: { conversations: Conversation[]; unreadCount: number }) => {
+        conversations.value = data.conversations;
+        unreadCount.value = data.unreadCount;
+        loading.value = false;
+      },
+    );
 
-    socket.on('chat:unread', (data: { count: number }) => {
+    socket.on("chat:unread", (data: { count: number }) => {
       unreadCount.value = data.count;
     });
 
-    socket.on('chat:message', () => {
+    socket.on("chat:message", () => {
       fetch();
-      emit('chat:unread');
+      emit("chat:unread");
+    });
+
+    socket.on("chat:error", () => {
+      // Reset loading if backend returns an error
+      loading.value = false;
+    });
+
+    // If the socket fails to connect (or drops mid-session) the connect
+    // handler below never fires, so loading would be stuck at true after a
+    // retry. Reset it here so the UI doesn't hang on "Loading...".
+    socket.on("connect_error", () => {
+      loading.value = false;
     });
 
     if (socket.connected) {
       fetch();
     } else {
-      socket.on('connect', () => {
+      socket.on("connect", () => {
         fetch();
-        emit('chat:unread');
+        emit("chat:unread");
       });
     }
   }
 
   function fetch(): void {
     loading.value = true;
-    emit('chat:conversations');
+    emit("chat:conversations");
   }
 
   init();

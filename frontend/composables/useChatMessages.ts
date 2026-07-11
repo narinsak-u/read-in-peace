@@ -1,6 +1,6 @@
-import { ref, readonly, onUnmounted } from 'vue';
-import { useChatSocket } from './useChatSocket';
-import type { DirectMessage } from '~/types/chat';
+import { ref, readonly, onUnmounted } from "vue";
+import { useChatSocket } from "./useChatSocket";
+import type { DirectMessage } from "~/types/chat";
 
 export function useChatMessages(userId: string) {
   const messages = ref<DirectMessage[]>([]);
@@ -16,7 +16,7 @@ export function useChatMessages(userId: string) {
     loading.value = true;
     error.value = null;
     connect();
-    emit('chat:history', { userId, before, limit: 50 });
+    emit("chat:history", { userId, before, limit: 50 });
   }
 
   function send(text: string): void {
@@ -31,7 +31,7 @@ export function useChatMessages(userId: string) {
       ...messages.value,
       {
         id: tempId,
-        senderId: '',
+        senderId: "",
         receiverId: userId,
         text: text.trim(),
         read: false,
@@ -39,23 +39,26 @@ export function useChatMessages(userId: string) {
       } as DirectMessage,
     ];
 
-    emit('chat:send', { receiverId: userId, text: text.trim() });
+    emit("chat:send", { receiverId: userId, text: text.trim() });
 
     setTimeout(() => {
       const stillTemp = messages.value.find((m) => m.id === tempId);
       if (stillTemp) {
         messages.value = messages.value.filter((m) => m.id !== tempId);
         sending.value = false;
-        error.value = 'Message send timed out';
+        error.value = "Message send timed out";
       }
     }, 10000);
   }
 
   function markAsRead(): void {
-    emit('chat:read', { userId });
+    emit("chat:read", { userId });
   }
 
-  const handleHistory = (data: { messages: DirectMessage[]; userId: string }) => {
+  const handleHistory = (data: {
+    messages: DirectMessage[];
+    userId: string;
+  }) => {
     if (data.userId === userId) {
       messages.value = data.messages.reverse();
       loading.value = false;
@@ -64,13 +67,13 @@ export function useChatMessages(userId: string) {
   };
 
   const handleSent = (data: { id: string; createdAt: string }) => {
-    const tempIdx = messages.value.findIndex((m) => m.id.startsWith('temp-'));
+    const tempIdx = messages.value.findIndex((m) => m.id.startsWith("temp-"));
     if (tempIdx !== -1) {
       messages.value[tempIdx] = {
         ...messages.value[tempIdx],
         id: data.id,
         createdAt: new Date(data.createdAt),
-        senderId: 'me',
+        senderId: "me",
       };
     }
     sending.value = false;
@@ -85,20 +88,20 @@ export function useChatMessages(userId: string) {
   const handleError = (data: { code: string; message: string }) => {
     error.value = data.message;
     sending.value = false;
-    messages.value = messages.value.filter((m) => !m.id.startsWith('temp-'));
+    messages.value = messages.value.filter((m) => !m.id.startsWith("temp-"));
   };
 
   const socket = connect();
-  socket.on('chat:history', handleHistory);
-  socket.on('chat:sent', handleSent);
-  socket.on('chat:message', handleMessage);
-  socket.on('chat:error', handleError);
+  socket.on("chat:history", handleHistory);
+  socket.on("chat:sent", handleSent);
+  socket.on("chat:message", handleMessage);
+  socket.on("chat:error", handleError);
 
   onUnmounted(() => {
-    socket.off('chat:history', handleHistory);
-    socket.off('chat:sent', handleSent);
-    socket.off('chat:message', handleMessage);
-    socket.off('chat:error', handleError);
+    socket.off("chat:history", handleHistory);
+    socket.off("chat:sent", handleSent);
+    socket.off("chat:message", handleMessage);
+    socket.off("chat:error", handleError);
   });
 
   fetch();

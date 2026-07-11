@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const text = ref('');
+const text = ref("");
 const emit = defineEmits<{
   send: [text: string];
 }>();
@@ -14,12 +14,12 @@ const props = withDefaults(
 function submit() {
   const trimmed = text.value.trim();
   if (!trimmed || props.disabled) return;
-  emit('send', trimmed);
-  text.value = '';
+  emit("send", trimmed);
+  text.value = "";
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey) {
+  if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     submit();
   }
@@ -35,6 +35,6 @@ function onKeydown(e: KeyboardEvent) {
       :disabled="disabled"
       class="flex-1 rounded-lg border border-border bg-muted px-3 py-2 text-sm outline-none focus:border-primary disabled:opacity-50"
       @keydown="onKeydown"
-    >
+    />
   </div>
 </template>

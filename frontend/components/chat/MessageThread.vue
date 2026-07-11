@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { DirectMessage } from '~/types/chat';
-import MessageBubble from './MessageBubble.vue';
-import MessageComposer from './MessageComposer.vue';
-import { useAuthStore } from '~/stores/auth';
+import type { DirectMessage } from "~/types/chat";
+import MessageBubble from "./MessageBubble.vue";
+import MessageComposer from "./MessageComposer.vue";
+import { useAuthStore } from "~/stores/auth";
 
 const props = withDefaults(
   defineProps<{
@@ -23,7 +23,7 @@ const emit = defineEmits<{
 }>();
 
 const scrollRef = ref<HTMLElement | null>(null);
-const currentUserId = useAuthStore().user?.id ?? '';
+const currentUserId = useAuthStore().user?.id ?? "";
 
 function scrollToBottom() {
   nextTick(() => {
@@ -59,10 +59,16 @@ watch(
       >
         Load earlier messages
       </button>
-      <div v-if="loading && messages.length === 0" class="flex items-center justify-center py-12 text-sm text-muted-foreground">
+      <div
+        v-if="loading && messages.length === 0"
+        class="flex items-center justify-center py-12 text-sm text-muted-foreground"
+      >
         Loading...
       </div>
-      <div v-else-if="messages.length === 0" class="flex items-center justify-center py-12 text-sm text-muted-foreground">
+      <div
+        v-else-if="messages.length === 0"
+        class="flex items-center justify-center py-12 text-sm text-muted-foreground"
+      >
         Send a message to start the conversation.
       </div>
       <MessageBubble

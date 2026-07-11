@@ -62,7 +62,7 @@ export class DrizzleChatRepository implements ChatRepository {
       ORDER BY l.last_message_at DESC
     `);
 
-    return (rows as any[]).map((r: any) => ({
+    return (rows.rows as any[]).map((r: any) => ({
       userId: r.other_user_id,
       name: r.name ?? 'Unknown',
       image: r.image ?? null,

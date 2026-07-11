@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { Logger as PinoNestLogger, PinoLogger } from 'nestjs-pino';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
 import { toNodeHandler } from 'better-auth/node';
 import type { Request, Response, NextFunction } from 'express';
@@ -42,6 +43,11 @@ async function bootstrap() {
   app.use('/api/auth', (req: Request, res: Response, next: NextFunction) => {
     void authHandler(req, res).catch(next);
   });
+
+  // Socket.IO gateway support — without IoAdapter, @WebSocketGateway decorators
+  // are inert (NestJS falls back to the bare `ws` package which doesn't speak
+  // the Socket.IO protocol the client uses).
+  app.useWebSocketAdapter(new IoAdapter(app));
 
   await app.listen(config.server.port);
   app

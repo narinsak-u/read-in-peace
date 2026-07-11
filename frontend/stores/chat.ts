@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { ref, readonly } from 'vue';
+import { ref } from 'vue';
 
 export const useChatStore = defineStore('chat', () => {
   const showModal = ref(false);
@@ -31,8 +31,8 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   return {
-    showModal: readonly(showModal),
-    activeUserId: readonly(activeUserId),
+    showModal,
+    activeUserId,
     open,
     close,
     toggle,

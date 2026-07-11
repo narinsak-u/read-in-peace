@@ -22,9 +22,7 @@ const bio = ref(
 );
 
 const plan = ref("Curator");
-
 const lastActiveLabel = ref("2hr ago");
-
 const isOwnProfile = computed(() => auth.user?.id === props.user.id);
 
 function formatDate(dateStr: string): string {
