@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Conversation } from "~/types/chat";
+import { timeAgo } from "~/utils/comment";
 
 defineProps<{
   conversations: readonly Conversation[];
@@ -36,7 +37,7 @@ const emit = defineEmits<{
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium">{{ conv.name }}</span>
             <span class="text-[10px] text-muted-foreground">
-              {{ new Date(conv.lastMessageAt).toLocaleDateString() }}
+              {{ timeAgo(conv.lastMessageAt as unknown as string) }}
             </span>
           </div>
           <p class="truncate text-xs text-muted-foreground">
