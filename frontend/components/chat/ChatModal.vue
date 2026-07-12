@@ -45,7 +45,10 @@ const activeUser = computed(() => {
 
 const messagesApi = computed(() => {
   if (!chat.activeUserId) return null;
-  return useChatMessages(chat.activeUserId);
+  return useChatMessages(chat.activeUserId, () => {
+    fetchConversations();
+    fetchUnread();
+  });
 });
 
 function onSelect(userId: string) {

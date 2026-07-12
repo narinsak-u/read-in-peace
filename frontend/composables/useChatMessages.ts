@@ -3,7 +3,7 @@ import { useChatSocket } from './useChatSocket';
 import { useAuthStore } from '~/stores/auth';
 import type { DirectMessage } from '~/types/chat';
 
-export function useChatMessages(userId: string) {
+export function useChatMessages(userId: string, onSent?: () => void) {
   const config = useRuntimeConfig();
   const { user } = useAuthStore();
   const currentUserId = user?.id ?? '';
@@ -50,6 +50,7 @@ export function useChatMessages(userId: string) {
       };
     }
     sending.value = false;
+    onSent?.();
   }
 
   function handleError(data: { code: string; message: string }): void {
