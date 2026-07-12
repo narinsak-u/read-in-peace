@@ -26,7 +26,7 @@ export class DrizzleChatRepository implements ChatRepository {
   }
 
   async getConversations(userId: string): Promise<Conversation[]> {
-    const rows = await this.db.execute(sql`
+    const result = await this.db.execute(sql`
       WITH ranked AS (
         SELECT
           CASE
@@ -72,7 +72,7 @@ export class DrizzleChatRepository implements ChatRepository {
       ORDER BY l.last_message_at DESC
     `);
 
-    return (rows.rows as any[]).map((r: any) => ({
+    return (result.rows as any[]).map((r: any) => ({
       userId: r.other_user_id,
       name: r.name ?? 'Unknown',
       image: r.image ?? null,

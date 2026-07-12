@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, BadRequestException } from '@nestjs/common';
 import { ChatService } from '../../../src/chat/application/chat.service';
 import {
   CHAT_REPOSITORY,
@@ -48,16 +48,16 @@ describe('ChatService', () => {
       expect(chatRepo.send).not.toHaveBeenCalled();
     });
 
-    it('throws Error when text is empty', async () => {
+    it('throws BadRequestException when text is empty', async () => {
       await expect(svc.send('u1', 'u2', '')).rejects.toThrow(
-        'Message cannot be empty',
+        BadRequestException,
       );
       expect(chatRepo.send).not.toHaveBeenCalled();
     });
 
-    it('throws Error when text exceeds 2000 chars', async () => {
+    it('throws BadRequestException when text exceeds 2000 chars', async () => {
       await expect(svc.send('u1', 'u2', 'x'.repeat(2001))).rejects.toThrow(
-        'Message too long',
+        BadRequestException,
       );
       expect(chatRepo.send).not.toHaveBeenCalled();
     });

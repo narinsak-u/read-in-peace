@@ -13,10 +13,6 @@ import { AUTH_PORT, type AuthPort } from '../../iam/auth/auth.port';
 @Injectable()
 @WebSocketGateway({
   namespace: '/chat',
-  cors: {
-    origin: ['http://localhost:3000'],
-    credentials: true,
-  },
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

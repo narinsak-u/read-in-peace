@@ -1,4 +1,9 @@
-import { Injectable, Inject, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   CHAT_REPOSITORY,
   type ChatRepository,
@@ -19,10 +24,10 @@ export class ChatService {
       throw new ForbiddenException('Cannot send a message to yourself');
     }
     if (!text.trim()) {
-      throw new Error('Message cannot be empty');
+      throw new BadRequestException('Message cannot be empty');
     }
     if (text.length > 2000) {
-      throw new Error('Message too long');
+      throw new BadRequestException('Message too long');
     }
     return this.repo.send({ senderId, receiverId, text: text.trim() });
   }

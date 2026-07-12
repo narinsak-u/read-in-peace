@@ -9,7 +9,6 @@ import MessageThread from "./MessageThread.vue";
 const chat = useChatStore();
 const {
   conversations,
-  unreadCount,
   loading: convsLoading,
   fetchConversations,
   fetchUnread,
@@ -43,13 +42,21 @@ const activeUser = computed(() => {
   );
 });
 
-const messagesApi = computed(() => {
-  if (!chat.activeUserId) return null;
-  return useChatMessages(chat.activeUserId, () => {
-    fetchConversations();
-    fetchUnread();
-  });
-});
+const messagesApi = ref<ReturnType<typeof useChatMessages> | null>(null);
+
+watch(
+  () => chat.activeUserId,
+  (userId) => {
+    messagesApi.value = null;
+    if (userId) {
+      messagesApi.value = useChatMessages(userId, () => {
+        fetchConversations();
+        fetchUnread();
+      });
+    }
+  },
+  { immediate: true },
+);
 
 function onSelect(userId: string) {
   chat.openConversation(userId);
@@ -72,7 +79,7 @@ function onLoadMore() {
   <div>
     <div
       v-if="chat.showModal"
-      class="fixed bottom-0 right-0 z-50 flex h-125 w-90 flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-2xl md:bottom-4 md:right-4 md:rounded-xl"
+      class="fixed inset-x-0 bottom-0 z-50 flex h-[70vh] flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-2xl md:inset-auto md:bottom-4 md:right-4 md:h-[500px] md:w-[360px] md:rounded-xl"
     >
       <div
         class="flex items-center justify-between border-b border-border px-4 py-3"
@@ -108,10 +115,10 @@ function onLoadMore() {
           v-else-if="messagesApi"
           :user-id="chat.activeUserId!"
           :user-name="activeUser?.name || chat.activeUserId!"
-          :messages="messagesApi.messages.value"
-          :loading="messagesApi.loading.value"
-          :sending="messagesApi.sending.value"
-          :has-more="messagesApi.hasMore.value"
+          :messages="messagesApi.messages"
+          :loading="messagesApi.loading"
+          :sending="messagesApi.sending"
+          :has-more="messagesApi.hasMore"
           @send="onSend"
           @load-more="onLoadMore"
         />

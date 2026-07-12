@@ -15,6 +15,7 @@ export function useChatMessages(userId: string, onSent?: () => void) {
   const { connect, emit } = useChatSocket();
 
   let tempCounter = 0;
+  let lastSentTempId: string | null = null;
   let socket: ReturnType<typeof connect> | null = null;
 
   function connectSocket(): void {
@@ -40,14 +41,17 @@ export function useChatMessages(userId: string, onSent?: () => void) {
   }
 
   function handleSent(data: { id: string; createdAt: string }): void {
-    const tempIdx = messages.value.findIndex((m) => m.id.startsWith('temp-'));
-    if (tempIdx !== -1) {
-      messages.value[tempIdx] = {
-        ...messages.value[tempIdx],
-        id: data.id,
-        createdAt: new Date(data.createdAt),
-        senderId: currentUserId,
-      };
+    if (lastSentTempId) {
+      const idx = messages.value.findIndex((m) => m.id === lastSentTempId);
+      if (idx !== -1) {
+        messages.value[idx] = {
+          ...messages.value[idx],
+          id: data.id,
+          createdAt: new Date(data.createdAt),
+          senderId: currentUserId,
+        };
+      }
+      lastSentTempId = null;
     }
     sending.value = false;
     onSent?.();
@@ -87,6 +91,7 @@ export function useChatMessages(userId: string, onSent?: () => void) {
     connectSocket();
 
     const tempId = `temp-${++tempCounter}`;
+    lastSentTempId = tempId;
     messages.value = [
       ...messages.value,
       {

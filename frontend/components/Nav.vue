@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ArrowLeft, Bell, Library, ShoppingBag } from "lucide-vue-next";
+import { ArrowLeft, Bell, ShoppingBag } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import { buttonVariants } from "~/components/ui/button/variants";
 import { useAuthStore } from "~/stores/auth";
