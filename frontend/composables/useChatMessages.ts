@@ -1,9 +1,12 @@
 import { ref, readonly, onUnmounted } from 'vue';
 import { useChatSocket } from './useChatSocket';
+import { useAuthStore } from '~/stores/auth';
 import type { DirectMessage } from '~/types/chat';
 
 export function useChatMessages(userId: string) {
   const config = useRuntimeConfig();
+  const { user } = useAuthStore();
+  const currentUserId = user?.id ?? '';
   const messages = ref<DirectMessage[]>([]);
   const loading = ref(false);
   const sending = ref(false);
@@ -43,7 +46,7 @@ export function useChatMessages(userId: string) {
         ...messages.value[tempIdx],
         id: data.id,
         createdAt: new Date(data.createdAt),
-        senderId: 'me',
+        senderId: currentUserId,
       };
     }
     sending.value = false;
@@ -87,7 +90,7 @@ export function useChatMessages(userId: string) {
       ...messages.value,
       {
         id: tempId,
-        senderId: '',
+        senderId: currentUserId,
         receiverId: userId,
         text: text.trim(),
         read: false,
