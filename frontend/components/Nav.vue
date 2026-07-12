@@ -1,11 +1,15 @@
 <script setup lang="ts">
-import { ArrowLeft, Library, ShoppingBag } from "lucide-vue-next";
+import { ArrowLeft, Bell, ShoppingBag } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import { buttonVariants } from "~/components/ui/button/variants";
+import { useAuthStore } from "~/stores/auth";
 import { useCartStore } from "~/stores/cart";
+import { useFlash } from "~/composables/useFlash";
 
 const query = defineModel<string>("query", { default: "" });
+const auth = useAuthStore();
 const cart = useCartStore();
+const { flash } = useFlash();
 
 withDefaults(
   defineProps<{
@@ -13,6 +17,10 @@ withDefaults(
   }>(),
   { mode: "feed" },
 );
+
+function onNotifClick() {
+  flash("This feature is coming soon!");
+}
 </script>
 
 <template>
@@ -57,14 +65,6 @@ withDefaults(
             : 'ml-auto flex shrink-0 items-center gap-3 md:px-6'
         "
       >
-        <NuxtLink
-          to="/dashboard"
-          :class="buttonVariants({ variant: 'archivalGhost', size: 'icon' })"
-          aria-label="My Library"
-        >
-          <Library />
-        </NuxtLink>
-
         <Button
           variant="archivalGhost"
           size="icon"
@@ -80,6 +80,16 @@ withDefaults(
               {{ cart.itemCount }}
             </span>
           </NuxtLink>
+        </Button>
+
+        <Button
+          v-if="auth.signedIn"
+          variant="archivalGhost"
+          size="icon"
+          aria-label="Notifications"
+          @click="onNotifClick"
+        >
+          <Bell class="size-5" />
         </Button>
 
         <ProfileDropdown />

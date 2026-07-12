@@ -325,3 +325,32 @@ export const follows = pgTable(
   },
   (table) => [primaryKey({ columns: [table.followerId, table.followingId] })],
 );
+
+// ——— Direct messages ———
+export const directMessages = pgTable(
+  'direct_messages',
+  {
+    id: text('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    senderId: text('sender_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    receiverId: text('receiver_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    text: text('text').notNull(),
+    read: boolean('read').notNull().default(false),
+    createdAt: timestamp('created_at').notNull().defaultNow(),
+  },
+  (table) => ({
+    senderReceiverIdx: index('idx_dm_sender_receiver').on(
+      table.senderId,
+      table.receiverId,
+    ),
+    receiverReadIdx: index('idx_dm_receiver_read').on(
+      table.receiverId,
+      table.read,
+    ),
+  }),
+);

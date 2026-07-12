@@ -2,12 +2,12 @@
 import { Home, Library, MessageCircle, Settings, User } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import { useAuthStore } from "~/stores/auth";
-
-defineProps<{
-  flash: (message: string) => void;
-}>();
+import { useChatStore } from "~/stores/chat";
+import { useConversations } from "~/composables/useConversations";
 
 const auth = useAuthStore();
+const chat = useChatStore();
+const { unreadCount } = useConversations();
 </script>
 
 <template>
@@ -24,20 +24,22 @@ const auth = useAuthStore();
         Shelf
       </span>
     </Button>
+    <Button variant="archivalDock" class="relative" @click="chat.toggle()">
+      <MessageCircle />
+      <span class="font-mono text-[8px] uppercase opacity-60"> Chat </span>
+      <span
+        v-if="unreadCount > 0"
+        class="absolute -right-2 -top-2 flex size-5 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground"
+      >
+        {{ unreadCount > 9 ? "9+" : unreadCount }}
+      </span>
+    </Button>
     <Button
       variant="archivalDock"
       @click="navigateTo(auth.user?.id ? `/profile/${auth.user.id}` : '/feed')"
     >
       <User /><span class="font-mono text-[8px] uppercase opacity-60">
         Profile
-      </span>
-    </Button>
-    <Button
-      variant="archivalDock"
-      @click="flash('The feature is coming soon!')"
-    >
-      <MessageCircle /><span class="font-mono text-[8px] uppercase opacity-60">
-        Social
       </span>
     </Button>
     <Button variant="archivalDock" @click="navigateTo('/plans')">
