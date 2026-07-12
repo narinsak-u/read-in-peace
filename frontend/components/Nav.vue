@@ -1,17 +1,15 @@
 <script setup lang="ts">
-import { ArrowLeft, Library, MessageCircle, ShoppingBag } from "lucide-vue-next";
+import { ArrowLeft, Bell, Library, ShoppingBag } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import { buttonVariants } from "~/components/ui/button/variants";
 import { useAuthStore } from "~/stores/auth";
 import { useCartStore } from "~/stores/cart";
-import { useChatStore } from "~/stores/chat";
-import { useConversations } from "~/composables/useConversations";
+import { useFlash } from "~/composables/useFlash";
 
 const query = defineModel<string>("query", { default: "" });
 const auth = useAuthStore();
 const cart = useCartStore();
-const chat = useChatStore();
-const { unreadCount } = useConversations();
+const { flash } = useFlash();
 
 withDefaults(
   defineProps<{
@@ -20,12 +18,8 @@ withDefaults(
   { mode: "feed" },
 );
 
-function onMessagesClick() {
-  if (auth.signedIn) {
-    chat.toggle();
-  } else {
-    auth.openAuthModal();
-  }
+function onNotifClick() {
+  flash("This feature is coming soon!");
 }
 </script>
 
@@ -71,14 +65,6 @@ function onMessagesClick() {
             : 'ml-auto flex shrink-0 items-center gap-3 md:px-6'
         "
       >
-        <NuxtLink
-          to="/dashboard"
-          :class="buttonVariants({ variant: 'archivalGhost', size: 'icon' })"
-          aria-label="My Library"
-        >
-          <Library />
-        </NuxtLink>
-
         <Button
           variant="archivalGhost"
           size="icon"
@@ -100,17 +86,10 @@ function onMessagesClick() {
           v-if="auth.signedIn"
           variant="archivalGhost"
           size="icon"
-          :aria-label="`Messages${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`"
-          class="relative"
-          @click="onMessagesClick"
+          aria-label="Notifications"
+          @click="onNotifClick"
         >
-          <MessageCircle class="size-5" />
-          <span
-            v-if="unreadCount > 0"
-            class="absolute -right-1 -top-1 flex size-4 items-center justify-center rounded-full bg-primary text-[8px] text-primary-foreground"
-          >
-            {{ unreadCount > 9 ? '9+' : unreadCount }}
-          </span>
+          <Bell class="size-5" />
         </Button>
 
         <ProfileDropdown />
