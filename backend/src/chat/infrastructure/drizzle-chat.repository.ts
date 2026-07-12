@@ -77,7 +77,9 @@ export class DrizzleChatRepository implements ChatRepository {
       name: r.name ?? 'Unknown',
       image: r.image ?? null,
       lastMessage: r.last_message,
-      lastMessageAt: r.last_message_at,
+      lastMessageAt: new Date(
+        String(r.last_message_at).replace(' ', 'T') + 'Z',
+      ).toISOString(),
       unreadCount: Number(r.unread_count),
     }));
   }

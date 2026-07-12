@@ -37,7 +37,7 @@ const emit = defineEmits<{
           <div class="flex items-center justify-between">
             <span class="text-sm font-medium">{{ conv.name }}</span>
             <span class="text-[10px] text-muted-foreground">
-              {{ timeAgo(conv.lastMessageAt as unknown as string) }}
+              {{ timeAgo(conv.lastMessageAt) }}
             </span>
           </div>
           <p class="truncate text-xs text-muted-foreground">

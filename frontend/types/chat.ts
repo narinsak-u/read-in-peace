@@ -12,6 +12,6 @@ export interface Conversation {
   name: string;
   image: string | null;
   lastMessage: string;
-  lastMessageAt: Date;
+  lastMessageAt: string;
   unreadCount: number;
 }
