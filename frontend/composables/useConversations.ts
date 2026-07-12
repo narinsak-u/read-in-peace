@@ -4,6 +4,7 @@ import type { Conversation } from "~/types/chat";
 const conversations = ref<Conversation[]>([]);
 const unreadCount = ref(0);
 const loading = ref(false);
+let initialized = false;
 
 export function useConversations() {
   const config = useRuntimeConfig();
@@ -33,6 +34,11 @@ export function useConversations() {
     } catch {
       unreadCount.value = 0;
     }
+  }
+
+  if (!initialized) {
+    initialized = true;
+    fetchUnread();
   }
 
   return {
