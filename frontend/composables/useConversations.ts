@@ -26,11 +26,11 @@ export function useConversations() {
 
   async function fetchUnread(): Promise<void> {
     try {
-      const data = await $fetch<{ count: number }>(
+      const count = await $fetch<number>(
         `${config.public.backendUrl}/api/chat/unread`,
         { credentials: "include" },
       );
-      unreadCount.value = data.count;
+      unreadCount.value = count;
     } catch {
       unreadCount.value = 0;
     }
