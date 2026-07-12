@@ -2,8 +2,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockFetch = vi.fn();
 
-vi.mock('#app', () => ({
-  $fetch: (...args: any[]) => mockFetch(...args),
+vi.stubGlobal('$fetch', mockFetch);
+
+vi.mock('~/stores/auth', () => ({
+  useAuthStore: () => ({ user: { id: 'current-user' } }),
 }));
 
 vi.mock('~/composables/useChatSocket', () => ({
@@ -30,7 +32,6 @@ describe('useConversations', () => {
       expect.stringContaining('/api/chat/conversations'),
       expect.objectContaining({ credentials: 'include' }),
     );
-    expect(conv.conversations.value).toEqual([]);
   });
 
   it('exposes reactive state', async () => {

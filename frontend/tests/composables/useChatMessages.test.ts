@@ -15,8 +15,10 @@ const mockSocket = {
 const mockConnect = vi.fn(() => mockSocket);
 const mockEmit = vi.fn();
 
-vi.mock('#app', () => ({
-  $fetch: (...args: any[]) => mockFetch(...args),
+vi.stubGlobal('$fetch', mockFetch);
+
+vi.mock('~/stores/auth', () => ({
+  useAuthStore: () => ({ user: { id: 'current-user' } }),
 }));
 
 vi.mock('~/composables/useChatSocket', () => ({
