@@ -27,37 +27,47 @@ export class DrizzleChatRepository implements ChatRepository {
 
   async getConversations(userId: string): Promise<Conversation[]> {
     const rows = await this.db.execute(sql`
-      WITH latest AS (
-        SELECT DISTINCT ON (
-          CASE
-            WHEN sender_id = ${userId} THEN receiver_id
-            ELSE sender_id
-          END
-        )
+      WITH ranked AS (
+        SELECT
           CASE
             WHEN sender_id = ${userId} THEN receiver_id
             ELSE sender_id
           END AS other_user_id,
           text AS last_message,
           created_at AS last_message_at,
-          COUNT(*) FILTER (WHERE receiver_id = ${userId} AND read = false) OVER (
+          ROW_NUMBER() OVER (
             PARTITION BY
               CASE
                 WHEN sender_id = ${userId} THEN receiver_id
                 ELSE sender_id
               END
-          ) AS unread_count
+            ORDER BY created_at DESC
+          ) AS rn
         FROM direct_messages
-        WHERE sender_id = ${userId} OR receiver_id = ${userId}
-        ORDER BY
-          CASE
-            WHEN sender_id = ${userId} THEN receiver_id
-            ELSE sender_id
-          END,
-          created_at DESC
+        WHERE ${userId} IN (sender_id, receiver_id)
+      ),
+      latest AS (
+        SELECT other_user_id, last_message, last_message_at
+        FROM ranked
+        WHERE rn = 1
+      ),
+      unread_counts AS (
+        SELECT
+          sender_id AS other_user_id,
+          COUNT(*)::int AS unread_count
+        FROM direct_messages
+        WHERE receiver_id = ${userId} AND read = false
+        GROUP BY sender_id
       )
-      SELECT l.*, u.name, u.image
+      SELECT
+        l.other_user_id,
+        l.last_message,
+        l.last_message_at,
+        COALESCE(uc.unread_count, 0) AS unread_count,
+        u.name,
+        u.image
       FROM latest l
+      LEFT JOIN unread_counts uc ON uc.other_user_id = l.other_user_id
       JOIN "user" u ON u.id = l.other_user_id
       ORDER BY l.last_message_at DESC
     `);

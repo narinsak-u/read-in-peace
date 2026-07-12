@@ -1,16 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockSocket = {
-  connected: false,
-  on: vi.fn(),
-  off: vi.fn(),
-  emit: vi.fn(),
-};
-const mockConnect = vi.fn(() => mockSocket);
+const mockFetch = vi.fn();
+
+vi.mock('#app', () => ({
+  $fetch: (...args: any[]) => mockFetch(...args),
+}));
 
 vi.mock('~/composables/useChatSocket', () => ({
   useChatSocket: () => ({
-    connect: mockConnect,
+    connect: vi.fn(),
     emit: vi.fn(),
   }),
 }));
@@ -21,11 +19,18 @@ describe('useConversations', () => {
     vi.resetModules();
   });
 
-  it('calls connect on first call', async () => {
+  it('fetches conversations via REST', async () => {
+    mockFetch.mockResolvedValueOnce([]);
     const { useConversations } = await import('~/composables/useConversations');
-    useConversations();
+    const conv = useConversations();
 
-    expect(mockConnect).toHaveBeenCalled();
+    await conv.fetchConversations();
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/chat/conversations'),
+      expect.objectContaining({ credentials: 'include' }),
+    );
+    expect(conv.conversations.value).toEqual([]);
   });
 
   it('exposes reactive state', async () => {
@@ -35,6 +40,7 @@ describe('useConversations', () => {
     expect(conv.loading).toBeDefined();
     expect(conv.conversations).toBeDefined();
     expect(conv.unreadCount).toBeDefined();
-    expect(conv.error).toBeDefined();
+    expect(conv.fetchConversations).toBeInstanceOf(Function);
+    expect(conv.fetchUnread).toBeInstanceOf(Function);
   });
 });

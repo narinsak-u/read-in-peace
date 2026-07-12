@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const mockFetch = vi.fn();
 let onEventHandlers: Record<string, (...args: any[]) => void> = {};
 const mockSocket = {
   connected: true,
@@ -13,6 +14,10 @@ const mockSocket = {
 };
 const mockConnect = vi.fn(() => mockSocket);
 const mockEmit = vi.fn();
+
+vi.mock('#app', () => ({
+  $fetch: (...args: any[]) => mockFetch(...args),
+}));
 
 vi.mock('~/composables/useChatSocket', () => ({
   useChatSocket: () => ({
@@ -28,14 +33,19 @@ describe('useChatMessages', () => {
     onEventHandlers = {};
   });
 
-  it('connects and emits history on init', async () => {
+  it('fetches messages via REST on init', async () => {
+    mockFetch.mockResolvedValueOnce([]);
     const { useChatMessages } = await import('~/composables/useChatMessages');
     useChatMessages('u2');
 
-    expect(mockConnect).toHaveBeenCalled();
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining('/api/chat/messages/u2'),
+      expect.objectContaining({ credentials: 'include' }),
+    );
   });
 
   it('exposes messages and actions', async () => {
+    mockFetch.mockResolvedValueOnce([]);
     const { useChatMessages } = await import('~/composables/useChatMessages');
     const chat = useChatMessages('u2');
 
@@ -47,12 +57,14 @@ describe('useChatMessages', () => {
     expect(chat.hasMore).toBeDefined();
   });
 
-  it('send emits chat:send event', async () => {
+  it('send connects socket and emits chat:send', async () => {
+    mockFetch.mockResolvedValueOnce([]);
     const { useChatMessages } = await import('~/composables/useChatMessages');
     const chat = useChatMessages('u2');
 
     chat.send('Hello!');
 
+    expect(mockConnect).toHaveBeenCalled();
     expect(mockEmit).toHaveBeenCalledWith('chat:send', {
       receiverId: 'u2',
       text: 'Hello!',
@@ -60,6 +72,7 @@ describe('useChatMessages', () => {
   });
 
   it('send does not emit for empty text', async () => {
+    mockFetch.mockResolvedValueOnce([]);
     const { useChatMessages } = await import('~/composables/useChatMessages');
     const chat = useChatMessages('u2');
 
@@ -70,37 +83,8 @@ describe('useChatMessages', () => {
     expect(mockEmit).not.toHaveBeenCalled();
   });
 
-  it('markAsRead emits chat:read event', async () => {
-    const { useChatMessages } = await import('~/composables/useChatMessages');
-    const chat = useChatMessages('u2');
-
-    mockEmit.mockClear();
-    chat.markAsRead();
-
-    expect(mockEmit).toHaveBeenCalledWith('chat:read', { userId: 'u2' });
-  });
-
-  it('handles incoming message updates via history event', async () => {
-    const { useChatMessages } = await import('~/composables/useChatMessages');
-    const chat = useChatMessages('u2');
-
-    const historyHandler = mockSocket.on.mock.calls.find(
-      (c: any[]) => c[0] === 'chat:history',
-    );
-    expect(historyHandler).toBeDefined();
-
-    historyHandler[1]({
-      messages: [
-        { id: 'm1', senderId: 'u2', receiverId: 'u1', text: 'Hi!', read: false, createdAt: new Date() },
-      ],
-      userId: 'u2',
-    });
-
-    expect(chat.messages.value.length).toBe(1);
-    expect(chat.messages.value[0].text).toBe('Hi!');
-  });
-
   it('handles sent acknowledgement replacing temp ID', async () => {
+    mockFetch.mockResolvedValueOnce([]);
     const { useChatMessages } = await import('~/composables/useChatMessages');
     const chat = useChatMessages('u2');
 
@@ -111,10 +95,10 @@ describe('useChatMessages', () => {
 
     const sentHandler = mockSocket.on.mock.calls.find(
       (c: any[]) => c[0] === 'chat:sent',
-    );
+    ) as [string, (data: any) => void] | undefined;
     expect(sentHandler).toBeDefined();
 
-    sentHandler[1]({ id: 'server-msg-1', createdAt: new Date().toISOString() });
+    sentHandler![1]({ id: 'server-msg-1', createdAt: new Date().toISOString() });
 
     const updated = chat.messages.value.find((m) => m.id === 'server-msg-1');
     expect(updated).toBeDefined();
@@ -122,6 +106,7 @@ describe('useChatMessages', () => {
   });
 
   it('handles error event clearing optimistic messages', async () => {
+    mockFetch.mockResolvedValueOnce([]);
     const { useChatMessages } = await import('~/composables/useChatMessages');
     const chat = useChatMessages('u2');
 
@@ -130,10 +115,10 @@ describe('useChatMessages', () => {
 
     const errorHandler = mockSocket.on.mock.calls.find(
       (c: any[]) => c[0] === 'chat:error',
-    );
+    ) as [string, (data: any) => void] | undefined;
     expect(errorHandler).toBeDefined();
 
-    errorHandler[1]({ code: 'SEND_FAILED', message: 'Failed' });
+    errorHandler![1]({ code: 'SEND_FAILED', message: 'Failed' });
 
     expect(chat.messages.value.some((m) => m.id.startsWith('temp-'))).toBe(false);
     expect(chat.sending.value).toBe(false);

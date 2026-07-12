@@ -1,8 +1,9 @@
-import { ref, readonly, onUnmounted } from "vue";
-import { useChatSocket } from "./useChatSocket";
-import type { DirectMessage } from "~/types/chat";
+import { ref, readonly, onUnmounted } from 'vue';
+import { useChatSocket } from './useChatSocket';
+import type { DirectMessage } from '~/types/chat';
 
 export function useChatMessages(userId: string) {
+  const config = useRuntimeConfig();
   const messages = ref<DirectMessage[]>([]);
   const loading = ref(false);
   const sending = ref(false);
@@ -11,12 +12,67 @@ export function useChatMessages(userId: string) {
   const { connect, emit } = useChatSocket();
 
   let tempCounter = 0;
+  let socket: ReturnType<typeof connect> | null = null;
 
-  function fetch(before?: string): void {
+  function connectSocket(): void {
+    if (socket) return;
+    socket = connect();
+    socket.on('chat:message', handleIncoming);
+    socket.on('chat:sent', handleSent);
+    socket.on('chat:error', handleError);
+  }
+
+  function disconnectSocket(): void {
+    if (!socket) return;
+    socket.off('chat:message', handleIncoming);
+    socket.off('chat:sent', handleSent);
+    socket.off('chat:error', handleError);
+    socket = null;
+  }
+
+  function handleIncoming(data: DirectMessage): void {
+    if (data.senderId === userId) {
+      messages.value = [...messages.value, data];
+    }
+  }
+
+  function handleSent(data: { id: string; createdAt: string }): void {
+    const tempIdx = messages.value.findIndex((m) => m.id.startsWith('temp-'));
+    if (tempIdx !== -1) {
+      messages.value[tempIdx] = {
+        ...messages.value[tempIdx],
+        id: data.id,
+        createdAt: new Date(data.createdAt),
+        senderId: 'me',
+      };
+    }
+    sending.value = false;
+  }
+
+  function handleError(data: { code: string; message: string }): void {
+    error.value = data.message;
+    sending.value = false;
+    messages.value = messages.value.filter((m) => !m.id.startsWith('temp-'));
+  }
+
+  async function fetch(before?: string): Promise<void> {
     loading.value = true;
     error.value = null;
-    connect();
-    emit("chat:history", { userId, before, limit: 50 });
+    try {
+      const params = new URLSearchParams();
+      if (before) params.set('before', before);
+      params.set('limit', '50');
+      const url = `${config.public.backendUrl}/api/chat/messages/${userId}?${params}`;
+      const data = await $fetch<DirectMessage[]>(url, {
+        credentials: 'include',
+      });
+      messages.value = data.reverse();
+      hasMore.value = data.length >= 50;
+    } catch (err: any) {
+      error.value = err?.message ?? 'Failed to load messages';
+    } finally {
+      loading.value = false;
+    }
   }
 
   function send(text: string): void {
@@ -24,14 +80,14 @@ export function useChatMessages(userId: string) {
 
     sending.value = true;
     error.value = null;
+    connectSocket();
 
     const tempId = `temp-${++tempCounter}`;
-
     messages.value = [
       ...messages.value,
       {
         id: tempId,
-        senderId: "",
+        senderId: '',
         receiverId: userId,
         text: text.trim(),
         read: false,
@@ -39,73 +95,38 @@ export function useChatMessages(userId: string) {
       } as DirectMessage,
     ];
 
-    emit("chat:send", { receiverId: userId, text: text.trim() });
+    emit('chat:send', { receiverId: userId, text: text.trim() });
 
     setTimeout(() => {
       const stillTemp = messages.value.find((m) => m.id === tempId);
       if (stillTemp) {
         messages.value = messages.value.filter((m) => m.id !== tempId);
         sending.value = false;
-        error.value = "Message send timed out";
+        error.value = 'Message send timed out';
       }
     }, 10000);
   }
 
-  function markAsRead(): void {
-    emit("chat:read", { userId });
+  async function markAsRead(): Promise<void> {
+    try {
+      await $fetch(
+        `${config.public.backendUrl}/api/chat/messages/${userId}/read`,
+        { method: 'POST', credentials: 'include' },
+      );
+    } catch {
+      // silent
+    }
   }
 
-  const handleHistory = (data: {
-    messages: DirectMessage[];
-    userId: string;
-  }) => {
-    if (data.userId === userId) {
-      messages.value = data.messages.reverse();
-      loading.value = false;
-      hasMore.value = data.messages.length >= 50;
-    }
-  };
+  async function init(): Promise<void> {
+    await Promise.all([fetch(), markAsRead()]);
+  }
 
-  const handleSent = (data: { id: string; createdAt: string }) => {
-    const tempIdx = messages.value.findIndex((m) => m.id.startsWith("temp-"));
-    if (tempIdx !== -1) {
-      messages.value[tempIdx] = {
-        ...messages.value[tempIdx],
-        id: data.id,
-        createdAt: new Date(data.createdAt),
-        senderId: "me",
-      };
-    }
-    sending.value = false;
-  };
-
-  const handleMessage = (data: DirectMessage) => {
-    if (data.senderId === userId) {
-      messages.value = [...messages.value, data];
-    }
-  };
-
-  const handleError = (data: { code: string; message: string }) => {
-    error.value = data.message;
-    sending.value = false;
-    messages.value = messages.value.filter((m) => !m.id.startsWith("temp-"));
-  };
-
-  const socket = connect();
-  socket.on("chat:history", handleHistory);
-  socket.on("chat:sent", handleSent);
-  socket.on("chat:message", handleMessage);
-  socket.on("chat:error", handleError);
+  init();
 
   onUnmounted(() => {
-    socket.off("chat:history", handleHistory);
-    socket.off("chat:sent", handleSent);
-    socket.off("chat:message", handleMessage);
-    socket.off("chat:error", handleError);
+    disconnectSocket();
   });
-
-  fetch();
-  markAsRead();
 
   return {
     messages: readonly(messages),

@@ -9,13 +9,28 @@ import MessageThread from "./MessageThread.vue";
 const chat = useChatStore();
 const {
   conversations,
+  unreadCount,
   loading: convsLoading,
+  fetchConversations,
+  fetchUnread,
 } = useConversations();
+
+watch(
+  () => chat.showModal,
+  (open) => {
+    if (open) {
+      fetchConversations();
+      fetchUnread();
+    }
+  },
+  { immediate: true },
+);
 
 const activeUser = computed(() => {
   if (!chat.activeUserId) return null;
-  const found = conversations.value.find((c) => c.userId === chat.activeUserId);
-  return found ?? { userId: chat.activeUserId, name: chat.activeUserId, image: null, lastMessage: '', lastMessageAt: new Date(), unreadCount: 0 };
+  return (
+    conversations.value.find((c) => c.userId === chat.activeUserId) ?? null
+  );
 });
 
 const messagesApi = computed(() => {
