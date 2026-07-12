@@ -26,6 +26,16 @@ watch(
   { immediate: true },
 );
 
+watch(
+  () => chat.activeUserId,
+  (userId, prevId) => {
+    if (!userId && prevId) {
+      fetchConversations();
+      fetchUnread();
+    }
+  },
+);
+
 const activeUser = computed(() => {
   if (!chat.activeUserId) return null;
   return (
