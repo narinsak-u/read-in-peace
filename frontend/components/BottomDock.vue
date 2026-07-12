@@ -2,12 +2,10 @@
 import { Home, Library, MessageCircle, Settings, User } from "lucide-vue-next";
 import { Button } from "~/components/ui/button";
 import { useAuthStore } from "~/stores/auth";
-
-defineProps<{
-  flash: (message: string) => void;
-}>();
+import { useChatStore } from "~/stores/chat";
 
 const auth = useAuthStore();
+const chat = useChatStore();
 </script>
 
 <template>
@@ -24,20 +22,17 @@ const auth = useAuthStore();
         Shelf
       </span>
     </Button>
+    <Button variant="archivalDock" @click="chat.open()">
+      <MessageCircle /><span class="font-mono text-[8px] uppercase opacity-60">
+        Social
+      </span>
+    </Button>
     <Button
       variant="archivalDock"
       @click="navigateTo(auth.user?.id ? `/profile/${auth.user.id}` : '/feed')"
     >
       <User /><span class="font-mono text-[8px] uppercase opacity-60">
         Profile
-      </span>
-    </Button>
-    <Button
-      variant="archivalDock"
-      @click="flash('The feature is coming soon!')"
-    >
-      <MessageCircle /><span class="font-mono text-[8px] uppercase opacity-60">
-        Social
       </span>
     </Button>
     <Button variant="archivalDock" @click="navigateTo('/plans')">
