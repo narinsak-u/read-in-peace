@@ -24,7 +24,7 @@ const { unreadCount } = useConversations();
         Shelf
       </span>
     </Button>
-    <Button variant="archivalDock" class="relative" @click="chat.open()">
+    <Button variant="archivalDock" class="relative" @click="chat.toggle()">
       <MessageCircle />
       <span class="font-mono text-[8px] uppercase opacity-60"> Chat </span>
       <span

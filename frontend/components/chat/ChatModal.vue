@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { X } from "lucide-vue-next";
+import { X, ArrowLeft } from "lucide-vue-next";
 import { useChatStore } from "~/stores/chat";
 import { useConversations } from "~/composables/useConversations";
 import { useChatMessages } from "~/composables/useChatMessages";
@@ -70,19 +70,27 @@ function onLoadMore() {
 
 <template>
   <div>
-    <!-- Expanded modal -->
     <div
       v-if="chat.showModal"
-      class="fixed bottom-0 right-0 z-50 flex h-[500px] w-[360px] flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-2xl md:bottom-4 md:right-4 md:rounded-xl"
+      class="fixed bottom-0 right-0 z-50 flex h-125 w-90 flex-col overflow-hidden rounded-t-xl border border-border bg-card shadow-2xl md:bottom-4 md:right-4 md:rounded-xl"
     >
       <div
         class="flex items-center justify-between border-b border-border px-4 py-3"
       >
-        <h3 class="text-sm font-semibold">
-          {{ chat.activeUserId ? activeUser?.name : "Messages" }}
-        </h3>
+        <div class="flex items-center gap-2">
+          <button
+            v-if="chat.activeUserId"
+            class="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+            @click="onClose"
+          >
+            <ArrowLeft class="size-4" />
+          </button>
+          <h3 class="text-sm font-semibold uppercase">
+            {{ chat.activeUserId ? activeUser?.name : "Messages" }}
+          </h3>
+        </div>
         <button
-          class="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+          class="flex size-7 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
           @click="chat.close()"
         >
           <X class="size-4" />
@@ -106,7 +114,6 @@ function onLoadMore() {
           :has-more="messagesApi.hasMore.value"
           @send="onSend"
           @load-more="onLoadMore"
-          @close="onClose"
         />
       </div>
     </div>

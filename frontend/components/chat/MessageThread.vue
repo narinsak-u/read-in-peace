@@ -19,7 +19,6 @@ const props = withDefaults(
 const emit = defineEmits<{
   send: [text: string];
   loadMore: [];
-  close: [];
 }>();
 
 const scrollRef = ref<HTMLElement | null>(null);
@@ -41,17 +40,7 @@ watch(
 
 <template>
   <div class="flex h-full flex-col">
-    <div class="flex items-center gap-2 border-b border-border px-4 py-3">
-      <button
-        class="flex size-7 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
-        @click="emit('close')"
-      >
-        ←
-      </button>
-      <span class="text-sm font-medium">{{ userName }}</span>
-    </div>
-
-    <div ref="scrollRef" class="flex-1 space-y-2 overflow-y-auto p-4">
+    <div ref="scrollRef" class="scrollbar-thin flex-1 space-y-2 overflow-y-auto p-4">
       <button
         v-if="hasMore && !loading"
         class="w-full py-2 text-xs text-muted-foreground hover:text-foreground"
