@@ -3,6 +3,7 @@
 // to main.ts (which mounts it on /api/auth) and to the BetterAuthAdapter.
 import { Provider } from '@nestjs/common';
 import { betterAuth } from 'better-auth/minimal';
+import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { genericOAuth } from 'better-auth/plugins';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../core/database/schema';
@@ -26,7 +27,9 @@ export const authProvider: Provider = {
                 clientId: centralIdentity.clientId,
                 clientSecret: centralIdentity.clientSecret,
                 scopes: ['openid', 'email', 'profile'],
-                disableProviderLogout: true,
+                redirectURI: `${config.auth.baseUrl}/api/auth/oauth2/callback/central-identity`,
+                pkce: true,
+                authentication: 'basic',
               },
             ],
           }),
