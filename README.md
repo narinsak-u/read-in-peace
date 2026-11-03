@@ -58,7 +58,7 @@ server on port 3000; PostgreSQL is started reproducibly with `docker compose up 
 Copy `backend/.env.example` to `backend/.env` and fill in the operator-issued
 `CENTRAL_IDENTITY_CLIENT_ID` and `CENTRAL_IDENTITY_CLIENT_SECRET`. The issuer is
 `https://auth.127.0.0.1.nip.io/api/auth`; its confidential client callback is
-`https://reading.lvh.me/api/auth/oauth2/callback/central-identity`. Keep `.env` files
+`https://reading.lvh.me/api/auth/callback/central-identity`. Keep `.env` files
 private and do not commit client credentials. Run backend migrations and start
 the backend, then start Nuxt with `frontend/.env.example` copied to
 `frontend/.env` and `NUXT_PUBLIC_SITE_URL=https://reading.lvh.me`.
