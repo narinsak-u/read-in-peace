@@ -1,9 +1,9 @@
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:17.5-alpine
     container_name: readinpeace-db
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_USER: readinpeace
       POSTGRES_PASSWORD: readinpeace
