@@ -54,6 +54,16 @@ export class CoreConfigService implements AppConfig {
       baseUrl,
       trustedOrigins: [baseUrl],
       secret: parsed.AUTH_SECRET,
+      centralIdentity:
+        parsed.CENTRAL_IDENTITY_ISSUER &&
+        parsed.CENTRAL_IDENTITY_CLIENT_ID &&
+        parsed.CENTRAL_IDENTITY_CLIENT_SECRET
+          ? {
+              issuer: parsed.CENTRAL_IDENTITY_ISSUER,
+              clientId: parsed.CENTRAL_IDENTITY_CLIENT_ID,
+              clientSecret: parsed.CENTRAL_IDENTITY_CLIENT_SECRET,
+            }
+          : undefined,
     };
     this.stripe = { secretKey: parsed.STRIPE_SECRET_KEY };
     this.membership = { webhookSecret: parsed.STRIPE_WEBHOOK_SECRET };

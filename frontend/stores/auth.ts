@@ -90,6 +90,14 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null;
     flash('Signed out');
   }
+  async function authSignInCentral() {
+    const { error } = await authClient.signIn.social({
+      provider: 'central-identity',
+      callbackURL: window.location.origin,
+    });
+    if (error) throw error;
+  }
+
 
   function toggleAdmin() {
     adminMode.value = !adminMode.value;
@@ -103,6 +111,7 @@ export const useAuthStore = defineStore('auth', () => {
     showAuthModal,
     signIn: authSignIn,
     signUp: authSignUp,
+    signInCentral: authSignInCentral,
     signOut: authSignOut,
     toggleAdmin,
     openAuthModal,

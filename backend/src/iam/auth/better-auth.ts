@@ -3,7 +3,7 @@
 // to main.ts (which mounts it on /api/auth) and to the BetterAuthAdapter.
 import { Provider } from '@nestjs/common';
 import { betterAuth } from 'better-auth/minimal';
-import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { genericOAuth } from 'better-auth/plugins';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../core/database/schema';
 import { CoreConfigService } from '../../core/config/config.provider';
@@ -14,11 +14,31 @@ export const AUTH = Symbol('AUTH');
 export const authProvider: Provider = {
   provide: AUTH,
   inject: [DATABASE, CoreConfigService],
-  useFactory: (db: NodePgDatabase<typeof schema>, config: CoreConfigService) =>
-    betterAuth({
+  useFactory: (db: NodePgDatabase<typeof schema>, config: CoreConfigService) => {
+    const centralIdentity = config.auth.centralIdentity;
+    const oauth = centralIdentity
+      ? [
+          genericOAuth({
+            config: [
+              {
+                providerId: 'central-identity',
+                discoveryUrl: `${centralIdentity.issuer}/.well-known/openid-configuration`,
+                clientId: centralIdentity.clientId,
+                clientSecret: centralIdentity.clientSecret,
+                scopes: ['openid', 'email', 'profile'],
+                disableProviderLogout: true,
+              },
+            ],
+          }),
+        ]
+      : [];
+    return betterAuth({
       database: drizzleAdapter(db, { provider: 'pg', schema }),
       emailAndPassword: { enabled: true },
+      account: { accountLinking: { disableImplicitLinking: true } },
+      plugins: oauth,
       trustedOrigins: [...config.auth.trustedOrigins],
       baseURL: config.auth.baseUrl,
-    }),
+    });
+  },
 };

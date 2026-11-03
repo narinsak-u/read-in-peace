@@ -28,6 +28,11 @@ export interface IamAuthConfig {
   readonly baseUrl: string;
   readonly trustedOrigins: readonly string[];
   readonly secret: string | undefined;
+  readonly centralIdentity?: {
+    readonly issuer: string;
+    readonly clientId: string;
+    readonly clientSecret: string;
+  };
 }
 
 export interface TransactionsStripeConfig {

@@ -39,6 +39,20 @@ describe('CoreConfigService', () => {
     expect(config.server.logLevel).toBe('debug');
   });
 
+  it('configures the independent Central Identity client credentials', () => {
+    const config = new CoreConfigService({
+      ...validEnv,
+      CENTRAL_IDENTITY_ISSUER: 'https://auth.127.0.0.1.nip.io/api/auth',
+      CENTRAL_IDENTITY_CLIENT_ID: 'reading-client',
+      CENTRAL_IDENTITY_CLIENT_SECRET: 'reading-secret',
+    });
+    expect(config.auth.centralIdentity).toEqual({
+      issuer: 'https://auth.127.0.0.1.nip.io/api/auth',
+      clientId: 'reading-client',
+      clientSecret: 'reading-secret',
+    });
+  });
+
   it('throws when DATABASE_URL is missing', () => {
     expect(
       () =>

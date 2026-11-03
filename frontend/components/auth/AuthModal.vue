@@ -87,6 +87,17 @@ async function handleSubmit() {
     submitting.value = false;
   }
 }
+async function handleCentralLogin() {
+  error.value = "";
+  submitting.value = true;
+  try {
+    await auth.signInCentral();
+  } catch (err: any) {
+    error.value = err?.data?.message || err?.message || "Central sign-in failed";
+    submitting.value = false;
+  }
+}
+
 
 function switchTab(t: "sign-in" | "sign-up") {
   tab.value = t;
@@ -113,6 +124,7 @@ function switchTab(t: "sign-in" | "sign-up") {
       :submitting="submitting"
       @submit="handleSubmit"
       @switch-tab="switchTab"
+      @central-login="handleCentralLogin"
     />
   </div>
 </template>

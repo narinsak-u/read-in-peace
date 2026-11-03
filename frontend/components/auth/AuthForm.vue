@@ -14,6 +14,7 @@ const name = defineModel<string>("name");
 const emit = defineEmits<{
   submit: [];
   "switch-tab": [tab: "sign-in" | "sign-up"];
+  "central-login": [];
 }>();
 </script>
 
@@ -128,6 +129,15 @@ const emit = defineEmits<{
             ? "Sign in"
             : "Create account"
       }}
+    </Button>
+    <Button
+      v-if="tab === 'sign-in'"
+      variant="archivalGhost"
+      class="mt-3 w-full cursor-pointer"
+      :disabled="submitting"
+      @click="emit('central-login')"
+    >
+      Continue with Central Identity
     </Button>
 
     <p class="mt-5 text-center text-sm text-muted-foreground">
