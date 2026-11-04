@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
       headers: {
         origin: getHeader(event, 'origin') || 'http://localhost:3000',
       },
+      fetchOptions: { redirect: 'manual' },
     });
   } catch {
     throw createError({ statusCode: 502, message: 'Backend unavailable' });

@@ -8,6 +8,7 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   BETTER_AUTH_URL: z.url().optional(),
   FRONTEND_URL: z.url().optional(),
+  CORS_ORIGINS: z.string().optional(),
   CENTRAL_IDENTITY_ISSUER: z.url().optional(),
   CENTRAL_IDENTITY_CLIENT_ID: z.string().optional(),
   CENTRAL_IDENTITY_CLIENT_SECRET: z.string().optional(),
