@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Button } from '~/components/ui/button';
 import { authClient } from '~/lib/auth-client';
 import { useAuthStore } from '~/stores/auth';
 
@@ -39,8 +40,8 @@ async function linkCentralIdentity() {
   <main id="main-content" class="mx-auto max-w-2xl px-6 py-12">
     <h1 class="font-serif text-3xl">Central Identity link</h1>
     <p class="mt-4">Link Central Identity to your signed-in Read in Peace Application User. You will prove control of Central Identity separately. Your reading profile, purchases, memberships, and permissions remain with this user.</p>
-    <p v-if="!auth.signedIn" role="alert" class="mt-6">Sign in to your existing Read in Peace user before linking. Never create a replacement account to recover a link.</p>
-    <p v-else-if="checking" role="status" class="mt-6">Checking account links…</p>
+    <p v-if="checking" role="status" class="mt-6">Checking account links…</p>
+    <p v-else-if="!auth.signedIn" role="alert" class="mt-6">Sign in to your existing Read in Peace user before linking. Never create a replacement account to recover a link.</p>
     <p v-else-if="linked" role="status" class="mt-6">Identity linked to this Application User.</p>
     <template v-else>
       <p v-if="error" role="alert" class="mt-6">{{ error }}</p>
