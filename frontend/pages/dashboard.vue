@@ -180,7 +180,7 @@ onMounted(async () => {
         <p class="mt-2 text-sm text-muted-foreground">
           <button
             class="text-primary hover:underline"
-            @click="auth.openAuthModal()"
+            @click="auth.openAuthModal(undefined, route.fullPath)"
           >
             Sign in
           </button>
