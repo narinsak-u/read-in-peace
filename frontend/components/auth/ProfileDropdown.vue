@@ -65,6 +65,13 @@ function signOut() {
       >
         View Profile
       </NuxtLink>
+      <NuxtLink
+        to="/account/identity"
+        class="flex w-full items-center px-3 py-2 text-sm hover:bg-accent rounded-sm"
+        @click="show = false"
+      >
+        Central Identity link
+      </NuxtLink>
       <hr class="border-border" />
       <Button
         variant="archivalGhost"

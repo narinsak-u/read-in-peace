@@ -68,6 +68,14 @@ Read in Peace and choose **Continue with Central Identity**. It should return
 to Reading without another password prompt and create an independent Reading
 session. Sign out from Reading and confirm Book Bidding remains signed in.
 
+To keep an existing Reading profile and memberships, first sign in with its
+local credentials, open **Central Identity link** from the profile menu, and
+authenticate with Central Identity. Later OIDC sign-ins return to that same
+Reading user even when the two email addresses differ. Matching email alone
+never links accounts. If either proof is missing or an identity is already
+linked elsewhere, stop and request reviewed recovery instead of creating a
+replacement account.
+
 ## 📁 Project structure
 
 ```
