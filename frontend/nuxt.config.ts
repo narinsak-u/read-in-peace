@@ -34,6 +34,7 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss()],
+    server: { allowedHosts: ['reading.lvh.me'] },
   },
   app: {
     head: {
