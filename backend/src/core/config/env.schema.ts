@@ -18,6 +18,29 @@ export const envSchema = z.object({
   LOG_LEVEL: z
     .enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent'])
     .default('info'),
-});
+}).refine(
+  (env) =>
+    env.NODE_ENV !== 'production' ||
+    [
+      env.DATABASE_URL,
+      env.BETTER_AUTH_URL,
+      env.FRONTEND_URL,
+      env.CORS_ORIGINS,
+      env.AUTH_SECRET,
+      env.STRIPE_SECRET_KEY,
+      env.STRIPE_WEBHOOK_SECRET,
+      env.CENTRAL_IDENTITY_ISSUER,
+      env.CENTRAL_IDENTITY_CLIENT_ID,
+      env.CENTRAL_IDENTITY_CLIENT_SECRET,
+    ].every(
+      (value) =>
+        typeof value === 'string' &&
+        value.length > 0 &&
+        !value.includes('OPERATOR_MUST_CONFIGURE') &&
+        !value.startsWith('<'),
+    ) &&
+    !env.STRIPE_SECRET_KEY.startsWith('sk_test_'),
+  'Production requires operator-provided database, auth, payment, and Central Identity settings.',
+);
 
 export type Env = z.infer<typeof envSchema>;

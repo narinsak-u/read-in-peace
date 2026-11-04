@@ -1,0 +1,12 @@
+{
+  "name": "read-in-peace-tooling",
+  "private": true,
+  "scripts": {
+    "prepare": "husky",
+    "test:env": "node --test tests/env-hook.test.mjs"
+  },
+  "devDependencies": {
+    "@dotenvx/dotenvx": "2.38.2",
+    "husky": "9.1.7"
+  }
+}
