@@ -3,6 +3,11 @@ import { Button } from '~/components/ui/button';
 import { authClient } from '~/lib/auth-client';
 import { useAuthStore } from '~/stores/auth';
 
+definePageMeta({
+  title: 'Central Identity link — Read in Peace',
+  description: 'Link a Central Identity to an existing Reading Application User.',
+});
+
 const auth = useAuthStore();
 const route = useRoute();
 const checking = ref(true);
