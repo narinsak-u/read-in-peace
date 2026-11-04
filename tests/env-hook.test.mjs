@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-
+const { keypair } = createRequire(import.meta.url)('@dotenvx/primitives');
 const root = fileURLToPath(new URL('../', import.meta.url));
 
 function run(cwd, ...args) {
@@ -28,6 +29,10 @@ test('the repository hook encrypts env files and rejects partial staging and pri
   symlinkSync(join(root, 'node_modules'), join(repo, 'node_modules'), 'dir');
   assert.equal(run(repo, 'git', 'init', '-q').code, 0);
   assert.equal(run(repo, 'git', 'config', 'core.hooksPath', '.husky').code, 0);
+  for (const directory of ['frontend', 'backend']) {
+    const { privateKey } = keypair();
+    writeFileSync(join(repo, directory, '.env.keys'), `DOTENV_PRIVATE_KEY_DEVELOPMENT="${privateKey}"\n`);
+  }
   writeFileSync(join(repo, 'frontend/.env.development'), 'FRONTEND_PUBLIC_URL=https://reading.example.test\n');
   writeFileSync(join(repo, 'backend/.env.development'), 'BACKEND_SECRET=secret-smoke-value\n');
   assert.equal(run(repo, 'git', 'add', 'frontend/.env.development', 'backend/.env.development').code, 0);
@@ -38,6 +43,7 @@ test('the repository hook encrypts env files and rejects partial staging and pri
   assert.match(frontendStaged, /encrypted:/);
   assert.match(backendStaged, /encrypted:/);
   assert.doesNotMatch(frontendStaged, /reading\.example\.test/);
+  assert.doesNotMatch(frontendStaged, /secret-smoke-value/);
   assert.doesNotMatch(backendStaged, /secret-smoke-value/);
   writeFileSync(join(repo, 'frontend/.env.development'), `${frontendStaged}STAGED_CHANGE=1\n`);
   assert.equal(run(repo, 'git', 'add', 'frontend/.env.development').code, 0);
