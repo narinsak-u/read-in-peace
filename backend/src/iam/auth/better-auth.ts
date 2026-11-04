@@ -40,7 +40,7 @@ export const authProvider: Provider = {
     return betterAuth({
       database: drizzleAdapter(db, { provider: 'pg', schema }),
       emailAndPassword: { enabled: true },
-      account: { accountLinking: { disableImplicitLinking: true } },
+      account: { accountLinking: { disableImplicitLinking: true, allowDifferentEmails: true } },
       plugins: oauth,
       trustedOrigins: [...config.auth.trustedOrigins],
       baseURL: config.auth.baseUrl,
