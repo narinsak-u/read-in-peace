@@ -16,6 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const loading = shallowRef(false);
   const showAuthModal = ref(false);
   const onAuthSuccess = shallowRef<(() => void) | null>(null);
+  const centralReturnTo = shallowRef<string | null>(null);
   const { flash } = useFlash();
 
   const session = authClient.useSession();
@@ -30,14 +31,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }, { immediate: true });
 
-  function openAuthModal(onSuccess?: () => void) {
+  function openAuthModal(onSuccess?: () => void, returnTo?: string) {
     if (onSuccess) onAuthSuccess.value = onSuccess;
+    centralReturnTo.value = returnTo ?? null;
     showAuthModal.value = true;
   }
 
   function closeAuthModal() {
     showAuthModal.value = false;
     onAuthSuccess.value = null;
+    centralReturnTo.value = null;
   }
 
   async function authSignIn(email: string, password: string) {
@@ -95,9 +98,11 @@ export const useAuthStore = defineStore('auth', () => {
     flash('Signed out of Read in Peace. Your Central SSO Session and other Application Sessions remain active.');
   }
   async function authSignInCentral() {
+    const origin = window.location.origin;
+    const destination = safeReturnTo(centralReturnTo.value, origin);
     const { error } = await authClient.signIn.social({
       provider: 'central-identity',
-      callbackURL: window.location.origin,
+      callbackURL: destination ? `${origin}${destination}` : origin,
     });
     if (error) throw error;
   }
@@ -122,3 +127,33 @@ export const useAuthStore = defineStore('auth', () => {
     closeAuthModal,
   };
 });
+function safeReturnTo(destination: string | null, origin: string): string | null {
+  if (!destination?.startsWith('/') || destination.startsWith('//') || destination.includes('\\')) {
+    return null;
+  }
+
+  try {
+    const decoded = decodeURIComponent(destination);
+    const url = new URL(destination, origin);
+    if (
+      decoded.startsWith('//') ||
+      decoded.includes('\\') ||
+      hasControlCharacters(decoded) ||
+      url.origin !== origin ||
+      url.pathname.startsWith('//')
+    ) {
+      return null;
+    }
+    return `${url.pathname}${url.search}${url.hash}`;
+  } catch {
+    return null;
+  }
+}
+
+function hasControlCharacters(value: string): boolean {
+  for (let index = 0; index < value.length; index++) {
+    const code = value.charCodeAt(index);
+    if (code <= 0x1f || code === 0x7f) return true;
+  }
+  return false;
+}
