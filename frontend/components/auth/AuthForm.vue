@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from "~/components/ui/button";
+const centralIdentityUrl = useRuntimeConfig().public.centralIdentityUrl;
 
 defineProps<{
   tab: "sign-in" | "sign-up";
@@ -14,6 +15,7 @@ const name = defineModel<string>("name");
 const emit = defineEmits<{
   submit: [];
   "switch-tab": [tab: "sign-in" | "sign-up"];
+  "central-login": [];
 }>();
 </script>
 
@@ -129,6 +131,22 @@ const emit = defineEmits<{
             : "Create account"
       }}
     </Button>
+    <Button
+      v-if="tab === 'sign-in'"
+      variant="archivalGhost"
+      class="mt-3 w-full cursor-pointer"
+      :disabled="submitting"
+      @click="emit('central-login')"
+    >
+      Continue with Central Identity
+    </Button>
+    <a
+      v-if="tab === 'sign-in'"
+      :href="centralIdentityUrl"
+      class="mt-2 block py-2 text-center text-sm text-primary underline underline-offset-2"
+    >
+      Manage Central Identity / sign out centrally
+    </a>
 
     <p class="mt-5 text-center text-sm text-muted-foreground">
       <template v-if="tab === 'sign-in'">

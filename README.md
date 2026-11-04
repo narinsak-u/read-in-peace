@@ -48,6 +48,43 @@ npm install
 npm run dev                # → http://localhost:3000
 ```
 
+## Central Identity local proof
+
+For the cross-site SSO proof, use the local HTTPS host `https://reading.lvh.me`
+through the Central Identity Caddy proxy. Trust Caddy's local root certificate
+in the browser before testing. The proxy forwards this host to the Nuxt dev
+server on port 3000; PostgreSQL is started reproducibly with `docker compose up -d`.
+
+Copy `backend/.env.example` to `backend/.env` and fill in the operator-issued
+`CENTRAL_IDENTITY_CLIENT_ID` and `CENTRAL_IDENTITY_CLIENT_SECRET`. The issuer is
+`https://auth.127.0.0.1.nip.io/api/auth`; its confidential client callback is
+`https://reading.lvh.me/api/auth/callback/central-identity`. Keep `.env` files
+private and do not commit client credentials. Run backend migrations and start
+the backend, then start Nuxt with `frontend/.env.example` copied to
+`frontend/.env` and `NUXT_PUBLIC_SITE_URL=https://reading.lvh.me`.
+
+Browser smoke: sign into Central Identity via Book Bidding, then open
+Read in Peace and choose **Continue with Central Identity**. It should return
+to Reading without another password prompt and create an independent Reading
+session. When sign-in is requested from the protected library page, Read in
+Peace returns to that same local path and query after the callback; direct
+sign-in without a requested destination returns to the site origin. Sign out
+from Reading and confirm Book Bidding remains signed in.
+
+To keep an existing Reading profile and memberships, first sign in with its
+local credentials, open **Central Identity link** from the profile menu, and
+authenticate with Central Identity. Later OIDC sign-ins return to that same
+Reading user even when the two email addresses differ. Matching email alone
+never links accounts. If either proof is missing or an identity is already
+linked elsewhere, stop and request reviewed recovery instead of creating a
+replacement account.
+
+**Sign out of Read in Peace** ends only its Application Session; Book Bidding
+and the Central SSO Session remain active. **Manage Central Identity / sign out
+centrally** opens the provider page (`NUXT_PUBLIC_CENTRAL_IDENTITY_URL`), where
+**Sign out of Central Identity** ends only the Central SSO Session. Existing
+Application Sessions remain usable until separately ended or expired.
+
 ## 📁 Project structure
 
 ```
