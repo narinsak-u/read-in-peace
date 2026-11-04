@@ -27,6 +27,7 @@ const tab = shallowRef<"purchased" | "borrowed">(
   route.query.tab === "borrowed" ? "borrowed" : "purchased",
 );
 const confirming = shallowRef(false);
+const hydrated = shallowRef(false);
 
 const {
   purchases,
@@ -121,6 +122,7 @@ watch(
 );
 
 onMounted(async () => {
+  hydrated.value = true;
   const sessionId = route.query.session_id as string | undefined;
   if (sessionId) {
     await onConfirmPurchase(sessionId);
@@ -179,6 +181,7 @@ onMounted(async () => {
         <h2 class="mt-4 font-serif text-2xl">Sign in to see your library</h2>
         <p class="mt-2 text-sm text-muted-foreground">
           <button
+            :disabled="!hydrated"
             class="text-primary hover:underline"
             @click="auth.openAuthModal(undefined, route.fullPath)"
           >
