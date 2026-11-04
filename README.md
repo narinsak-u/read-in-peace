@@ -66,7 +66,10 @@ the backend, then start Nuxt with `frontend/.env.example` copied to
 Browser smoke: sign into Central Identity via Book Bidding, then open
 Read in Peace and choose **Continue with Central Identity**. It should return
 to Reading without another password prompt and create an independent Reading
-session. Sign out from Reading and confirm Book Bidding remains signed in.
+session. When sign-in is requested from the protected library page, Read in
+Peace returns to that same local path and query after the callback; direct
+sign-in without a requested destination returns to the site origin. Sign out
+from Reading and confirm Book Bidding remains signed in.
 
 To keep an existing Reading profile and memberships, first sign in with its
 local credentials, open **Central Identity link** from the profile menu, and
