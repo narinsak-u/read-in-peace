@@ -55,13 +55,16 @@ through the Central Identity Caddy proxy. Trust Caddy's local root certificate
 in the browser before testing. The proxy forwards this host to the Nuxt dev
 server on port 3000; PostgreSQL is started reproducibly with `docker compose up -d`.
 
-Copy `backend/.env.example` to `backend/.env` and fill in the operator-issued
-`CENTRAL_IDENTITY_CLIENT_ID` and `CENTRAL_IDENTITY_CLIENT_SECRET`. The issuer is
+Use the committed encrypted `backend/.env.development` and
+`frontend/.env.development` files, not plaintext `.env` files. The matching
+`.env.development.example` files are templates. Each package decrypts only its
+development settings with dotenvx; keep its ignored `.env.keys` private and
+back up the keys outside the repository. Keep the operator-issued
+`CENTRAL_IDENTITY_CLIENT_ID` and `CENTRAL_IDENTITY_CLIENT_SECRET` in the
+encrypted backend development config. The issuer is
 `https://auth.127.0.0.1.nip.io/api/auth`; its confidential client callback is
-`https://reading.lvh.me/api/auth/callback/central-identity`. Keep `.env` files
-private and do not commit client credentials. Run backend migrations and start
-the backend, then start Nuxt with `frontend/.env.example` copied to
-`frontend/.env` and `NUXT_PUBLIC_SITE_URL=https://reading.lvh.me`.
+`https://reading.lvh.me/api/auth/callback/central-identity`. Run backend
+migrations and start the backend, then start Nuxt at `https://reading.lvh.me`.
 
 Browser smoke: sign into Central Identity via Book Bidding, then open
 Read in Peace and choose **Continue with Central Identity**. It should return
@@ -84,6 +87,9 @@ and the Central SSO Session remain active. **Manage Central Identity / sign out
 centrally** opens the provider page (`NUXT_PUBLIC_CENTRAL_IDENTITY_URL`), where
 **Sign out of Central Identity** ends only the Central SSO Session. Existing
 Application Sessions remain usable until separately ended or expired.
+For the exact invitation, Mailpit verification, local client provisioning, and
+three-host Playwright run, follow the sibling provider's
+[local invited SSO browser proof](../book-auth-middleware/docs/local-invited-sso.md).
 
 ## 📁 Project structure
 
