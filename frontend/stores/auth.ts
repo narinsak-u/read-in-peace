@@ -85,10 +85,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function authSignOut() {
-    await signOut();
+    const { error } = await signOut();
+    if (error) {
+      flash('Read in Peace sign-out failed. Try again.');
+      return;
+    }
     signedIn.value = false;
     user.value = null;
-    flash('Signed out');
+    flash('Signed out of Read in Peace. Your Central SSO Session and other Application Sessions remain active.');
   }
   async function authSignInCentral() {
     const { error } = await authClient.signIn.social({

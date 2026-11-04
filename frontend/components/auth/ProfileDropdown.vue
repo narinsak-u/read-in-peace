@@ -4,6 +4,7 @@ import { onClickOutside } from "@vueuse/core";
 import { Button } from "~/components/ui/button";
 
 const auth = useAuthStore();
+const centralIdentityUrl = useRuntimeConfig().public.centralIdentityUrl;
 
 const show = shallowRef(false);
 const menuRef = ref<HTMLElement | null>(null);
@@ -44,7 +45,7 @@ function signOut() {
     </Button>
     <div
       v-if="show && auth.signedIn"
-      class="absolute right-0 top-full z-50 mt-2 w-48 rounded-sm border border-border bg-white p-2 shadow-lg"
+      class="absolute right-0 top-full z-50 mt-2 w-64 rounded-sm border border-border bg-white p-2 shadow-lg"
     >
       <p class="px-3 py-2 text-sm font-medium">{{ auth.user?.name }}</p>
       <p class="px-3 pb-2 text-xs text-muted-foreground">
@@ -72,6 +73,9 @@ function signOut() {
       >
         Central Identity link
       </NuxtLink>
+      <a :href="centralIdentityUrl" class="flex w-full items-center px-3 py-2 text-sm hover:bg-accent rounded-sm">
+        Manage Central Identity / sign out centrally
+      </a>
       <hr class="border-border" />
       <Button
         variant="archivalGhost"
@@ -79,8 +83,9 @@ function signOut() {
         class="w-full justify-start cursor-pointer"
         @click="signOut"
       >
-        Sign out
+        Sign out of Read in Peace
       </Button>
+      <p class="px-3 py-2 text-xs text-muted-foreground">This leaves your Central SSO Session and other Application Sessions active.</p>
     </div>
   </div>
 </template>

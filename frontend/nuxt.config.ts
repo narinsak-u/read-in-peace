@@ -25,6 +25,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       backendUrl: "http://localhost:4000",
+      centralIdentityUrl: process.env.NUXT_PUBLIC_CENTRAL_IDENTITY_URL || "https://auth.127.0.0.1.nip.io",
     },
   },
   compatibilityDate: "2026-06-03",

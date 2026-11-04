@@ -76,6 +76,12 @@ never links accounts. If either proof is missing or an identity is already
 linked elsewhere, stop and request reviewed recovery instead of creating a
 replacement account.
 
+**Sign out of Read in Peace** ends only its Application Session; Book Bidding
+and the Central SSO Session remain active. **Manage Central Identity / sign out
+centrally** opens the provider page (`NUXT_PUBLIC_CENTRAL_IDENTITY_URL`), where
+**Sign out of Central Identity** ends only the Central SSO Session. Existing
+Application Sessions remain usable until separately ended or expired.
+
 ## 📁 Project structure
 
 ```

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Button } from "~/components/ui/button";
+const centralIdentityUrl = useRuntimeConfig().public.centralIdentityUrl;
 
 defineProps<{
   tab: "sign-in" | "sign-up";
@@ -139,6 +140,13 @@ const emit = defineEmits<{
     >
       Continue with Central Identity
     </Button>
+    <a
+      v-if="tab === 'sign-in'"
+      :href="centralIdentityUrl"
+      class="mt-2 block py-2 text-center text-sm text-primary underline underline-offset-2"
+    >
+      Manage Central Identity / sign out centrally
+    </a>
 
     <p class="mt-5 text-center text-sm text-muted-foreground">
       <template v-if="tab === 'sign-in'">
