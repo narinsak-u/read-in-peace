@@ -28,6 +28,14 @@ Thumbs.db
 .env
 .env.*
 !.env.example
+!/frontend/.env.development
+!/frontend/.env.production
+!/backend/.env.development
+!/backend/.env.production
+!/frontend/.env.development.example
+!/frontend/.env.production.example
+!/backend/.env.development.example
+!/backend/.env.production.example
 
 .superpowers
 .brainstorming

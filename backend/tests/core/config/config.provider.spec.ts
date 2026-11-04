@@ -20,11 +20,16 @@ describe('CoreConfigService', () => {
   it('respects explicit overrides', () => {
     const config = new CoreConfigService({
       ...validEnv,
+      STRIPE_SECRET_KEY: 'sk_live_test_fixture',
       PORT: '5000',
       BETTER_AUTH_URL: 'https://auth.example.com',
       CORS_ORIGINS: 'https://a.com, https://b.com',
       FRONTEND_URL: 'https://app.example.com',
       NODE_ENV: 'production',
+      AUTH_SECRET: 'test-only-auth-secret-long-enough',
+      CENTRAL_IDENTITY_ISSUER: 'https://identity.example.com/api/auth',
+      CENTRAL_IDENTITY_CLIENT_ID: 'test-client',
+      CENTRAL_IDENTITY_CLIENT_SECRET: 'test-secret',
       LOG_LEVEL: 'debug',
     });
     expect(config.server.port).toBe(5000);
@@ -38,6 +43,19 @@ describe('CoreConfigService', () => {
     expect(config.server.nodeEnv).toBe('production');
     expect(config.server.logLevel).toBe('debug');
   });
+  it('rejects production config without all operator-owned identity settings', () => {
+    expect(
+      () =>
+        new CoreConfigService({
+          ...validEnv,
+          NODE_ENV: 'production',
+          BETTER_AUTH_URL: 'https://reading.example.com',
+          FRONTEND_URL: 'https://reading.example.com',
+          CORS_ORIGINS: 'https://reading.example.com',
+        }),
+    ).toThrow();
+  });
+
 
   it('configures the independent Central Identity client credentials', () => {
     const config = new CoreConfigService({

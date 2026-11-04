@@ -8,18 +8,18 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
-    "start": "nest start",
-    "start:dev": "nest start --watch",
-    "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- nest start",
+    "start:dev": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- nest start --watch",
+    "start:debug": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- nest start --debug --watch",
+    "start:prod": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.production -- node dist/main",
     "lint": "eslint \"{src,apps,libs,tests}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "db:migrate": "drizzle-kit migrate",
-    "db:seed": "ts-node src/core/database/seed.ts"
+    "db:migrate": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- drizzle-kit migrate",
+    "db:seed": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- ts-node src/core/database/seed.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
