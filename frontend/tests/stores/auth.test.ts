@@ -1,6 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia';
 import { ref, readonly } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useAuthStore } from '~/stores/auth';
 
 const { mockSignInSocial } = vi.hoisted(() => ({ mockSignInSocial: vi.fn() }));
 vi.stubGlobal('ref', ref);
@@ -16,8 +17,6 @@ vi.mock('~/lib/auth-client', () => ({
   signOut: vi.fn(),
 }));
 vi.mock('~/composables/useFlash', () => ({ useFlash: () => ({ flash: vi.fn() }) }));
-
-import { useAuthStore } from '~/stores/auth';
 
 describe('central identity sign-in', () => {
   beforeEach(() => {
@@ -52,7 +51,14 @@ describe('central identity sign-in', () => {
     });
   });
 
-  it.each(['https://attacker.example', '//attacker.example/path', '/%zz'])('does not use hostile destination %s', async (destination) => {
+  it.each([
+    'https://attacker.example',
+    '//attacker.example/path',
+    '/%zz',
+    '/\u0000dashboard',
+    '/\u001f',
+    '/\u007f',
+  ])('does not use hostile destination %s', async (destination) => {
     const auth = useAuthStore();
     auth.openAuthModal(undefined, destination);
 
