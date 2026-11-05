@@ -11,6 +11,7 @@ import { CoreConfigService } from '../../core/config/config.provider';
 import { DATABASE } from '../../core/database/database.provider';
 
 export const AUTH = Symbol('AUTH');
+export type BetterAuthInstance = ReturnType<typeof betterAuth>;
 
 export const authProvider: Provider = {
   provide: AUTH,

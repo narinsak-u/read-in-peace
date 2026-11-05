@@ -112,6 +112,7 @@ describe('CoreConfigService', () => {
   it('does not require migration-only recovery configuration in production', () => {
     const config = new CoreConfigService({
       ...validEnv,
+      STRIPE_SECRET_KEY: 'sk_live_fixture',
       NODE_ENV: 'production',
       BETTER_AUTH_URL: 'https://reading.example.com',
       FRONTEND_URL: 'https://reading.example.com',

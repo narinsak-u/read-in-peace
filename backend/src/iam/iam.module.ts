@@ -18,6 +18,8 @@ import { AUTH_PORT } from './auth/auth.port';
 import { PoliciesGuard } from './authorization/policies.guard';
 import { IdentityRecoveryController } from './identity-recovery/identity-recovery.controller';
 import { IdentityRecoveryService } from './identity-recovery/identity-recovery.service';
+import { IDENTITY_RECOVERY_REPOSITORY } from './identity-recovery/domain/identity-recovery.repository';
+import { DrizzleIdentityRecoveryRepository } from './identity-recovery/infrastructure/drizzle-identity-recovery.repository';
 
 @Module({
   controllers: [IdentityRecoveryController],
@@ -28,6 +30,8 @@ import { IdentityRecoveryService } from './identity-recovery/identity-recovery.s
     AuthGuard,
     OptionalAuthGuard,
     PoliciesGuard,
+    DrizzleIdentityRecoveryRepository,
+    { provide: IDENTITY_RECOVERY_REPOSITORY, useExisting: DrizzleIdentityRecoveryRepository },
     IdentityRecoveryService,
   ],
   exports: [AUTH, AUTH_PORT, AuthGuard, OptionalAuthGuard, PoliciesGuard],
