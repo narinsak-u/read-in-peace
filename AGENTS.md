@@ -4,7 +4,7 @@ Consumed by agentic coding tools. Read this before writing or editing code.
 
 ## Project structure
 
-Two independent npm packages (no root `package.json` — run commands from each package directory):
+Two independent npm application packages plus a tooling-only root package for repo-level dotenvx/Husky (run application commands from each package directory):
 
 - `frontend/` — Nuxt 3 (SSR), Vue 3 Composition API, Pinia, Tailwind CSS v4, shadcn-vue
 - `backend/` — NestJS v11 (Express platform), Better Auth, Drizzle ORM, PostgreSQL
