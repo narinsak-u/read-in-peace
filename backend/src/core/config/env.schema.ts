@@ -39,12 +39,6 @@ export const envSchema = z.object({
       env.CENTRAL_IDENTITY_ISSUER,
       env.CENTRAL_IDENTITY_CLIENT_ID,
       env.CENTRAL_IDENTITY_CLIENT_SECRET,
-      env.READING_RECOVERY_OIDC_REDIRECT_URI,
-      env.READING_RECOVERY_PROVIDER_REDIRECT_URI,
-      env.READING_RECOVERY_GOOGLE_CLIENT_ID,
-      env.READING_RECOVERY_GOOGLE_CLIENT_SECRET,
-      env.READING_RECOVERY_GITHUB_CLIENT_ID,
-      env.READING_RECOVERY_GITHUB_CLIENT_SECRET,
     ].every(
       (value) =>
         typeof value === 'string' &&
@@ -59,7 +53,7 @@ export const envSchema = z.object({
         env.FRONTEND_URL === 'https://reading-test.lvh.me:8081' &&
         env.CENTRAL_IDENTITY_ISSUER === 'https://auth-test.127.0.0.1.nip.io:8081/api/auth'
       : !env.STRIPE_SECRET_KEY.startsWith('sk_test_')),
-  'Production requires operator-provided database, auth, payment, Central Identity, and recovery settings.',
+  'Production requires operator-provided database, auth, payment, and Central Identity settings.',
 ).refine(
   (env) =>
     Boolean(env.READING_RECOVERY_GOOGLE_CLIENT_ID) === Boolean(env.READING_RECOVERY_GOOGLE_CLIENT_SECRET) &&

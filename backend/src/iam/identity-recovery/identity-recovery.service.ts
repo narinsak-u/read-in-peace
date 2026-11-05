@@ -19,8 +19,8 @@ import { CoreConfigService } from '../../core/config/config.provider';
 import { AUTH } from '../auth/better-auth';
 import { z } from 'zod';
 
-const RECOVERY_TTL_MS = 5 * 60 * 1000;
-const CENTRAL_PROVIDER = 'central-identity';
+const recoveryTtlMs = 5 * 60 * 1000;
+const centralProvider = 'central-identity';
 type RecoveryProvider = 'google' | 'github';
 const providerChallengeSchema = z.object({
   provider: z.enum(['google', 'github']),
@@ -32,8 +32,8 @@ const centralChallengeSchema = z.object({
   nonce: z.string(),
   codeVerifier: z.string(),
 });
-interface RecoveryAuth {
-  $context: {
+type RecoveryAuth = {
+  $context: Promise<{
     password: { verify(input: { hash: string; password: string }): Promise<boolean> };
     internalAdapter: {
       createAccount(account: {
@@ -43,8 +43,8 @@ interface RecoveryAuth {
         accountId: string;
       }): Promise<unknown>;
     };
-  };
-}
+  }>;
+};
 
 @Injectable()
 export class IdentityRecoveryService {
@@ -63,7 +63,8 @@ export class IdentityRecoveryService {
           eq(schema.account.providerId, 'credential'),
         )).limit(1)
       : [];
-    if (!identity || !credential?.password || !await this.auth.$context.password.verify({
+    const context = await this.auth.$context;
+    if (!identity || !credential?.password || !await context.password.verify({
       hash: credential.password,
       password,
     })) throw new UnauthorizedException('Recovery proof failed.');
@@ -74,12 +75,13 @@ export class IdentityRecoveryService {
     const settings = this.config.auth.recoveryProviders[provider];
     if (!settings) throw new UnauthorizedException('Recovery provider is unavailable.');
     const state = randomState();
-    const nonce = provider === 'google' ? randomNonce() : undefined;
+    const redirectUri = this.config.auth.recoveryProviderRedirectUri;
+    if (!redirectUri) throw new UnauthorizedException('Recovery provider is unavailable.');
     const codeVerifier = randomPKCECodeVerifier();
     const challenge = await calculatePKCECodeChallenge(codeVerifier);
     const client = await this.providerClient(provider, settings.clientId, settings.clientSecret);
     const authorizationUrl = buildAuthorizationUrl(client, {
-      redirect_uri: this.config.auth.recoveryProviderRedirectUri,
+      redirect_uri: redirectUri,
       response_type: 'code',
       scope: provider === 'google' ? 'openid email profile' : 'read:user',
       state,
@@ -140,7 +142,8 @@ export class IdentityRecoveryService {
       await this.consumeChallenge(`identity-recovery-central:${state}`),
     );
     const central = this.config.auth.centralIdentity;
-    if (!central) throw new UnauthorizedException('Central Identity is unavailable.');
+    const redirectUri = this.config.auth.recoveryRedirectUri;
+    if (!central || !redirectUri) throw new UnauthorizedException('Central Identity is unavailable.');
     const client = await discovery(
       new URL(central.issuer),
       central.clientId,
@@ -159,26 +162,28 @@ export class IdentityRecoveryService {
     }
     const existing = await this.db.select({ userId: schema.account.userId })
       .from(schema.account).where(and(
-        eq(schema.account.providerId, CENTRAL_PROVIDER),
+        eq(schema.account.providerId, centralProvider),
         eq(schema.account.accountId, claims.sub),
       )).limit(1);
     const localLink = await this.db.select({ accountId: schema.account.accountId })
       .from(schema.account).where(and(
-        eq(schema.account.providerId, CENTRAL_PROVIDER),
+        eq(schema.account.providerId, centralProvider),
         eq(schema.account.userId, pending.userId),
       )).limit(1);
     if (existing.length || localLink.length) throw new UnauthorizedException('Conflicting identity link.');
-    await this.auth.$context.internalAdapter.createAccount({
+    const context = await this.auth.$context;
+    await context.internalAdapter.createAccount({
       id: randomUUID(),
       userId: pending.userId,
-      providerId: CENTRAL_PROVIDER,
+      providerId: centralProvider,
       accountId: claims.sub,
     });
   }
 
   private async beginCentral(userId: string): Promise<{ state: string; authorizationUrl: string }> {
     const central = this.config.auth.centralIdentity;
-    if (!central) throw new UnauthorizedException('Central Identity is unavailable.');
+    const redirectUri = this.config.auth.recoveryRedirectUri;
+    if (!central || !redirectUri) throw new UnauthorizedException('Central Identity is unavailable.');
     const state = randomState();
     const nonce = randomNonce();
     const codeVerifier = randomPKCECodeVerifier();
@@ -190,7 +195,7 @@ export class IdentityRecoveryService {
       ClientSecretBasic(central.clientSecret),
     );
     const authorizationUrl = buildAuthorizationUrl(client, {
-      redirect_uri: this.config.auth.recoveryRedirectUri,
+      redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid email profile',
       state,
@@ -223,7 +228,7 @@ export class IdentityRecoveryService {
       id: randomUUID(),
       identifier,
       value: JSON.stringify(value),
-      expiresAt: new Date(Date.now() + RECOVERY_TTL_MS),
+      expiresAt: new Date(Date.now() + recoveryTtlMs),
     });
   }
 
