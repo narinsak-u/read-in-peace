@@ -1,3 +1,7 @@
+jest.mock('../../../src/iam/identity-recovery/identity-recovery.service', () => ({
+  IdentityRecoveryService: class IdentityRecoveryService {},
+}));
+
 import { UnauthorizedException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';

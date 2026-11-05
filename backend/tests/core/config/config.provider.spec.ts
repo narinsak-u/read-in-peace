@@ -27,6 +27,7 @@ describe('CoreConfigService', () => {
       CORS_ORIGINS: 'https://a.com, https://b.com',
       FRONTEND_URL: 'https://app.example.com',
       NODE_ENV: 'production',
+      LOG_LEVEL: 'debug',
       AUTH_SECRET: 'test-only-auth-secret-long-enough',
       CENTRAL_IDENTITY_ISSUER: 'https://identity.example.com/api/auth',
       CENTRAL_IDENTITY_CLIENT_ID: 'test-client',

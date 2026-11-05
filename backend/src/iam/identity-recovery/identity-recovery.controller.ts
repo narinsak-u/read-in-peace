@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, Req, Res, UnauthorizedException } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Post, Req, Res, UnauthorizedException } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import { CoreConfigService } from '../../core/config/config.provider';
 import { IdentityRecoveryService } from './identity-recovery.service';
@@ -13,6 +13,7 @@ export class IdentityRecoveryController {
   ) {}
 
   @Post('start')
+  @HttpCode(200)
   async start(
     @Body() body: { email?: string; password?: string },
     @Res() response: Response,
@@ -24,6 +25,7 @@ export class IdentityRecoveryController {
   }
 
   @Post('provider')
+  @HttpCode(200)
   async beginProvider(
     @Body() body: { provider?: string },
     @Res() response: Response,
