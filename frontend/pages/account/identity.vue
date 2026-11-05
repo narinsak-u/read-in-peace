@@ -2,6 +2,7 @@
 import { Button } from '~/components/ui/button';
 import { authClient } from '~/lib/auth-client';
 import { useAuthStore } from '~/stores/auth';
+import { waitForAuthSession } from '~/utils/wait-for-auth-session';
 
 definePageMeta({
   title: 'Central Identity link — Read in Peace',
@@ -28,6 +29,7 @@ const error = ref(
 const recovered = route.query.recovered === '1';
 
 onMounted(async () => {
+  await waitForAuthSession(() => auth.sessionReady);
   if (auth.signedIn) {
     const result = await authClient.listAccounts();
     linked.value = result.data?.some((account) => account.providerId === 'central-identity') ?? false;

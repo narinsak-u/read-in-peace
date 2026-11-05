@@ -14,7 +14,8 @@ describe('CoreConfigService', () => {
     expect(config.server.port).toBe(3000);
     expect(config.server.corsOrigins).toEqual(['https://reading.lvh.me:8080']);
     expect(config.auth.baseUrl).toBe('https://reading.lvh.me:8080');
-    expect(config.auth.recoveryRedirectUri).toBe('https://reading.lvh.me:8080/api/identity-recovery/callback');
+    expect(config.auth.recoveryRedirectUri).toBeUndefined();
+    expect(config.auth.recoveryProviderRedirectUri).toBeUndefined();
     expect(config.frontend.url).toBe('https://reading.lvh.me:8080');
   });
 
@@ -107,6 +108,23 @@ describe('CoreConfigService', () => {
       clientId: 'reading-client',
       clientSecret: 'reading-secret',
     });
+  });
+  it('does not require migration-only recovery configuration in production', () => {
+    const config = new CoreConfigService({
+      ...validEnv,
+      STRIPE_SECRET_KEY: 'sk_live_fixture',
+      NODE_ENV: 'production',
+      BETTER_AUTH_URL: 'https://reading.example.com',
+      FRONTEND_URL: 'https://reading.example.com',
+      CORS_ORIGINS: 'https://reading.example.com',
+      AUTH_SECRET: 'production-auth-secret-long-enough',
+      CENTRAL_IDENTITY_ISSUER: 'https://identity.example.com/api/auth',
+      CENTRAL_IDENTITY_CLIENT_ID: 'reading-client',
+      CENTRAL_IDENTITY_CLIENT_SECRET: 'reading-secret',
+    });
+    expect(config.auth.recoveryRedirectUri).toBeUndefined();
+    expect(config.auth.recoveryProviderRedirectUri).toBeUndefined();
+    expect(config.auth.recoveryProviders).toEqual({});
   });
 
   it('throws when DATABASE_URL is missing', () => {

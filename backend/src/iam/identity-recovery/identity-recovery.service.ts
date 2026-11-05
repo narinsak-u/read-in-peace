@@ -1,6 +1,5 @@
 import { Inject, Injectable, UnauthorizedException } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { and, eq, gt, like, lt } from 'drizzle-orm';
 import {
   authorizationCodeGrant,
   buildAuthorizationUrl,
@@ -13,14 +12,17 @@ import {
   randomPKCECodeVerifier,
   randomState,
 } from 'openid-client';
-import { DATABASE, type Database } from '../../core/database/database.provider';
-import * as schema from '../../core/database/schema';
+import type { BetterAuthInstance } from '../auth/better-auth';
 import { CoreConfigService } from '../../core/config/config.provider';
 import { AUTH } from '../auth/better-auth';
+import {
+  IDENTITY_RECOVERY_REPOSITORY,
+  type IdentityRecoveryRepository,
+} from './domain/identity-recovery.repository';
 import { z } from 'zod';
 
-const RECOVERY_TTL_MS = 5 * 60 * 1000;
-const CENTRAL_PROVIDER = 'central-identity';
+const recoveryTtlMs = 5 * 60 * 1000;
+const centralProvider = 'central-identity';
 type RecoveryProvider = 'google' | 'github';
 const providerChallengeSchema = z.object({
   provider: z.enum(['google', 'github']),
@@ -32,42 +34,24 @@ const centralChallengeSchema = z.object({
   nonce: z.string(),
   codeVerifier: z.string(),
 });
-interface RecoveryAuth {
-  $context: {
-    password: { verify(input: { hash: string; password: string }): Promise<boolean> };
-    internalAdapter: {
-      createAccount(account: {
-        id: string;
-        userId: string;
-        providerId: string;
-        accountId: string;
-      }): Promise<unknown>;
-    };
-  };
-}
+type RecoveryAuth = BetterAuthInstance;
 
 @Injectable()
 export class IdentityRecoveryService {
   constructor(
-    @Inject(DATABASE) private readonly db: Database,
+    @Inject(IDENTITY_RECOVERY_REPOSITORY) private readonly repository: IdentityRecoveryRepository,
     @Inject(AUTH) private readonly auth: RecoveryAuth,
     private readonly config: CoreConfigService,
   ) {}
 
   async begin(email: string, password: string): Promise<{ state: string; authorizationUrl: string }> {
-    const [identity] = await this.db.select({ id: schema.user.id })
-      .from(schema.user).where(eq(schema.user.email, email.trim().toLowerCase())).limit(1);
-    const [credential] = identity
-      ? await this.db.select({ password: schema.account.password }).from(schema.account).where(and(
-          eq(schema.account.userId, identity.id),
-          eq(schema.account.providerId, 'credential'),
-        )).limit(1)
-      : [];
-    if (!identity || !credential?.password || !await this.auth.$context.password.verify({
-      hash: credential.password,
+    const identity = await this.repository.findCredential(email.trim().toLowerCase());
+    const context = await this.auth.$context;
+    if (!identity?.password || !await context.password.verify({
+      hash: identity.password,
       password,
     })) throw new UnauthorizedException('Recovery proof failed.');
-    return this.beginCentral(identity.id);
+    return this.beginCentral(identity.userId);
   }
 
   async beginProvider(provider: RecoveryProvider): Promise<{ state: string; authorizationUrl: string }> {
@@ -75,11 +59,13 @@ export class IdentityRecoveryService {
     if (!settings) throw new UnauthorizedException('Recovery provider is unavailable.');
     const state = randomState();
     const nonce = provider === 'google' ? randomNonce() : undefined;
+    const redirectUri = this.config.auth.recoveryProviderRedirectUri;
+    if (!redirectUri) throw new UnauthorizedException('Recovery provider is unavailable.');
     const codeVerifier = randomPKCECodeVerifier();
     const challenge = await calculatePKCECodeChallenge(codeVerifier);
     const client = await this.providerClient(provider, settings.clientId, settings.clientSecret);
     const authorizationUrl = buildAuthorizationUrl(client, {
-      redirect_uri: this.config.auth.recoveryProviderRedirectUri,
+      redirect_uri: redirectUri,
       response_type: 'code',
       scope: provider === 'google' ? 'openid email profile' : 'read:user',
       state,
@@ -87,18 +73,19 @@ export class IdentityRecoveryService {
       code_challenge: challenge,
       code_challenge_method: 'S256',
     });
-    await this.saveChallenge(`identity-recovery-provider:${state}`, {
+    await this.repository.saveChallenge(`identity-recovery-provider:${state}`, {
       provider,
       nonce,
       codeVerifier,
-    });
+    }, new Date(Date.now() + recoveryTtlMs));
     return { state, authorizationUrl: authorizationUrl.href };
   }
 
   async completeProvider(callbackUrl: URL, cookieState: string): Promise<{ state: string; authorizationUrl: string }> {
     const state = callbackUrl.searchParams.get('state');
     if (!state || state !== cookieState) throw new UnauthorizedException('Recovery proof failed.');
-    const pending = await this.consumeChallenge(`identity-recovery-provider:${state}`);
+    const pending = await this.repository.consumeChallenge(`identity-recovery-provider:${state}`, new Date());
+    if (!pending) throw new UnauthorizedException('Recovery proof failed.');
     const details = providerChallengeSchema.parse(pending);
     const settings = this.config.auth.recoveryProviders[details.provider];
     if (!settings) throw new UnauthorizedException('Recovery proof failed.');
@@ -124,11 +111,7 @@ export class IdentityRecoveryService {
       }
       providerSubject = String(githubUser.id);
     }
-    const [account] = await this.db.select({ userId: schema.account.userId })
-      .from(schema.account).where(and(
-        eq(schema.account.providerId, details.provider),
-        eq(schema.account.accountId, providerSubject),
-      )).limit(1);
+    const account = await this.repository.findProviderUser(details.provider, providerSubject);
     if (!account) throw new UnauthorizedException('Recovery proof failed.');
     return this.beginCentral(account.userId);
   }
@@ -136,11 +119,12 @@ export class IdentityRecoveryService {
   async complete(callbackUrl: URL, cookieState: string): Promise<void> {
     const state = callbackUrl.searchParams.get('state');
     if (!state || state !== cookieState) throw new UnauthorizedException('Recovery proof failed.');
-    const pending = centralChallengeSchema.parse(
-      await this.consumeChallenge(`identity-recovery-central:${state}`),
-    );
+    const pendingValue = await this.repository.consumeChallenge(`identity-recovery-central:${state}`, new Date());
+    if (!pendingValue) throw new UnauthorizedException('Recovery proof failed.');
+    const pending = centralChallengeSchema.parse(pendingValue);
     const central = this.config.auth.centralIdentity;
-    if (!central) throw new UnauthorizedException('Central Identity is unavailable.');
+    const redirectUri = this.config.auth.recoveryRedirectUri;
+    if (!central || !redirectUri) throw new UnauthorizedException('Central Identity is unavailable.');
     const client = await discovery(
       new URL(central.issuer),
       central.clientId,
@@ -157,28 +141,21 @@ export class IdentityRecoveryService {
     if (!claims?.iss || !claims.sub || claims.iss !== central.issuer) {
       throw new UnauthorizedException('Recovery proof failed.');
     }
-    const existing = await this.db.select({ userId: schema.account.userId })
-      .from(schema.account).where(and(
-        eq(schema.account.providerId, CENTRAL_PROVIDER),
-        eq(schema.account.accountId, claims.sub),
-      )).limit(1);
-    const localLink = await this.db.select({ accountId: schema.account.accountId })
-      .from(schema.account).where(and(
-        eq(schema.account.providerId, CENTRAL_PROVIDER),
-        eq(schema.account.userId, pending.userId),
-      )).limit(1);
-    if (existing.length || localLink.length) throw new UnauthorizedException('Conflicting identity link.');
-    await this.auth.$context.internalAdapter.createAccount({
+    const existing = await this.repository.findCentralIdentityLink(pending.userId, claims.sub);
+    if (existing.subjectUserId || existing.userHasLink) throw new UnauthorizedException('Conflicting identity link.');
+    const context = await this.auth.$context;
+    await context.internalAdapter.createAccount({
       id: randomUUID(),
       userId: pending.userId,
-      providerId: CENTRAL_PROVIDER,
+      providerId: centralProvider,
       accountId: claims.sub,
     });
   }
 
   private async beginCentral(userId: string): Promise<{ state: string; authorizationUrl: string }> {
     const central = this.config.auth.centralIdentity;
-    if (!central) throw new UnauthorizedException('Central Identity is unavailable.');
+    const redirectUri = this.config.auth.recoveryRedirectUri;
+    if (!central || !redirectUri) throw new UnauthorizedException('Central Identity is unavailable.');
     const state = randomState();
     const nonce = randomNonce();
     const codeVerifier = randomPKCECodeVerifier();
@@ -190,7 +167,7 @@ export class IdentityRecoveryService {
       ClientSecretBasic(central.clientSecret),
     );
     const authorizationUrl = buildAuthorizationUrl(client, {
-      redirect_uri: this.config.auth.recoveryRedirectUri,
+      redirect_uri: redirectUri,
       response_type: 'code',
       scope: 'openid email profile',
       state,
@@ -198,7 +175,11 @@ export class IdentityRecoveryService {
       code_challenge: codeChallenge,
       code_challenge_method: 'S256',
     });
-    await this.saveChallenge(`identity-recovery-central:${state}`, { userId, nonce, codeVerifier });
+    await this.repository.saveChallenge(`identity-recovery-central:${state}`, {
+      userId,
+      nonce,
+      codeVerifier,
+    }, new Date(Date.now() + recoveryTtlMs));
     return { state, authorizationUrl: authorizationUrl.href };
   }
 
@@ -214,25 +195,4 @@ export class IdentityRecoveryService {
     }, clientId, undefined, ClientSecretPost(clientSecret));
   }
 
-  private async saveChallenge(identifier: string, value: object): Promise<void> {
-    await this.db.delete(schema.verification).where(and(
-      like(schema.verification.identifier, 'identity-recovery-%'),
-      lt(schema.verification.expiresAt, new Date()),
-    ));
-    await this.db.insert(schema.verification).values({
-      id: randomUUID(),
-      identifier,
-      value: JSON.stringify(value),
-      expiresAt: new Date(Date.now() + RECOVERY_TTL_MS),
-    });
-  }
-
-  private async consumeChallenge(identifier: string): Promise<unknown> {
-    const [pending] = await this.db.delete(schema.verification).where(and(
-      eq(schema.verification.identifier, identifier),
-      gt(schema.verification.expiresAt, new Date()),
-    )).returning({ value: schema.verification.value });
-    if (!pending) throw new UnauthorizedException('Recovery proof failed.');
-    return JSON.parse(pending.value) as unknown;
-  }
 }

@@ -53,12 +53,8 @@ export class CoreConfigService implements AppConfig {
     this.auth = {
       baseUrl,
       trustedOrigins: [baseUrl],
-      recoveryRedirectUri:
-        parsed.READING_RECOVERY_OIDC_REDIRECT_URI ??
-        `${baseUrl}/api/identity-recovery/callback`,
-      recoveryProviderRedirectUri:
-        parsed.READING_RECOVERY_PROVIDER_REDIRECT_URI ??
-        `${baseUrl}/api/identity-recovery/provider/callback`,
+      recoveryRedirectUri: parsed.READING_RECOVERY_OIDC_REDIRECT_URI,
+      recoveryProviderRedirectUri: parsed.READING_RECOVERY_PROVIDER_REDIRECT_URI,
       recoveryProviders: {
         ...(parsed.READING_RECOVERY_GOOGLE_CLIENT_ID &&
         parsed.READING_RECOVERY_GOOGLE_CLIENT_SECRET
