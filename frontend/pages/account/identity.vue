@@ -28,6 +28,16 @@ const error = ref(
 const recovered = route.query.recovered === '1';
 
 onMounted(async () => {
+  if (!auth.sessionReady) {
+    await new Promise<void>((resolve) => {
+      const stop = watch(() => auth.sessionReady, (ready) => {
+        if (ready) {
+          stop();
+          resolve();
+        }
+      });
+    });
+  }
   if (auth.signedIn) {
     const result = await authClient.listAccounts();
     linked.value = result.data?.some((account) => account.providerId === 'central-identity') ?? false;
