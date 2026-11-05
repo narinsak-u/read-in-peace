@@ -68,77 +68,69 @@ of private keys and partial env staging; it does not exercise live sign-in.
 
 ## 1. Authentication
 
-### 1.1 Sign Up
+### 1.1 Start Central Identity sign-in
 
-```
-User fills email, password, name in AuthModal (sign-up tab)
-  │
-  ▼
-AuthModal.vue calls auth.signUp(name, email, password)
-  │
-  ▼
-stores/auth.ts → authSignUp()
-  │  calls signUp.email({ name, email, password })
-  │  from better-auth/vue client (lib/auth-client.ts)
-  │
-  ▼
-POST /api/auth/sign-up
-  │  (Nuxt server proxy: server/api/[...].ts forwards to NestJS)
-  │
-  ▼
-backend/src/main.ts → toNodeHandler(auth)
-  │  Better Auth handles the route:
-  │  1. Validates input (name, email, password ≥ 8 chars)
-  │  2. Hashes password with scrypt (N=16384, r=16, p=1, dkLen=64)
-  │  3. Inserts user row + account row (providerId: "credential")
-  │  4. Creates session, returns Set-Cookie header
-  │
-  ▼
-Response: { user: { id, name, email }, session }
-  │  Cookies forwarded by h3 proxyRequest
-  │
-  ▼
-auth store sets signedIn = true, user = data.user
-  │  useSession() reactive ref also updates (session watcher)
-  │
-  ▼
-Toast: "Account created successfully"
-  │  Router navigates to /feed
+The header profile control starts the Relying Party's Better Auth OAuth request.
+The same control is available in the mobile navigation. It does not link directly
+to the portal, so the application owns the authorization transaction and return
+destination.
+
+```text
+Sign In → POST /api/auth/sign-in/social (provider: central-identity)
+  → Better Auth discovers Central Identity and starts OIDC authorization code
+    flow with state and PKCE
+  → browser visits the Central Identity Authentication Portal
 ```
 
-### 1.2 Sign In
+The Relying Party callback is
+`https://reading.lvh.me:8080/api/auth/callback/central-identity`. Keep the
+callback registered on the development Central Identity client.
 
-```
-User fills email, password in AuthModal (sign-in tab)
-  │
-  ▼
-AuthModal.vue calls auth.signIn(email, password)
-  │
-  ▼
-stores/auth.ts → authSignIn()
-  │  calls signIn.email({ email, password })
-  │
-  ▼
-POST /api/auth/sign-in
-  │  (proxy → NestJS → Better Auth handler)
-  │
-  ▼
-Better Auth:
-  1. Looks up account by email, verifies password (scrypt compare)
-  2. Creates session, returns Set-Cookie
-  │
-  ▼
-Response: { user: { id, name, email }, session }
-  │
-  ▼
-auth store sets signedIn = true, user = data.user
-  │
-  ▼
-Toast: "Signed in successfully"
-  │  Router navigates to /feed
-```
+### 1.2 Callback, account mapping, and session
 
-### 1.3 Session Persistence (Page Reload)
+Better Auth validates the OIDC response and matches the Central Identity issuer
+and subject to the existing `central-identity` account link. It creates an
+independent Read in Peace Application Session only after successful callback.
+The browser returns to the original safe same-origin path, query, and fragment.
+Application authorization still checks the retained local user and roles.
+
+An unknown subject cannot claim an unlinked local user by matching email.
+Conflicts and unlinked existing users must use the signed-in Identity Link or
+Reviewed Recovery flow. Recovery proves ownership; it does not create an
+Application Session as its proof step or replace local users and records.
+
+### 1.3 Retired local sign-in
+
+Read in Peace Better Auth has email/password authentication disabled and
+registers only Central Identity as a normal OAuth provider. Legacy password and
+social-login requests cannot create an Application Session. Existing user,
+account, session, and business records remain in place. Old local credentials
+remain only as the recovery proof for migration and must not be exposed as a
+sign-in option.
+
+### 1.4 Development browser check
+
+1. Start the Central Identity development service, database, and HTTPS gateway.
+2. Start Read in Peace with `npm run dev`.
+3. Trust the development gateway certificate in the browser, then open
+   `https://reading.lvh.me:8080`.
+4. Select Sign In from the header or mobile navigation. Confirm the browser
+   enters the portal through the Central Identity authorization request.
+5. Complete Central Identity authentication. Confirm callback creates the local
+   session and returns to the original same-origin page.
+6. Open `https://reading.lvh.me:8080/dashboard` while signed out. After local
+   session hydration, confirm OIDC starts automatically and callback returns to `/dashboard`.
+7. Confirm an unlinked existing account cannot sign in by email match and is
+   directed to Reviewed Recovery.
+8. Tamper with OIDC state, issuer, token, authorization code, and return target.
+   Forged state, invalid issuer/token, replayed code, or external destination
+   must fail without creating a session or redirecting outside this origin.
+9. Confirm local password, signup, password-reset, Google, and GitHub requests
+   do not create an Application Session.
+
+Do not use production issuer or credentials for this development check.
+
+### 1.5 Session Persistence (Page Reload)
 
 ```
 Page reloads
@@ -166,7 +158,7 @@ On failure (no cookie / expired):
 UI reacts: Navbar shows profile initials, guarded features unlock
 ```
 
-### 1.4 Sign Out
+### 1.6 Sign Out
 
 ```
 User clicks "Sign out" in Navbar dropdown
@@ -695,10 +687,8 @@ cartStore.checkout()
   │
   ├─ Not signed in:
   │    drawerOpen.value = false
-  │    auth.openAuthModal(() => {      ← opens AuthModal
-  │      drawerOpen.value = true        ← reopens drawer after sign-in
-  │      checkout()                     ← retries checkout
-  │    })
+  │    auth.signInCentral() starts Central Identity OIDC
+  │    callback restores this page; user retries checkout
   │    return
   │
   └─ Signed in:
@@ -802,7 +792,7 @@ On failure:
 | User adds item | `items.value` appends; `watch` persists to localStorage |
 | User removes item | `items.value` filters; `watch` persists to localStorage |
 | Page reload (client) | `plugins/cart-persist.client.ts` → `cartStore.hydrateFromStorage()` reads localStorage |
-| Auth required (guest checkout) | Drawer closes → AuthModal opens → on sign-in success: drawer reopens → checkout retries |
+| Auth required (guest checkout) | Drawer closes → Central Identity OIDC → callback restores cart page; user retries checkout |
 | Stripe cancel (user returns) | Cart preserved (no clear happens) |
 | Purchase confirmed | `cartStore.clear()` called from `dashboard.vue` after `confirmPurchase` |
 | Sign out | Cart persists (stays in localStorage; not connected to auth state) |

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const mockOpenAuthModal = vi.fn();
+const mockSignInCentral = vi.fn();
 let mockUser: { id: string } | null = null;
 let mockSignedIn = false;
 
@@ -12,7 +12,7 @@ vi.mock("~/stores/auth", () => ({
     get user() {
       return mockUser;
     },
-    openAuthModal: mockOpenAuthModal,
+    signInCentral: mockSignInCentral,
   }),
 }));
 
@@ -26,14 +26,14 @@ describe("useFollow", () => {
     mockSignedIn = false;
   });
 
-  it("opens auth modal when not signed in", async () => {
+  it("starts Central Identity sign-in when not signed in", async () => {
     const { useFollow } = await import("~/composables/useFollow");
     const { toggle } = useFollow();
     const onUpdate = vi.fn();
 
     await toggle("u2", onUpdate);
 
-    expect(mockOpenAuthModal).toHaveBeenCalled();
+    expect(mockSignInCentral).toHaveBeenCalled();
     expect(onUpdate).not.toHaveBeenCalled();
   });
 

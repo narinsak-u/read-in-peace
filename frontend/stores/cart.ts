@@ -97,7 +97,7 @@ export const useCartStore = defineStore(
     async function checkout() {
       const auth = useAuthStore();
       if (!auth.signedIn) {
-        auth.openAuthModal(() => checkout());
+        void auth.signInCentral();
         return;
       }
       try {

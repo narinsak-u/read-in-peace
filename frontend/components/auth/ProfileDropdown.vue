@@ -4,7 +4,6 @@ import { onClickOutside } from "@vueuse/core";
 import { Button } from "~/components/ui/button";
 
 const auth = useAuthStore();
-const centralIdentityUrl = useRuntimeConfig().public.centralIdentityUrl;
 
 const show = shallowRef(false);
 const menuRef = ref<HTMLElement | null>(null);
@@ -19,11 +18,8 @@ const initials = computed(() => {
 });
 
 function toggle() {
-  if (auth.signedIn) {
-    show.value = !show.value;
-  } else {
-    auth.openAuthModal();
-  }
+  if (auth.signedIn) show.value = !show.value;
+  else void auth.signInCentral();
 }
 
 function signOut() {
@@ -73,9 +69,6 @@ function signOut() {
       >
         Central Identity link
       </NuxtLink>
-      <a :href="centralIdentityUrl" class="flex w-full items-center px-3 py-2 text-sm hover:bg-accent rounded-sm">
-        Manage Central Identity / sign out centrally
-      </a>
       <hr class="border-border" />
       <Button
         variant="archivalGhost"

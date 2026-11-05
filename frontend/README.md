@@ -43,7 +43,7 @@ frontend/
 │   ├── BookBorrowCard.vue     # Borrow/purchase sidebar with cart integration
 │   ├── BookReviews.vue        # Reviews section with star input, textarea, ReviewItem
 │   ├── ReviewItem.vue         # Individual review with likes, replies, reply form
-│   ├── AuthModal.vue          # Sign-in / Sign-up modal
+│   ├── auth/ProfileDropdown.vue  # Central Identity sign-in and local session menu
 │   ├── ReviewModal.vue        # Modal for writing a review
 │   ├── ActiveLoans.vue        # Active loans section with return/write review/buy
 │   ├── NewArrivals.vue        # New arrivals grid with borrow/buy, search filter

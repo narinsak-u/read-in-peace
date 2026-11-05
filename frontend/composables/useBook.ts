@@ -35,7 +35,7 @@ export function useBook(bookId: string | Ref<string> | (() => string)) {
   }
 
   async function toggleLike() {
-    if (!auth.signedIn) { auth.openAuthModal(() => { void toggleLike() }); return }
+    if (!auth.signedIn) { void auth.signInCentral(); return }
     const prevLiked = liked.value; const prevCount = likeCount.value
     liked.value = !liked.value; likeCount.value += liked.value ? 1 : -1
     try {
@@ -46,7 +46,7 @@ export function useBook(bookId: string | Ref<string> | (() => string)) {
   }
 
   async function setRating(rating: number) {
-    if (!auth.signedIn) { auth.openAuthModal(() => { void setRating(rating) }); return }
+    if (!auth.signedIn) { void auth.signInCentral(); return }
     await $fetch(`/api/books/${id.value}/rate`, { method: 'POST', body: { rating } })
     userRating.value = rating; invalidate('books')
   }
