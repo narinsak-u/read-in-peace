@@ -49,7 +49,7 @@ async function onBorrowBook(bookId: string) {
     refreshTrending();
   } catch (e: any) {
     if (e?.status === 401) {
-      auth.openAuthModal();
+      void auth.signInCentral();
     } else if (e?.data?.message) {
       props.flash(e.data.message);
     } else {
@@ -71,7 +71,7 @@ async function onReturnBook(bookId: string, title: string, slug: string) {
 
 function onBorrow(bookId: string) {
   if (!auth.signedIn) {
-    auth.openAuthModal();
+    void auth.signInCentral();
     return;
   }
   onBorrowBook(bookId);

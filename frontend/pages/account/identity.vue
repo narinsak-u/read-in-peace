@@ -19,9 +19,11 @@ const linked = ref(false);
 const error = ref(
   route.query.error === 'recovery'
     ? 'Reviewed recovery failed. Neither identity was linked; resolve proof or mapping conflicts before retrying.'
-    : route.query.error
-      ? 'Central Identity could not be linked. If it belongs to another Application User, stop and request reviewed recovery; do not create a replacement account.'
-      : '',
+    : route.query.error === 'login'
+      ? 'Central Identity sign-in could not be completed. Existing unlinked users must use Reviewed Recovery; matching email never links accounts.'
+      : route.query.error
+        ? 'Central Identity could not be linked. If it belongs to another Application User, stop and request reviewed recovery; do not create a replacement account.'
+        : '',
 );
 const recovered = route.query.recovered === '1';
 

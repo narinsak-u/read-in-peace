@@ -48,9 +48,7 @@ const activeLoan = computed(() =>
 
 async function borrowBookAction() {
   if (!auth.signedIn) {
-    auth.openAuthModal(() => {
-      void borrowBookAction();
-    });
+    void auth.signInCentral();
     return;
   }
   try {
@@ -58,9 +56,7 @@ async function borrowBookAction() {
     props.flash(`${props.book.title} is now on your desk.`);
   } catch (e: any) {
     if (e?.status === 401) {
-      auth.openAuthModal(() => {
-        void borrowBookAction();
-      });
+      void auth.signInCentral();
     } else {
       props.flash(e?.data?.message || "Could not borrow the book.");
     }
@@ -77,9 +73,7 @@ async function doBuy() {
     await navigateTo(res.url, { external: true });
   } catch (e: any) {
     if (e?.status === 401) {
-      auth.openAuthModal(() => {
-        void doBuy();
-      });
+      void auth.signInCentral();
     } else {
       props.flash(e?.data?.message || "Could not start checkout.");
     }
@@ -90,9 +84,7 @@ async function doBuy() {
 
 async function buyNow() {
   if (!auth.signedIn) {
-    auth.openAuthModal(() => {
-      void buyNow();
-    });
+    void auth.signInCentral();
     return;
   }
   if (ownedCount.value > 0) {

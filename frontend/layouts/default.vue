@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { useAuthStore } from "~/stores/auth";
 
 const { notice, flash } = useFlash();
 const route = useRoute();
-const auth = useAuthStore();
 const showDock = computed(() => route.name !== "index");
 </script>
 
@@ -21,7 +19,6 @@ const showDock = computed(() => route.name !== "index");
   </div>
   <BottomDock v-if="showDock" :flash="flash" />
 
-  <AuthModal v-if="auth.showAuthModal" @close="auth.closeAuthModal()" />
 
   <!-- Toast Notification -->
   <Teleport to="body">

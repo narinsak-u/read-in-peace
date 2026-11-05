@@ -11,16 +11,11 @@ const backendUrl =
   (process.env.NODE_ENV === "production" && !testProduction
     ? undefined
     : "http://localhost:3000");
-const centralIdentityUrl =
-  process.env.NUXT_PUBLIC_CENTRAL_IDENTITY_URL ||
-  (process.env.NODE_ENV === "production" && !testProduction
-    ? undefined
-    : "https://auth.127.0.0.1.nip.io");
 
 if (
   process.env.NODE_ENV === "production" &&
   !testProduction &&
-  (!siteUrl || !backendUrl || !centralIdentityUrl)
+  (!siteUrl || !backendUrl)
 ) {
   throw new Error("Production frontend URLs must be provided by the operator.");
 }
@@ -28,8 +23,7 @@ if (
 if (
   testProduction &&
   (siteUrl !== "https://reading-test.lvh.me:8081" ||
-    backendUrl !== "http://localhost:3100" ||
-    centralIdentityUrl !== "https://auth-test.127.0.0.1.nip.io:8081")
+    backendUrl !== "http://localhost:3100")
 ) {
   throw new Error("Test-production frontend origins must use the isolated local HTTPS gateway.");
 }
@@ -60,7 +54,6 @@ export default defineNuxtConfig({
     public: {
       siteUrl,
       backendUrl,
-      centralIdentityUrl,
     },
   },
   compatibilityDate: "2026-06-03",
