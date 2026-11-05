@@ -1,12 +1,12 @@
 services:
   postgres:
     image: postgres:17-alpine
+    ports:
+      - "127.0.0.1:5433:5432"
     environment:
       POSTGRES_DB: read_in_peace
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-    ports:
-      - "5432:5432"
     volumes:
       - reading-postgres:/var/lib/postgresql/data
     healthcheck:

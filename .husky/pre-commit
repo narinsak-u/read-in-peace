@@ -8,7 +8,7 @@ while IFS= read -r -d '' file; do
       echo "Refusing to commit dotenvx private keys: $file" >&2
       exit 1
       ;;
-    frontend/.env.development|frontend/.env.production|backend/.env.development|backend/.env.production)
+    frontend/.env.development|frontend/.env.production|frontend/.env.test-production|backend/.env.development|backend/.env.production|backend/.env.test-production)
       if ! git diff --quiet -- "$file"; then
         echo "Refusing partially staged environment file: $file" >&2
         exit 1
@@ -27,7 +27,7 @@ while IFS= read -r -d '' file; do
         /^[[:space:]]*(#|$)/ { next }
         {
           value = substr($0, index($0, "=") + 1)
-          if ($1 ~ /^DOTENV_PUBLIC_KEY(_[A-Z]+)?$/ && value ~ /^"[0-9a-f]+"$/) next
+          if ($1 ~ /^DOTENV_PUBLIC_KEY(_[A-Z_-]+)?$/ && value ~ /^"[0-9a-f]+"$/) next
           if (value ~ /^"?encrypted:[A-Za-z0-9+\/=]+"?$/) next
           exit 1
         }
@@ -36,7 +36,7 @@ while IFS= read -r -d '' file; do
         exit 1
       fi
       ;;
-    frontend/.env.example|frontend/.env.development.example|frontend/.env.production.example|backend/.env.example|backend/.env.development.example|backend/.env.production.example) ;;
+    frontend/.env.example|frontend/.env.development.example|frontend/.env.production.example|frontend/.env.test-production.example|backend/.env.example|backend/.env.development.example|backend/.env.production.example|backend/.env.test-production.example) ;;
     .env|.env.*|*/.env|*/.env.*)
       echo "Refusing to commit an unsupported environment file: $file" >&2
       exit 1

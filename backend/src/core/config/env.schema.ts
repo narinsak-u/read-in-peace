@@ -4,7 +4,8 @@ export const envSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
-  PORT: z.coerce.number().int().positive().default(4000),
+  PORT: z.coerce.number().int().positive().default(3000),
+  TEST_PRODUCTION: z.enum(['true', 'false']).default('false').transform((value) => value === 'true'),
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
   BETTER_AUTH_URL: z.url().optional(),
   FRONTEND_URL: z.url().optional(),
@@ -39,7 +40,13 @@ export const envSchema = z.object({
         !value.includes('OPERATOR_MUST_CONFIGURE') &&
         !value.startsWith('<'),
     ) &&
-    !env.STRIPE_SECRET_KEY.startsWith('sk_test_'),
+    (env.TEST_PRODUCTION
+      ? env.STRIPE_SECRET_KEY.startsWith('sk_test_') &&
+        env.DATABASE_URL === 'postgres://postgres:postgres@localhost:5433/read_in_peace' &&
+        env.BETTER_AUTH_URL === 'https://reading-test.lvh.me:8081' &&
+        env.FRONTEND_URL === 'https://reading-test.lvh.me:8081' &&
+        env.CENTRAL_IDENTITY_ISSUER === 'https://auth-test.127.0.0.1.nip.io:8081/api/auth'
+      : !env.STRIPE_SECRET_KEY.startsWith('sk_test_')),
   'Production requires operator-provided database, auth, payment, and Central Identity settings.',
 );
 

@@ -1,0 +1,7 @@
+services:
+  postgres:
+    volumes:
+      - reading-test-production-postgres:/var/lib/postgresql/data
+
+volumes:
+  reading-test-production-postgres:

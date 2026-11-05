@@ -19,7 +19,7 @@ Nuxt 3 SSR application with Vue 3 Composition API, Pinia, Tailwind CSS v4, and s
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start dev server (port 3000) |
+| `npm run dev` | Start Nuxt on port 3001 |
 | `npm run build` | Production build |
 | `npm run generate` | Static export |
 | `npm run preview` | Preview production build |

@@ -3,7 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- nuxt dev",
+    "dev": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- env NUXT_PORT=3001 NUXT_PUBLIC_SITE_URL=https://reading.lvh.me:8080 NUXT_PUBLIC_BACKEND_URL=http://localhost:3000 NUXT_PUBLIC_CENTRAL_IDENTITY_URL=https://auth.127.0.0.1.nip.io:8080 nuxt dev",
+    "build:test-production": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.test-production -- env NODE_ENV=production TEST_PRODUCTION=true NUXT_PUBLIC_SITE_URL=https://reading-test.lvh.me:8081 NUXT_PUBLIC_BACKEND_URL=http://localhost:3100 NUXT_PUBLIC_CENTRAL_IDENTITY_URL=https://auth-test.127.0.0.1.nip.io:8081 nuxt build",
+    "preview:test-production": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.test-production -- env NODE_ENV=production TEST_PRODUCTION=true NUXT_PORT=3101 NUXT_PUBLIC_SITE_URL=https://reading-test.lvh.me:8081 NUXT_PUBLIC_BACKEND_URL=http://localhost:3100 NUXT_PUBLIC_CENTRAL_IDENTITY_URL=https://auth-test.127.0.0.1.nip.io:8081 nuxt preview --host 0.0.0.0 --port 3101",
     "build": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.production -- nuxt build",
     "generate": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.production -- nuxt generate",
     "preview": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.production -- nuxt preview",

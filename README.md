@@ -30,41 +30,49 @@ Your quiet corner of the internet to discover, borrow, buy, and discuss books �
 ## 🚀 Quick start
 
 ```bash
-# Prerequisites: Node.js 20+, Docker
-
-# Start PostgreSQL
-docker compose up -d
-
-# Backend
-cd backend
+# Prerequisites: Node.js 20+, Docker, repository and package dependencies installed
 npm install
+cd frontend && npm ci
+cd ../backend && npm ci
+cd ..
+
+# Start Central Caddy first; export its root.crt as described in the Central README.
+NODE_EXTRA_CA_CERTS="$(realpath ../book-auth-middleware/central-identity-root.crt)" npm run dev
+```
+
+The HTTPS browser origin is `https://reading.lvh.me:8080` through the Central
+Identity Caddy proxy. Trust Caddy's local root certificate before testing.
+Nest needs the absolute `NODE_EXTRA_CA_CERTS` path to fetch Central's OIDC
+discovery document from either subpackage directory.
+Root startup reuses `backend/docker-compose.yml` and its existing `pgdata`
+volume; it does not create or reset the app's local database. Run migrations
+and seed only when needed:
+
+```bash
+cd backend
 npm run db:migrate
 npm run db:seed
-npm run start:dev          # → http://localhost:4000
-
-# Frontend (in a second terminal)
-cd frontend
-npm install
-npm run dev                # → http://localhost:3000
 ```
 
 ## Central Identity local proof
 
-For the cross-site SSO proof, use the local HTTPS host `https://reading.lvh.me`
-through the Central Identity Caddy proxy. Trust Caddy's local root certificate
-in the browser before testing. The proxy forwards this host to the Nuxt dev
-server on port 3000; PostgreSQL is started reproducibly with `docker compose up -d`.
+Use the encrypted `backend/.env.development` and `frontend/.env.development`
+files, not plaintext `.env` files. The matching `.env.development.example`
+files are templates. Each package decrypts only its settings with its own
+ignored `.env.keys`; back up both keys outside the repository. Keep the
+operator-issued `CENTRAL_IDENTITY_CLIENT_ID` and
+`CENTRAL_IDENTITY_CLIENT_SECRET` in encrypted backend settings. The issuer is
+`https://auth.127.0.0.1.nip.io:8080`; the registered callback is
+`https://reading.lvh.me:8080/api/auth/callback/central-identity`.
 
-Use the committed encrypted `backend/.env.development` and
-`frontend/.env.development` files, not plaintext `.env` files. The matching
-`.env.development.example` files are templates. Each package decrypts only its
-development settings with dotenvx; keep its ignored `.env.keys` private and
-back up the keys outside the repository. Keep the operator-issued
-`CENTRAL_IDENTITY_CLIENT_ID` and `CENTRAL_IDENTITY_CLIENT_SECRET` in the
-encrypted backend development config. The issuer is
-`https://auth.127.0.0.1.nip.io/api/auth`; its confidential client callback is
-`https://reading.lvh.me/api/auth/callback/central-identity`. Run backend
-migrations and start the backend, then start Nuxt at `https://reading.lvh.me`.
+For production-mode local proof, configure and encrypt each package's
+`.env.test-production` using its `.env.test-production.example`. Use separate
+local credentials, test Stripe keys, and a provisioned test Central Identity
+client. `npm run dev:prod` builds and starts both apps with `NODE_ENV=production`,
+applies migrations only to its isolated database on host `:5433`, then runs the
+backend on `:3100`, frontend on `:3101`, and HTTPS gateway on `:8081`. The callback is
+`https://reading-test.lvh.me:8081/api/auth/callback/central-identity`. It never
+loads `.env.production`, which remains live operator configuration.
 
 Browser smoke: sign into Central Identity via Book Bidding, then open
 Read in Peace and choose **Continue with Central Identity**. It should return
@@ -87,22 +95,22 @@ and the Central SSO Session remain active. **Manage Central Identity / sign out
 centrally** opens the provider page (`NUXT_PUBLIC_CENTRAL_IDENTITY_URL`), where
 **Sign out of Central Identity** ends only the Central SSO Session. Existing
 Application Sessions remain usable until separately ended or expired.
-For the exact invitation, Mailpit verification, local client provisioning, and
-three-host Playwright run, follow the sibling provider's
-[local invited SSO browser proof](../book-auth-middleware/docs/local-invited-sso.md).
+For provider callbacks, Caddy trust, local client provisioning, and the
+three-host browser flow, follow the sibling provider's
+[Development SSO workflow](../book-auth-middleware/docs/local-oauth-sso.md).
 
 ## 📁 Project structure
 
 ```
 read-in-peace/
-├── frontend/          # Nuxt 3 app (Port 3000)
+├── frontend/          # Nuxt 3 app (port 3001; HTTPS gateway :8080)
 │   ├── components/    # Vue components (chat/, profile/, social/, reviews/, browse/, auth/, ui/)
 │   ├── composables/   # useChat*, useConversations, useProfile, useFollow, useFeed, etc.
 │   ├── pages/         # File-based routing
 │   ├── stores/        # Pinia (auth, cart, chat)
 │   ├── types/         # TypeScript interfaces
 │   └── utils/         # Feed, comment, discount helpers
-├── backend/           # NestJS API (Port 4000)
+├── backend/           # NestJS API (port 3000; test-production :3100)
 │   └── src/
 │       ├── chat/      # Direct messages (WebSocket gateway + service + repository)
 │       ├── profiles/  # User profiles, follow system

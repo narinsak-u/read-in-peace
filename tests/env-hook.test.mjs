@@ -22,20 +22,22 @@ test('the repository hook encrypts env files and rejects partial staging and pri
   const repo = mkdtempSync(join(tmpdir(), 'reading-env-hook-'));
   t.after(() => rmSync(repo, { recursive: true, force: true }));
   mkdirSync(join(repo, '.husky'));
-  mkdirSync(join(repo, 'frontend'));
-  mkdirSync(join(repo, 'backend'));
+  for (const directory of ['frontend', 'backend']) mkdirSync(join(repo, directory));
   copyFileSync(join(root, '.husky/pre-commit'), join(repo, '.husky/pre-commit'));
   chmodSync(join(repo, '.husky/pre-commit'), 0o755);
   symlinkSync(join(root, 'node_modules'), join(repo, 'node_modules'), 'dir');
   assert.equal(run(repo, 'git', 'init', '-q').code, 0);
   assert.equal(run(repo, 'git', 'config', 'core.hooksPath', '.husky').code, 0);
   for (const directory of ['frontend', 'backend']) {
-    const { privateKey } = keypair();
-    writeFileSync(join(repo, directory, '.env.keys'), `DOTENV_PRIVATE_KEY_DEVELOPMENT="${privateKey}"\n`);
+    const { privateKey: developmentKey } = keypair();
+    const { privateKey: testProductionKey } = keypair();
+    writeFileSync(join(repo, directory, '.env.keys'), `DOTENV_PRIVATE_KEY_DEVELOPMENT="${developmentKey}"\nDOTENV_PRIVATE_KEY_TEST_PRODUCTION="${testProductionKey}"\n`);
   }
   writeFileSync(join(repo, 'frontend/.env.development'), 'FRONTEND_PUBLIC_URL=https://reading.example.test\n');
   writeFileSync(join(repo, 'backend/.env.development'), 'BACKEND_SECRET=secret-smoke-value\n');
-  assert.equal(run(repo, 'git', 'add', 'frontend/.env.development', 'backend/.env.development').code, 0);
+  writeFileSync(join(repo, 'frontend/.env.test-production'), 'NODE_ENV=production\nTEST_PRODUCTION=true\nPUBLIC_URL=https://reading.example.test\n');
+  writeFileSync(join(repo, 'backend/.env.test-production'), 'NODE_ENV=production\nTEST_PRODUCTION=true\nBACKEND_SECRET=secret-smoke-value\n');
+  assert.equal(run(repo, 'git', 'add', 'frontend/.env.development', 'backend/.env.development', 'frontend/.env.test-production', 'backend/.env.test-production').code, 0);
   const initialCommit = run(repo, 'git', 'commit', '-m', 'encrypt local environment');
   assert.equal(initialCommit.code, 0, initialCommit.stderr);
   const frontendStaged = run(repo, 'git', 'show', 'HEAD:frontend/.env.development').stdout;
@@ -45,6 +47,11 @@ test('the repository hook encrypts env files and rejects partial staging and pri
   assert.doesNotMatch(frontendStaged, /reading\.example\.test/);
   assert.doesNotMatch(frontendStaged, /secret-smoke-value/);
   assert.doesNotMatch(backendStaged, /secret-smoke-value/);
+  const frontendTestProduction = run(repo, 'git', 'show', 'HEAD:frontend/.env.test-production').stdout;
+  const backendTestProduction = run(repo, 'git', 'show', 'HEAD:backend/.env.test-production').stdout;
+  assert.match(frontendTestProduction, /encrypted:/);
+  assert.match(backendTestProduction, /encrypted:/);
+  assert.doesNotMatch(backendTestProduction, /secret-smoke-value/);
   writeFileSync(join(repo, 'frontend/.env.development'), `${frontendStaged}STAGED_CHANGE=1\n`);
   assert.equal(run(repo, 'git', 'add', 'frontend/.env.development').code, 0);
   writeFileSync(join(repo, 'frontend/.env.development'), `${frontendStaged}UNSTAGED_CHANGE=1\n`);

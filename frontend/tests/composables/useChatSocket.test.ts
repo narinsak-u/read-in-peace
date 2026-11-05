@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.stubGlobal('useRuntimeConfig', () => ({
-  public: { backendUrl: 'http://localhost:4000' },
+  public: { backendUrl: 'http://localhost:3000' },
 }));
 
 describe('useChatSocket', () => {

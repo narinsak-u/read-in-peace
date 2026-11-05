@@ -19,30 +19,46 @@ cd frontend && npm ci
 cd ../backend && npm ci
 ```
 
-The root package pins Husky and dotenvx; it does not replace either package's
-own install workflow. Each package has encrypted `.env.development` and
-`.env.production` files and its own ignored `.env.keys`. Back up both private
-key files outside the repository with restrictive permissions. The tracked
-`.env.development.example` and `.env.production.example` files are templates,
-not credentials.
+Root `npm run dev` starts PostgreSQL from `backend/docker-compose.yml` in its
+existing `backend` Compose project. It reuses the existing `pgdata` volume and
+`readinpeace` database, preserving local users and sessions. Nest runs on `:3000`
+and Nuxt on `:3001`. Caddy serves `https://reading.lvh.me:8080`; Nuxt proxies
+`/api/*` to the backend. The local Central Identity issuer is
+`https://auth.127.0.0.1.nip.io:8080/api/auth`, and the registered callback is
+`https://reading.lvh.me:8080/api/auth/callback/central-identity`.
 
-`npm run dev` in either package loads only that package's development file with
-dotenvx strict loading. The frontend process starts with a clean environment
-and its encrypted file contains only public site, backend API, and Central
-Identity URLs. Keep database, Better Auth, OIDC client-secret, and payment
-credentials in `backend/.env.development` only. The local frontend origin is
-`https://reading.lvh.me`; the provider issuer is
-`https://auth.127.0.0.1.nip.io/api/auth`, and the registered callback is
-`https://reading.lvh.me/api/auth/callback/central-identity`.
+Each application keeps its own encrypted env files and ignored `.env.keys`.
+Back up package key files outside the repository with restrictive permissions.
+Root env commands select one file for both packages, defaulting to development:
+`ENV_FILE=.env.test-production npm run env:encrypt` or
+`ENV_FILE=.env.test-production npm run env:decrypt`. Each command runs dotenvx
+from each package directory and uses that package's private key. Live production
+files are touched only when `ENV_FILE=.env.production` is explicitly selected.
+Never commit `.env.keys` or plaintext env files.
 
-Production files intentionally contain no hostnames or credentials. Supply
-operator-owned production values in each package's `.env.production` and
-back up the corresponding keys before committing. The frontend refuses a
-production build without all three public URLs; the backend config requires
-its database and payment values. Never put frontend secrets in Nuxt public
-runtime configuration or commit private keys. The root Husky pre-commit hook
-encrypts/re-stages changed environment files and rejects plaintext, staged
-private keys, and partially staged env changes.
+`npm run dev:prod` builds both applications, starts PostgreSQL from the root
+Compose files with its own volume on host `:5433`, waits for database health,
+runs test-production migrations, then starts both apps in production mode.
+It uses only `.env.test-production`, backend `:3100`, Nuxt preview `:3101`, and
+the isolated gateway origins `https://reading-test.lvh.me:8081` and
+`https://auth-test.127.0.0.1.nip.io:8081`. The backend guard accepts only Stripe
+test credentials and those isolated local origins in this mode. Keep
+`.env.production` reserved for live operator settings; this local command never
+loads it. Configure the Reading Central Identity test client callback as
+`https://reading-test.lvh.me:8081/api/auth/callback/central-identity` before
+testing SSO. Provider-console client provisioning is required.
+
+Tracked `.env.*.example` files are templates, not credentials. Configure and
+encrypt `.env.test-production` separately in both packages before starting
+`dev:prod`; use a unique local auth secret, test Stripe credentials, and the
+operator-provisioned test Central Identity client. Do not copy a live client
+secret or live Stripe key into local configuration.
+
+The frontend refuses a live production build without all three public URLs; the
+backend production config requires its database, auth, payment, and Central
+Identity values. The root Husky pre-commit hook encrypts and re-stages changed
+development, production, and test-production env files. It rejects plaintext,
+staged private keys, and partially staged env changes.
 
 Run `npm run test:env` from the repository root to exercise the hook in a
 disposable Git repository. This verifies commit-time encryption and rejection
@@ -201,7 +217,7 @@ stores/books.ts:
   │  fetchBooks(1, 12) → $fetch("/api/books?page=1&limit=12")
   │
   ▼
-server/api/[...].ts → proxyRequest to http://localhost:4000
+server/api/[...].ts → proxyRequest to http://localhost:3000
   │
   ▼
 NestJS BooksController:
@@ -967,7 +983,7 @@ Toast: "Book deleted"
 2. Page handler → composable method → store method
 3. Store calls $fetch("/api/books/:id/like", { method: "POST" })
 4. Nuxt server: server/api/[...].ts catches /api/*
-5. h3 proxyRequest forwards to http://localhost:4000/api/books/:id/like
+5. h3 proxyRequest forwards to http://localhost:3000/api/books/:id/like
 6. NestJS routing: BooksController → LikesController
 7. AuthGuard: extracts cookie from headers, calls auth.api.getSession()
    → 401 if no valid session

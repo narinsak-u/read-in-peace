@@ -22,7 +22,7 @@ application / infrastructure / presentation).
 ```bash
 # Run from backend/
 npm run build          # nest build
-npm run start:dev      # Watch mode (port 4000)
+npm run start:dev      # Watch mode (port 3000)
 npm run lint           # ESLint + Prettier (--fix is baked in)
 npm run format         # Prettier write on src/**/*.ts and test/**/*.ts
 
@@ -168,7 +168,7 @@ Each feature follows the same four-layer pattern:
 ## Environment
 
 ```env
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/readinpace
+DATABASE_URL=postgres://readinpeace:readinpeace@localhost:5432/readinpeace
 BETTER_AUTH_SECRET=<your-secret>
 STRIPE_SECRET_KEY=<your-stripe-secret>
 ```

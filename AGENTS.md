@@ -4,7 +4,8 @@ Consumed by agentic coding tools. Read this before writing or editing code.
 
 ## Project structure
 
-Two independent npm application packages plus a tooling-only root package for repo-level dotenvx/Husky (run application commands from each package directory):
+- Two independent application packages and a tooling-only root package manage dotenvx and Husky; run app scripts from each package.
+- Root scripts coordinate both apps: `npm run dev` starts local services; `npm run dev:prod` builds production-mode apps with isolated test-production env and database.
 
 - `frontend/` — Nuxt 3 (SSR), Vue 3 Composition API, Pinia, Tailwind CSS v4, shadcn-vue
 - `backend/` — NestJS v11 (Express platform), Better Auth, Drizzle ORM, PostgreSQL
@@ -14,14 +15,14 @@ Feature modules in backend: `books/`, `transactions/`, `social/`, `membership/`.
 ## Commands
 
 ### Frontend
-- `npm run dev` — `nuxt dev` (port 3000)
+- `npm run dev` — Nuxt dev server on `:3001`; root public origin is `https://reading.lvh.me:8080`
 - `npm run build` — `nuxt build`
 - `npm run lint` — ESLint with `@nuxt/eslint` flat config
 - `npm run test` — Vitest (not Jest)
 - `npm run test:watch` — Vitest watch
 
 ### Backend
-- `npm run start:dev` — NestJS watch mode (port 4000)
+- `npm run start:dev` — NestJS watch mode on `:3000`
 - `npm run build` — `nest build`
 - `npm run lint` — ESLint v9 flat config with `--fix` (typescript-eslint + prettier)
 - `npm run format` — Prettier write on `src/**/*.ts` and `tests/**/*.ts`
@@ -90,7 +91,7 @@ npm run db:seed
 
 - Tailwind v4 CSS-first config in `frontend/assets/css/main.css` with `@theme` tokens (OKLCH colors). Dark mode via `.dark` class on `<html>`.
 - shadcn-vue components in `components/ui/` follow three-file pattern: `<Name>.vue` + `variants.ts` (CVA) + `index.ts` (barrel). Import `Button` from barrel, `buttonVariants` directly from `variants.ts` for non-button elements.
-- `runtimeConfig.public.backendUrl` (default `http://localhost:4000`) is the only way frontend reaches backend.
+- `runtimeConfig.public.backendUrl` points to backend `:3000` in local mode and `:3100` in isolated test-production mode.
 - Server API proxy at `frontend/server/api/[...].ts` forwards every `/api/*` to NestJS (no versioning).
 - Backend API prefix: `/api/`. Stripe webhooks at `/api/stripe/webhook` (raw body preserved via `rawBody: true` in `main.ts`).
 - Database: PostgreSQL via `docker-compose.yml`, Drizzle ORM, Better Auth Drizzle adapter. Schema in `src/core/database/schema.ts` (16 tables). Migrations in `src/core/database/migrations/`.

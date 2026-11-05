@@ -1,22 +1,38 @@
 ﻿import tailwindcss from "@tailwindcss/vite";
 
+const testProduction = process.env.TEST_PRODUCTION === "true";
 const siteUrl =
   process.env.NUXT_PUBLIC_SITE_URL ||
-  (process.env.NODE_ENV === "production" ? undefined : "http://localhost:3000");
+  (process.env.NODE_ENV === "production" && !testProduction
+    ? undefined
+    : "https://reading.lvh.me");
 const backendUrl =
   process.env.NUXT_PUBLIC_BACKEND_URL ||
-  (process.env.NODE_ENV === "production" ? undefined : "http://localhost:4000");
+  (process.env.NODE_ENV === "production" && !testProduction
+    ? undefined
+    : "http://localhost:3000");
 const centralIdentityUrl =
   process.env.NUXT_PUBLIC_CENTRAL_IDENTITY_URL ||
-  (process.env.NODE_ENV === "production" ? undefined : "");
+  (process.env.NODE_ENV === "production" && !testProduction
+    ? undefined
+    : "https://auth.127.0.0.1.nip.io");
 
 if (
   process.env.NODE_ENV === "production" &&
+  !testProduction &&
   (!siteUrl || !backendUrl || !centralIdentityUrl)
 ) {
   throw new Error("Production frontend URLs must be provided by the operator.");
 }
 
+if (
+  testProduction &&
+  (siteUrl !== "https://reading-test.lvh.me:8081" ||
+    backendUrl !== "http://localhost:3100" ||
+    centralIdentityUrl !== "https://auth-test.127.0.0.1.nip.io:8081")
+) {
+  throw new Error("Test-production frontend origins must use the isolated local HTTPS gateway.");
+}
 export default defineNuxtConfig({
   ssr: true,
   devtools: { enabled: true },
@@ -37,7 +53,8 @@ export default defineNuxtConfig({
     baseUrl: siteUrl,
   },
   devServer: {
-    port: 3000,
+    host: "0.0.0.0",
+    port: Number(process.env.NUXT_PORT || 3001),
   },
   runtimeConfig: {
     public: {
@@ -52,7 +69,7 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    server: { allowedHosts: ['reading.lvh.me'] },
+    server: { allowedHosts: ["reading.lvh.me", "reading-test.lvh.me"] },
   },
   app: {
     head: {

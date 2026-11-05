@@ -3,6 +3,10 @@
   "private": true,
   "scripts": {
     "prepare": "husky",
+    "dev": "docker compose -p backend -f backend/docker-compose.yml up -d --wait && (npm --prefix backend run start:dev & backend=$!; npm --prefix frontend run dev & frontend=$!; trap 'kill \"$backend\" \"$frontend\" 2>/dev/null || true' INT TERM EXIT; wait)",
+    "dev:prod": "npm --prefix frontend run build:test-production && npm --prefix backend run build && docker compose -p read-in-peace-test-production -f compose.yaml -f compose.test-production.yaml up -d --wait && npm --prefix backend run db:migrate:test-production && (npm --prefix backend run start:test-production & backend=$!; npm --prefix frontend run preview:test-production & frontend=$!; trap 'kill \"$backend\" \"$frontend\" 2>/dev/null || true' INT TERM EXIT; wait)",
+    "env:encrypt": "set -e; file=${ENV_FILE:-.env.development}; case \"$file\" in .env.development|.env.test-production|.env.production) ;; *) echo \"Unsupported env file: $file\" >&2; exit 2 ;; esac; for package in frontend backend; do (cd \"$package\" && ../node_modules/.bin/dotenvx encrypt -f \"$file\"); done",
+    "env:decrypt": "set -e; file=${ENV_FILE:-.env.development}; case \"$file\" in .env.development|.env.test-production|.env.production) ;; *) echo \"Unsupported env file: $file\" >&2; exit 2 ;; esac; for package in frontend backend; do (cd \"$package\" && ../node_modules/.bin/dotenvx decrypt -f \"$file\"); done",
     "test:env": "node --test tests/env-hook.test.mjs"
   },
   "devDependencies": {

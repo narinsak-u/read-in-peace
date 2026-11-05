@@ -11,10 +11,10 @@ describe('CoreConfigService', () => {
     const config = new CoreConfigService(validEnv);
     expect(config.db.url).toBe('postgres://test:test@localhost:5432/test');
     expect(config.stripe.secretKey).toBe('sk_test_xxx');
-    expect(config.server.port).toBe(4000);
-    expect(config.server.corsOrigins).toEqual(['http://localhost:3000']);
-    expect(config.auth.baseUrl).toBe('http://localhost:3000');
-    expect(config.frontend.url).toBe('http://localhost:3000');
+    expect(config.server.port).toBe(3000);
+    expect(config.server.corsOrigins).toEqual(['https://reading.lvh.me:8080']);
+    expect(config.auth.baseUrl).toBe('https://reading.lvh.me:8080');
+    expect(config.frontend.url).toBe('https://reading.lvh.me:8080');
   });
 
   it('respects explicit overrides', () => {
@@ -56,16 +56,37 @@ describe('CoreConfigService', () => {
     ).toThrow();
   });
 
+  it('allows Stripe test credentials only for the isolated test-production origins', () => {
+    const testProductionEnv = {
+      ...validEnv,
+      NODE_ENV: 'production',
+      TEST_PRODUCTION: 'true',
+      DATABASE_URL: 'postgres://postgres:postgres@localhost:5433/read_in_peace',
+      BETTER_AUTH_URL: 'https://reading-test.lvh.me:8081',
+      FRONTEND_URL: 'https://reading-test.lvh.me:8081',
+      CORS_ORIGINS: 'https://reading-test.lvh.me:8081',
+      AUTH_SECRET: 'isolated-test-production-auth-secret',
+      CENTRAL_IDENTITY_ISSUER: 'https://auth-test.127.0.0.1.nip.io:8081/api/auth',
+      CENTRAL_IDENTITY_CLIENT_ID: 'test-client',
+      CENTRAL_IDENTITY_CLIENT_SECRET: 'test-secret',
+    };
+    expect(() => new CoreConfigService(testProductionEnv)).not.toThrow();
+    expect(() => new CoreConfigService({
+      ...testProductionEnv,
+      DATABASE_URL: 'postgres://live.example.com/read_in_peace',
+    })).toThrow();
+  });
+
 
   it('configures the independent Central Identity client credentials', () => {
     const config = new CoreConfigService({
       ...validEnv,
-      CENTRAL_IDENTITY_ISSUER: 'https://auth.127.0.0.1.nip.io/api/auth',
+      CENTRAL_IDENTITY_ISSUER: 'https://auth.127.0.0.1.nip.io:8080/api/auth',
       CENTRAL_IDENTITY_CLIENT_ID: 'reading-client',
       CENTRAL_IDENTITY_CLIENT_SECRET: 'reading-secret',
     });
     expect(config.auth.centralIdentity).toEqual({
-      issuer: 'https://auth.127.0.0.1.nip.io/api/auth',
+      issuer: 'https://auth.127.0.0.1.nip.io:8080/api/auth',
       clientId: 'reading-client',
       clientSecret: 'reading-secret',
     });
