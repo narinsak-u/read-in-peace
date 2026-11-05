@@ -1,5 +1,22 @@
 ﻿import tailwindcss from "@tailwindcss/vite";
 
+const siteUrl =
+  process.env.NUXT_PUBLIC_SITE_URL ||
+  (process.env.NODE_ENV === "production" ? undefined : "http://localhost:3000");
+const backendUrl =
+  process.env.NUXT_PUBLIC_BACKEND_URL ||
+  (process.env.NODE_ENV === "production" ? undefined : "http://localhost:4000");
+const centralIdentityUrl =
+  process.env.NUXT_PUBLIC_CENTRAL_IDENTITY_URL ||
+  (process.env.NODE_ENV === "production" ? undefined : "");
+
+if (
+  process.env.NODE_ENV === "production" &&
+  (!siteUrl || !backendUrl || !centralIdentityUrl)
+) {
+  throw new Error("Production frontend URLs must be provided by the operator.");
+}
+
 export default defineNuxtConfig({
   ssr: true,
   devtools: { enabled: true },
@@ -17,15 +34,16 @@ export default defineNuxtConfig({
     },
   ],
   socialShare: {
-    baseUrl: process.env.NUXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    baseUrl: siteUrl,
   },
   devServer: {
     port: 3000,
   },
   runtimeConfig: {
     public: {
-      backendUrl: "http://localhost:4000",
-      centralIdentityUrl: process.env.NUXT_PUBLIC_CENTRAL_IDENTITY_URL || "https://auth.127.0.0.1.nip.io",
+      siteUrl,
+      backendUrl,
+      centralIdentityUrl,
     },
   },
   compatibilityDate: "2026-06-03",

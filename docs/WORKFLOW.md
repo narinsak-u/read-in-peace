@@ -8,6 +8,48 @@ controller → service → database) and back to the UI.
 
 ---
 
+## Local and production configuration
+
+The frontend and backend are independent npm packages. Install repository tooling
+once, then install each application separately:
+
+```sh
+npm install
+cd frontend && npm ci
+cd ../backend && npm ci
+```
+
+The root package pins Husky and dotenvx; it does not replace either package's
+own install workflow. Each package has encrypted `.env.development` and
+`.env.production` files and its own ignored `.env.keys`. Back up both private
+key files outside the repository with restrictive permissions. The tracked
+`.env.development.example` and `.env.production.example` files are templates,
+not credentials.
+
+`npm run dev` in either package loads only that package's development file with
+dotenvx strict loading. The frontend process starts with a clean environment
+and its encrypted file contains only public site, backend API, and Central
+Identity URLs. Keep database, Better Auth, OIDC client-secret, and payment
+credentials in `backend/.env.development` only. The local frontend origin is
+`https://reading.lvh.me`; the provider issuer is
+`https://auth.127.0.0.1.nip.io/api/auth`, and the registered callback is
+`https://reading.lvh.me/api/auth/callback/central-identity`.
+
+Production files intentionally contain no hostnames or credentials. Supply
+operator-owned production values in each package's `.env.production` and
+back up the corresponding keys before committing. The frontend refuses a
+production build without all three public URLs; the backend config requires
+its database and payment values. Never put frontend secrets in Nuxt public
+runtime configuration or commit private keys. The root Husky pre-commit hook
+encrypts/re-stages changed environment files and rejects plaintext, staged
+private keys, and partially staged env changes.
+
+Run `npm run test:env` from the repository root to exercise the hook in a
+disposable Git repository. This verifies commit-time encryption and rejection
+of private keys and partial env staging; it does not exercise live sign-in.
+
+---
+
 ## 1. Authentication
 
 ### 1.1 Sign Up
