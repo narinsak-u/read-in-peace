@@ -14,6 +14,7 @@ describe('CoreConfigService', () => {
     expect(config.server.port).toBe(3000);
     expect(config.server.corsOrigins).toEqual(['https://reading.lvh.me:8080']);
     expect(config.auth.baseUrl).toBe('https://reading.lvh.me:8080');
+    expect(config.auth.recoveryRedirectUri).toBe('https://reading.lvh.me:8080/api/identity-recovery/callback');
     expect(config.frontend.url).toBe('https://reading.lvh.me:8080');
   });
 
@@ -30,8 +31,17 @@ describe('CoreConfigService', () => {
       CENTRAL_IDENTITY_ISSUER: 'https://identity.example.com/api/auth',
       CENTRAL_IDENTITY_CLIENT_ID: 'test-client',
       CENTRAL_IDENTITY_CLIENT_SECRET: 'test-secret',
-      LOG_LEVEL: 'debug',
+      READING_RECOVERY_OIDC_REDIRECT_URI: 'https://auth.example.com/api/identity-recovery/callback',
+      READING_RECOVERY_PROVIDER_REDIRECT_URI: 'https://auth.example.com/api/identity-recovery/provider/callback',
+      READING_RECOVERY_GOOGLE_CLIENT_ID: 'recovery-google-client',
+      READING_RECOVERY_GOOGLE_CLIENT_SECRET: 'recovery-google-secret',
+      READING_RECOVERY_GITHUB_CLIENT_ID: 'recovery-github-client',
+      READING_RECOVERY_GITHUB_CLIENT_SECRET: 'recovery-github-secret',
     });
+    expect(config.auth.recoveryRedirectUri).toBe('https://auth.example.com/api/identity-recovery/callback');
+    expect(config.auth.recoveryProviderRedirectUri).toBe('https://auth.example.com/api/identity-recovery/provider/callback');
+    expect(config.auth.recoveryProviders.google?.clientId).toBe('recovery-google-client');
+    expect(config.auth.recoveryProviders.github?.clientId).toBe('recovery-github-client');
     expect(config.server.port).toBe(5000);
     expect(config.auth.baseUrl).toBe('https://auth.example.com');
     expect(config.auth.trustedOrigins).toEqual(['https://auth.example.com']);
@@ -69,6 +79,12 @@ describe('CoreConfigService', () => {
       CENTRAL_IDENTITY_ISSUER: 'https://auth-test.127.0.0.1.nip.io:8081/api/auth',
       CENTRAL_IDENTITY_CLIENT_ID: 'test-client',
       CENTRAL_IDENTITY_CLIENT_SECRET: 'test-secret',
+      READING_RECOVERY_OIDC_REDIRECT_URI: 'https://reading-test.lvh.me:8081/api/identity-recovery/callback',
+      READING_RECOVERY_PROVIDER_REDIRECT_URI: 'https://reading-test.lvh.me:8081/api/identity-recovery/provider/callback',
+      READING_RECOVERY_GOOGLE_CLIENT_ID: 'test-recovery-google-client',
+      READING_RECOVERY_GOOGLE_CLIENT_SECRET: 'test-recovery-google-secret',
+      READING_RECOVERY_GITHUB_CLIENT_ID: 'test-recovery-github-client',
+      READING_RECOVERY_GITHUB_CLIENT_SECRET: 'test-recovery-github-secret',
     };
     expect(() => new CoreConfigService(testProductionEnv)).not.toThrow();
     expect(() => new CoreConfigService({

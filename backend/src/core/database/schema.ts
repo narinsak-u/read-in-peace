@@ -11,6 +11,7 @@ import {
   integer,
   varchar,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 import { numeric, primaryKey } from 'drizzle-orm/pg-core';
 
@@ -62,7 +63,14 @@ export const account = pgTable('account', {
     .notNull()
     .defaultNow()
     .$onUpdate(() => new Date()),
-});
+}, (table) => [
+  uniqueIndex('account_central_identity_subject_unique')
+    .on(table.accountId)
+    .where(sql`${table.providerId} = 'central-identity'`),
+  uniqueIndex('account_central_identity_user_unique')
+    .on(table.userId)
+    .where(sql`${table.providerId} = 'central-identity'`),
+]);
 
 export const verification = pgTable('verification', {
   id: text('id').primaryKey(),

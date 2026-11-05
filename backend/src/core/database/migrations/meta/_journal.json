@@ -57,6 +57,13 @@
       "when": 1783761890714,
       "tag": "0007_amazing_bullseye",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793898343569,
+      "tag": "0008_identity_recovery",
+      "breakpoints": true
     }
   ]
 }
