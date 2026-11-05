@@ -8,6 +8,7 @@
     "generate": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.production -- nuxt generate",
     "preview": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.production -- nuxt preview",
     "test": "vitest run",
+    "lint": "eslint .",
     "test:watch": "vitest"
   },
   "dependencies": {

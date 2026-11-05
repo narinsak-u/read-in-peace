@@ -58,4 +58,14 @@ test('the repository hook encrypts env files and rejects partial staging and pri
   const keyCommit = run(repo, 'git', 'commit', '-m', 'reject private key');
   assert.notEqual(keyCommit.code, 0);
   assert.match(keyCommit.stderr, /Refusing to commit dotenvx private keys/);
+  assert.equal(run(repo, 'git', 'reset', '--', 'frontend/.env.keys').code, 0);
+  rmSync(join(repo, 'node_modules'), { recursive: true, force: true });
+  mkdirSync(join(repo, 'node_modules/.bin'), { recursive: true });
+  writeFileSync(join(repo, 'node_modules/.bin/dotenvx'), '#!/bin/sh\nexit 0\n');
+  chmodSync(join(repo, 'node_modules/.bin/dotenvx'), 0o755);
+  writeFileSync(join(repo, 'frontend/.env.development'), 'PLAINTEXT=must-not-commit\n');
+  assert.equal(run(repo, 'git', 'add', 'frontend/.env.development').code, 0);
+  const plaintextCommit = run(repo, 'git', 'commit', '-m', 'reject plaintext env');
+  assert.notEqual(plaintextCommit.code, 0);
+  assert.match(plaintextCommit.stderr, /Refusing plaintext values in staged environment file/);
 });
