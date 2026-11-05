@@ -43,6 +43,7 @@ export const authProvider: Provider = {
       account: { accountLinking: { disableImplicitLinking: true, allowDifferentEmails: true } },
       trustedOrigins: [...config.auth.trustedOrigins],
       baseURL: config.auth.baseUrl,
+      plugins: oauth,
     });
   },
 };

@@ -10,6 +10,7 @@ export interface User {
 }
 
 export const useAuthStore = defineStore('auth', () => {
+  const { flash } = useFlash();
   const signedIn = shallowRef(false);
   const user = shallowRef<User | null>(null);
   const adminMode = shallowRef(false);
