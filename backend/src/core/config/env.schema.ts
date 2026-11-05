@@ -13,6 +13,12 @@ export const envSchema = z.object({
   CENTRAL_IDENTITY_ISSUER: z.url().optional(),
   CENTRAL_IDENTITY_CLIENT_ID: z.string().optional(),
   CENTRAL_IDENTITY_CLIENT_SECRET: z.string().optional(),
+  READING_RECOVERY_OIDC_REDIRECT_URI: z.url().optional(),
+  READING_RECOVERY_PROVIDER_REDIRECT_URI: z.url().optional(),
+  READING_RECOVERY_GOOGLE_CLIENT_ID: z.string().optional(),
+  READING_RECOVERY_GOOGLE_CLIENT_SECRET: z.string().optional(),
+  READING_RECOVERY_GITHUB_CLIENT_ID: z.string().optional(),
+  READING_RECOVERY_GITHUB_CLIENT_SECRET: z.string().optional(),
   STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
   STRIPE_WEBHOOK_SECRET: z.string().min(1, 'STRIPE_WEBHOOK_SECRET is required'),
   AUTH_SECRET: z.string().min(16).optional(),
@@ -33,6 +39,12 @@ export const envSchema = z.object({
       env.CENTRAL_IDENTITY_ISSUER,
       env.CENTRAL_IDENTITY_CLIENT_ID,
       env.CENTRAL_IDENTITY_CLIENT_SECRET,
+      env.READING_RECOVERY_OIDC_REDIRECT_URI,
+      env.READING_RECOVERY_PROVIDER_REDIRECT_URI,
+      env.READING_RECOVERY_GOOGLE_CLIENT_ID,
+      env.READING_RECOVERY_GOOGLE_CLIENT_SECRET,
+      env.READING_RECOVERY_GITHUB_CLIENT_ID,
+      env.READING_RECOVERY_GITHUB_CLIENT_SECRET,
     ].every(
       (value) =>
         typeof value === 'string' &&
@@ -47,7 +59,12 @@ export const envSchema = z.object({
         env.FRONTEND_URL === 'https://reading-test.lvh.me:8081' &&
         env.CENTRAL_IDENTITY_ISSUER === 'https://auth-test.127.0.0.1.nip.io:8081/api/auth'
       : !env.STRIPE_SECRET_KEY.startsWith('sk_test_')),
-  'Production requires operator-provided database, auth, payment, and Central Identity settings.',
+  'Production requires operator-provided database, auth, payment, Central Identity, and recovery settings.',
+).refine(
+  (env) =>
+    Boolean(env.READING_RECOVERY_GOOGLE_CLIENT_ID) === Boolean(env.READING_RECOVERY_GOOGLE_CLIENT_SECRET) &&
+    Boolean(env.READING_RECOVERY_GITHUB_CLIENT_ID) === Boolean(env.READING_RECOVERY_GITHUB_CLIENT_SECRET),
+  'Recovery provider client IDs and secrets must be configured together.',
 );
 
 export type Env = z.infer<typeof envSchema>;

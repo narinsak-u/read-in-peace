@@ -16,8 +16,11 @@ import {
 } from './auth/better-auth.adapter';
 import { AUTH_PORT } from './auth/auth.port';
 import { PoliciesGuard } from './authorization/policies.guard';
+import { IdentityRecoveryController } from './identity-recovery/identity-recovery.controller';
+import { IdentityRecoveryService } from './identity-recovery/identity-recovery.service';
 
 @Module({
+  controllers: [IdentityRecoveryController],
   providers: [
     authProvider,
     BetterAuthAdapter,
@@ -25,6 +28,7 @@ import { PoliciesGuard } from './authorization/policies.guard';
     AuthGuard,
     OptionalAuthGuard,
     PoliciesGuard,
+    IdentityRecoveryService,
   ],
   exports: [AUTH, AUTH_PORT, AuthGuard, OptionalAuthGuard, PoliciesGuard],
 })
