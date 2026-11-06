@@ -12,11 +12,11 @@ describe('CoreConfigService', () => {
     expect(config.db.url).toBe('postgres://test:test@localhost:5432/test');
     expect(config.stripe.secretKey).toBe('sk_test_xxx');
     expect(config.server.port).toBe(3000);
-    expect(config.server.corsOrigins).toEqual(['https://reading.lvh.me:8080']);
-    expect(config.auth.baseUrl).toBe('https://reading.lvh.me:8080');
+    expect(config.server.corsOrigins).toEqual(['https://reading.localhost:8080']);
+    expect(config.auth.baseUrl).toBe('https://reading.localhost:8080');
     expect(config.auth.recoveryRedirectUri).toBeUndefined();
     expect(config.auth.recoveryProviderRedirectUri).toBeUndefined();
-    expect(config.frontend.url).toBe('https://reading.lvh.me:8080');
+    expect(config.frontend.url).toBe('https://reading.localhost:8080');
   });
 
   it('respects explicit overrides', () => {
@@ -103,12 +103,12 @@ describe('CoreConfigService', () => {
   it('configures the independent Central Identity client credentials', () => {
     const config = new CoreConfigService({
       ...validEnv,
-      CENTRAL_IDENTITY_ISSUER: 'https://auth.127.0.0.1.nip.io:8080/api/auth',
+      CENTRAL_IDENTITY_ISSUER: 'https://auth.localhost:8080/api/auth',
       CENTRAL_IDENTITY_CLIENT_ID: 'reading-client',
       CENTRAL_IDENTITY_CLIENT_SECRET: 'reading-secret',
     });
     expect(config.auth.centralIdentity).toEqual({
-      issuer: 'https://auth.127.0.0.1.nip.io:8080/api/auth',
+      issuer: 'https://auth.localhost:8080/api/auth',
       clientId: 'reading-client',
       clientSecret: 'reading-secret',
     });

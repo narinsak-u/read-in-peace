@@ -1,11 +1,11 @@
-﻿import tailwindcss from "@tailwindcss/vite";
+import tailwindcss from "@tailwindcss/vite";
 
 const testProduction = process.env.TEST_PRODUCTION === "true";
 const siteUrl =
   process.env.NUXT_PUBLIC_SITE_URL ||
   (process.env.NODE_ENV === "production" && !testProduction
     ? undefined
-    : "https://reading.lvh.me");
+    : "https://reading.localhost:8080");
 const backendUrl =
   process.env.NUXT_PUBLIC_BACKEND_URL ||
   (process.env.NODE_ENV === "production" && !testProduction
