@@ -5,14 +5,20 @@ on:
     branches: [main]
     paths:
       - 'frontend/**'
+      - '.github/workflows/frontend-test.yml'
   push:
     branches: [main]
     paths:
       - 'frontend/**'
+      - '.github/workflows/frontend-test.yml'
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      NUXT_PUBLIC_SITE_URL: https://reading.example.test
+      NUXT_PUBLIC_BACKEND_URL: https://api.reading.example.test
+      NUXT_PUBLIC_CENTRAL_IDENTITY_URL: https://auth.example.test
     defaults:
       run:
         working-directory: frontend
