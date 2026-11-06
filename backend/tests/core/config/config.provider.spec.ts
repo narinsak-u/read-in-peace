@@ -74,15 +74,15 @@ describe('CoreConfigService', () => {
       NODE_ENV: 'production',
       TEST_PRODUCTION: 'true',
       DATABASE_URL: 'postgres://postgres:postgres@localhost:5433/read_in_peace',
-      BETTER_AUTH_URL: 'https://reading-test.lvh.me:8081',
-      FRONTEND_URL: 'https://reading-test.lvh.me:8081',
-      CORS_ORIGINS: 'https://reading-test.lvh.me:8081',
+      BETTER_AUTH_URL: 'https://reading-test.localhost:8081',
+      FRONTEND_URL: 'https://reading-test.localhost:8081',
+      CORS_ORIGINS: 'https://reading-test.localhost:8081',
       AUTH_SECRET: 'isolated-test-production-auth-secret',
-      CENTRAL_IDENTITY_ISSUER: 'https://auth-test.127.0.0.1.nip.io:8081/api/auth',
+      CENTRAL_IDENTITY_ISSUER: 'https://auth-test.localhost:8081/api/auth',
       CENTRAL_IDENTITY_CLIENT_ID: 'test-client',
       CENTRAL_IDENTITY_CLIENT_SECRET: 'test-secret',
-      READING_RECOVERY_OIDC_REDIRECT_URI: 'https://reading-test.lvh.me:8081/api/identity-recovery/callback',
-      READING_RECOVERY_PROVIDER_REDIRECT_URI: 'https://reading-test.lvh.me:8081/api/identity-recovery/provider/callback',
+      READING_RECOVERY_OIDC_REDIRECT_URI: 'https://reading-test.localhost:8081/api/identity-recovery/callback',
+      READING_RECOVERY_PROVIDER_REDIRECT_URI: 'https://reading-test.localhost:8081/api/identity-recovery/provider/callback',
       READING_RECOVERY_GOOGLE_CLIENT_ID: 'test-recovery-google-client',
       READING_RECOVERY_GOOGLE_CLIENT_SECRET: 'test-recovery-google-secret',
       READING_RECOVERY_GITHUB_CLIENT_ID: 'test-recovery-github-client',
@@ -92,6 +92,10 @@ describe('CoreConfigService', () => {
     expect(() => new CoreConfigService({
       ...testProductionEnv,
       DATABASE_URL: 'postgres://live.example.com/read_in_peace',
+    })).toThrow();
+    expect(() => new CoreConfigService({
+      ...testProductionEnv,
+      READING_RECOVERY_OIDC_REDIRECT_URI: 'https://reading.lvh.me:8080/api/identity-recovery/callback',
     })).toThrow();
   });
 

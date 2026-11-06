@@ -4,7 +4,7 @@ set -euo pipefail
 
 while IFS= read -r -d '' file; do
   case "$file" in
-    .env.keys|*/.env.keys)
+    .env.keys|*/.env.keys|.env.test-production.keys|*/.env.test-production.keys)
       echo "Refusing to commit dotenvx private keys: $file" >&2
       exit 1
       ;;
@@ -14,20 +14,24 @@ while IFS= read -r -d '' file; do
         exit 1
       fi
       dir=${file%%/*}
-      if [ ! -s "$dir/.env.keys" ]; then
-        echo "Cannot commit $file: $dir/.env.keys is missing or empty; restore the backed-up key first." >&2
+      keys_file=.env.keys
+      if [[ "$file" == *test-production ]]; then
+        keys_file=.env.test-production.keys
+      fi
+      if [ ! -s "$dir/$keys_file" ]; then
+        echo "Cannot commit $file: $dir/$keys_file is missing or empty; restore the backed-up key first." >&2
         exit 1
       fi
       (
         cd "$dir"
-        ../node_modules/.bin/dotenvx encrypt -f "${file#*/}" >/dev/null
+        ../node_modules/.bin/dotenvx encrypt -f "${file#*/}" --env-keys-file "$keys_file" >/dev/null
       )
       git add -- "$file"
       if ! git show ":$file" | awk -F= '
         /^[[:space:]]*(#|$)/ { next }
         {
           value = substr($0, index($0, "=") + 1)
-          if ($1 ~ /^DOTENV_PUBLIC_KEY(_[A-Z_-]+)?$/ && value ~ /^"[0-9a-f]+"$/) next
+          if ($1 ~ /^DOTENV_PUBLIC_KEY(_[A-Z_-]+)?$/ && value ~ /^"[0-9a-f]+"( # -fk [^[:space:]]+)?$/) next
           if (value ~ /^"?encrypted:[A-Za-z0-9+\/=]+"?$/) next
           exit 1
         }

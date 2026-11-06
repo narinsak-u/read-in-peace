@@ -65,14 +65,19 @@ operator-issued `CENTRAL_IDENTITY_CLIENT_ID` and
 `https://auth.127.0.0.1.nip.io:8080`; the registered callback is
 `https://reading.lvh.me:8080/api/auth/callback/central-identity`.
 
-For production-mode local proof, configure and encrypt each package's
-`.env.test-production` using its `.env.test-production.example`. Use separate
-local credentials, test Stripe keys, and a provisioned test Central Identity
-client. `npm run dev:prod` builds and starts both apps with `NODE_ENV=production`,
+For production-mode local proof, configure each package's `.env.test-production`
+using its `.env.test-production.example` and a separate ignored
+`.env.test-production.keys` key file. Use separate local credentials, test
+Stripe keys, and a provisioned test Central Identity client. `npm run dev:prod`
+builds and starts both apps with `NODE_ENV=production`,
 applies migrations only to its isolated database on host `:5433`, then runs the
-backend on `:3100`, frontend on `:3101`, and HTTPS gateway on `:8081`. The callback is
-`https://reading-test.lvh.me:8081/api/auth/callback/central-identity`. It never
-loads `.env.production`, which remains live operator configuration.
+backend on `:3100`, frontend on `:3101`, and its loopback-only HTTPS gateway on
+`:8081`. The Reading browser origin is `https://reading-test.localhost:8081`,
+with issuer `https://auth-test.localhost:8081/api/auth`; register
+`https://reading-test.localhost:8081/api/auth/callback/central-identity` on the
+isolated Central Identity client. `*.localhost` resolves to `127.0.0.1`; start
+fresh Reading sessions and update saved links after cutover. It never loads
+`.env.production`, which remains live operator configuration.
 
 Browser smoke: sign in through Book Bidding's header, then open Read in Peace
 and select **Sign In**. The second relying party should return from Central
@@ -104,13 +109,21 @@ cd backend
 npm run db:migrate
 ```
 
-For test-production, provision matching callback URLs on its isolated clients
-and use `https://reading-test.lvh.me:8081` instead. Production requires explicit
-operator-owned callback URLs and recovery-only Google/GitHub clients. Disable
-and revoke those temporary provider clients after the migration window. Never
-paste passwords, provider tokens, authorization codes, or client secrets into
-logs or support tickets. Matching email alone never links accounts; any
-conflicting identity mapping fails closed. Preserve database backups before
+For test-production recovery, register
+`https://reading-test.localhost:8081/api/identity-recovery/callback` on the
+isolated Central Identity client and
+`https://reading-test.localhost:8081/api/identity-recovery/provider/callback`
+on temporary Google/GitHub OAuth clients. Export the test-production Caddy root
+certificate and trust it separately from development; set `NODE_EXTRA_CA_CERTS`
+to its absolute path for Node, and trust only that root in the browser before
+opening the HTTPS origin. Check discovery at
+`https://auth-test.localhost:8081/api/auth/.well-known/openid-configuration`;
+its `issuer` must equal `https://auth-test.localhost:8081/api/auth`. Production
+requires explicit operator-owned callback URLs and recovery-only Google/GitHub
+clients. Disable and revoke those temporary provider clients after the migration
+window. Never paste passwords, provider tokens, authorization codes, or client
+secrets into logs or support tickets. Matching email alone never links accounts;
+any conflicting identity mapping fails closed. Preserve database backups before
 migration and do not delete or merge Application Users.
 
 **Sign out of Read in Peace** ends only its Application Session. The Central
@@ -175,8 +188,10 @@ npm run build           # Production build
 
 Use encrypted `backend/.env.development` and `frontend/.env.development` for
 local development. From the repository root, run `npm run env:decrypt` before
-editing and `npm run env:encrypt` before staging. Keep each package's `.env.keys`
-private and outside Git. Tracked `.env.*.example` files are templates only.
+editing and `npm run env:encrypt` before staging. For test-production, create a
+separate ignored `.env.test-production.keys` in each package and select
+`ENV_FILE=.env.test-production` for these root commands. Keep key files private
+and outside Git. Tracked `.env.*.example` files are templates only.
 
 | Package | Key variables |
 |---------|--------------|

@@ -31,7 +31,8 @@ test('the repository hook encrypts env files and rejects partial staging and pri
   for (const directory of ['frontend', 'backend']) {
     const { privateKey: developmentKey } = keypair();
     const { privateKey: testProductionKey } = keypair();
-    writeFileSync(join(repo, directory, '.env.keys'), `DOTENV_PRIVATE_KEY_DEVELOPMENT="${developmentKey}"\nDOTENV_PRIVATE_KEY_TEST_PRODUCTION="${testProductionKey}"\n`);
+    writeFileSync(join(repo, directory, '.env.keys'), `DOTENV_PRIVATE_KEY_DEVELOPMENT="${developmentKey}"\n`);
+    writeFileSync(join(repo, directory, '.env.test-production.keys'), `DOTENV_PRIVATE_KEY_TEST_PRODUCTION="${testProductionKey}"\n`);
   }
   writeFileSync(join(repo, 'frontend/.env.development'), 'FRONTEND_PUBLIC_URL=https://reading.example.test\n');
   writeFileSync(join(repo, 'backend/.env.development'), 'BACKEND_SECRET=secret-smoke-value\n');
@@ -66,6 +67,11 @@ test('the repository hook encrypts env files and rejects partial staging and pri
   assert.notEqual(keyCommit.code, 0);
   assert.match(keyCommit.stderr, /Refusing to commit dotenvx private keys/);
   assert.equal(run(repo, 'git', 'reset', '--', 'frontend/.env.keys').code, 0);
+  assert.equal(run(repo, 'git', 'add', '-f', 'frontend/.env.test-production.keys').code, 0);
+  const testProductionKeyCommit = run(repo, 'git', 'commit', '-m', 'reject test-production private key');
+  assert.notEqual(testProductionKeyCommit.code, 0);
+  assert.match(testProductionKeyCommit.stderr, /Refusing to commit dotenvx private keys/);
+  assert.equal(run(repo, 'git', 'reset', '--', 'frontend/.env.test-production.keys').code, 0);
   rmSync(join(repo, 'node_modules'), { recursive: true, force: true });
   mkdirSync(join(repo, 'node_modules/.bin'), { recursive: true });
   writeFileSync(join(repo, 'node_modules/.bin/dotenvx'), '#!/bin/sh\nexit 0\n');
