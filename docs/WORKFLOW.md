@@ -982,28 +982,22 @@ Toast: "Book deleted"
 10. Response flows back: controller → proxy → store → component → UI
 ```
 
-### Cookie / Session Flow
-
 ```
-Better Auth sets session cookie on sign-in/sign-up
-  │  Cookie: better-auth-session=<token>
-  │  Domain: localhost (not Secure in dev)
-  │
+Central Identity OIDC callback succeeds
+  │ Better Auth creates a Read in Peace Application Session
+  │ Browser stores its session cookie for the HTTPS Reading origin
   ▼
-Subsequent requests:
-  │  Browser sends cookie with request
-  │  Nuxt proxy (h3) forwards cookie header to NestJS
-  │
+Subsequent same-origin request:
+  │ Browser sends the Application Session cookie
+  │ Nuxt proxy forwards the cookie header to NestJS
   ▼
 AuthGuard:
-  │  fromNodeHeaders(request.headers) extracts cookie
-  │  auth.api.getSession({ headers }) validates against DB
-  │  Returns { user, session } or null
-  │
+  │ auth.api.getSession({ headers }) validates the session against the database
+  │ Returns { user, session } or null
   ▼
 On page reload:
-  │  better-auth/vue → useSession() calls GET /api/auth/get-session
-  │  Cookie forwarded → Better Auth validates → session data returned
+  │ better-auth/vue → useSession() fetches GET /api/auth/get-session
+  │ Nuxt forwards the cookie; Better Auth returns the session
 ```
 
 ### Error Handling Flow

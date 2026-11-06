@@ -25,7 +25,7 @@ Your quiet corner of the internet to discover, borrow, buy, and discuss books �
 | Backend | NestJS v11 (Express), Better Auth, Drizzle ORM, Socket.IO |
 | Database | PostgreSQL (Docker) |
 | Payments | Stripe Checkout Sessions |
-| Auth | Better Auth (email/password) |
+| Auth | Better Auth OIDC via Central Identity; no local sign-in |
 
 ## 🚀 Quick start
 
@@ -173,7 +173,10 @@ npm run build           # Production build
 
 ## 🔐 Environment
 
-Copy `.env.example` from each package to `.env` and fill in the values.
+Use encrypted `backend/.env.development` and `frontend/.env.development` for
+local development. From the repository root, run `npm run env:decrypt` before
+editing and `npm run env:encrypt` before staging. Keep each package's `.env.keys`
+private and outside Git. Tracked `.env.*.example` files are templates only.
 
 | Package | Key variables |
 |---------|--------------|
@@ -183,9 +186,9 @@ Copy `.env.example` from each package to `.env` and fill in the values.
 ## 🧪 Tests
 
 ```bash
-# Backend — 144 tests
+# Backend Jest
 cd backend && npm run test
 
-# Frontend — 107 tests
+# Frontend Vitest
 cd frontend && npm run test
 ```

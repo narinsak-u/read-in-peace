@@ -7,8 +7,9 @@ application / infrastructure / presentation).
 ## Tech stack
 
 - **Framework:** NestJS v11 (Express platform)
-- **Auth:** Better Auth (email/password, scrypt hashing), mounted as Express
-  middleware at `/api/auth`
+- **Auth:** Better Auth delegates sign-in to Central Identity OIDC; local
+  credential sign-in is disabled. Better Auth mounts as Express middleware at
+  `/api/auth`.
 - **Database:** PostgreSQL + Drizzle ORM (`drizzle-kit` for migrations)
 - **Payments:** Stripe Checkout Sessions (single book + cart)
 - **Discounts:** 3-stage pipeline (quantity tier, category bonus, every $100) —
@@ -135,7 +136,8 @@ Each feature follows the same four-layer pattern:
 - `POST /api/feed/:id/reply` — add reply (auth)
 
 ### Auth
-- `GET/POST /api/auth/*` — Better Auth API (sign-in, sign-up, session, etc.)
+- `GET/POST /api/auth/*` — Better Auth session and Central Identity OIDC routes.
+  Local credential signup/sign-in is disabled.
 
 ## Module dependency graph
 
