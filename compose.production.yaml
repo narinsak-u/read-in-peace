@@ -1,0 +1,83 @@
+name: ${COMPOSE_PROJECT_NAME:-reading-production}
+
+services:
+  db:
+    image: postgres:17.5-alpine
+    environment:
+      POSTGRES_DB: ${READING_POSTGRES_DB:?READING_POSTGRES_DB is required}
+      POSTGRES_USER: ${READING_POSTGRES_USER:?READING_POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${READING_POSTGRES_PASSWORD:?READING_POSTGRES_PASSWORD is required}
+    volumes:
+      - reading-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [reading]
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      DATABASE_URL: ${READING_DATABASE_URL:?READING_DATABASE_URL is required}
+      BETTER_AUTH_URL: ${READING_BACKEND_URL:?READING_BACKEND_URL is required}
+      FRONTEND_URL: ${READING_FRONTEND_URL:?READING_FRONTEND_URL is required}
+      CORS_ORIGINS: ${READING_FRONTEND_URL:?READING_FRONTEND_URL is required}
+      AUTH_SECRET: ${READING_AUTH_SECRET:?READING_AUTH_SECRET is required}
+      STRIPE_SECRET_KEY: ${READING_STRIPE_SECRET_KEY:?READING_STRIPE_SECRET_KEY is required}
+      STRIPE_WEBHOOK_SECRET: ${READING_STRIPE_WEBHOOK_SECRET:?READING_STRIPE_WEBHOOK_SECRET is required}
+      CENTRAL_IDENTITY_ISSUER: ${CENTRAL_IDENTITY_ISSUER:?CENTRAL_IDENTITY_ISSUER is required}
+      CENTRAL_IDENTITY_CLIENT_ID: ${CENTRAL_IDENTITY_CLIENT_ID:?CENTRAL_IDENTITY_CLIENT_ID is required}
+      CENTRAL_IDENTITY_CLIENT_SECRET: ${CENTRAL_IDENTITY_CLIENT_SECRET:?CENTRAL_IDENTITY_CLIENT_SECRET is required}
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${READING_BACKEND_PORT:-4000}:4000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:4000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [reading]
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NUXT_PUBLIC_SITE_URL: ${READING_FRONTEND_URL:?READING_FRONTEND_URL is required}
+        NUXT_PUBLIC_BACKEND_URL: ${READING_BACKEND_URL:?READING_BACKEND_URL is required}
+        NUXT_PUBLIC_CENTRAL_IDENTITY_URL: ${NUXT_PUBLIC_CENTRAL_IDENTITY_URL:?NUXT_PUBLIC_CENTRAL_IDENTITY_URL is required}
+    environment:
+      NODE_ENV: production
+      NITRO_HOST: 0.0.0.0
+      PORT: 3000
+      NUXT_PUBLIC_SITE_URL: ${READING_FRONTEND_URL:?READING_FRONTEND_URL is required}
+      NUXT_PUBLIC_BACKEND_URL: ${READING_BACKEND_URL:?READING_BACKEND_URL is required}
+      NUXT_PUBLIC_CENTRAL_IDENTITY_URL: ${NUXT_PUBLIC_CENTRAL_IDENTITY_URL:?NUXT_PUBLIC_CENTRAL_IDENTITY_URL is required}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${READING_FRONTEND_PORT:-3100}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks: [reading]
+    restart: unless-stopped
+
+networks:
+  reading: {}
+volumes:
+  reading-db:
+    name: ${READING_DB_VOLUME:?Set READING_DB_VOLUME to the verified existing Reading database volume}
+    external: true
