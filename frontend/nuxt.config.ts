@@ -5,7 +5,7 @@ const siteUrl =
   process.env.NUXT_PUBLIC_SITE_URL ||
   (process.env.NODE_ENV === "production" && !testProduction
     ? undefined
-    : "https://reading.lvh.me");
+    : "https://reading.localhost:8080");
 const backendUrl =
   process.env.NUXT_PUBLIC_BACKEND_URL ||
   (process.env.NODE_ENV === "production" && !testProduction
@@ -62,7 +62,7 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    server: { allowedHosts: ["reading.lvh.me", "reading-test.lvh.me"] },
+    server: { allowedHosts: ["reading.localhost", "reading-test.lvh.me"] },
   },
   app: {
     head: {
