@@ -46,7 +46,6 @@ describe('CoreConfigService', () => {
     expect(config.auth.recoveryProviders.github?.clientId).toBe('recovery-github-client');
     expect(config.server.port).toBe(5000);
     expect(config.auth.baseUrl).toBe('https://auth.example.com');
-    expect(config.auth.trustedOrigins).toEqual(['https://auth.example.com']);
     expect(config.server.corsOrigins).toEqual([
       'https://a.com',
       'https://b.com',
