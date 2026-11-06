@@ -25,7 +25,7 @@ const replyingSubmitId = shallowRef<string | null>(null);
 async function publishReview() {
   if (!rating.value || !reviewText.value.trim()) return;
   if (!auth.signedIn) {
-    auth.openAuthModal(() => { void publishReview(); });
+    void auth.signInCentral();
     return;
   }
   submitting.value = true;
@@ -36,7 +36,7 @@ async function publishReview() {
     flash('Your review is now part of the discussion.');
   } catch (e: any) {
     if (e?.status === 401) {
-      auth.openAuthModal(() => { void publishReview(); });
+      void auth.signInCentral();
     } else if (e?.data?.message) {
       flash(e.data.message);
     } else {
@@ -50,7 +50,7 @@ async function publishReview() {
 async function publishReply(reviewId: string, text: string) {
   if (!text.trim()) return;
   if (!auth.signedIn) {
-    auth.openAuthModal(() => { void publishReply(reviewId, text); });
+    void auth.signInCentral();
     return;
   }
   replyingSubmitId.value = reviewId;
@@ -59,7 +59,7 @@ async function publishReply(reviewId: string, text: string) {
     replyingTo.value = null;
   } catch (e: any) {
     if (e?.status === 401) {
-      auth.openAuthModal(() => { void publishReply(reviewId, text); });
+      void auth.signInCentral();
     } else if (e?.data?.message) {
       flash(e.data.message);
     } else {
@@ -72,7 +72,7 @@ async function publishReply(reviewId: string, text: string) {
 
 async function onToggleLike(commentId: string, reviewIndex: number) {
   if (!auth.signedIn) {
-    auth.openAuthModal(() => { void onToggleLike(commentId, reviewIndex); });
+    void auth.signInCentral();
     return;
   }
   try {

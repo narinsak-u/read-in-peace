@@ -38,7 +38,7 @@ function initials(name: string): string {
 
 function onFollowClick() {
   if (!auth.signedIn) {
-    auth.openAuthModal();
+    void auth.signInCentral();
     return;
   }
   emit("follow");
@@ -49,7 +49,7 @@ function onMessageClick() {
     const chatStore = useChatStore();
     chatStore.openConversation(props.user.id);
   } else {
-    auth.openAuthModal();
+    void auth.signInCentral();
   }
 }
 </script>

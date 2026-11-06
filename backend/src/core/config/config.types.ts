@@ -28,10 +28,16 @@ export interface IamAuthConfig {
   readonly baseUrl: string;
   readonly trustedOrigins: readonly string[];
   readonly secret: string | undefined;
+  readonly recoveryRedirectUri?: string;
   readonly centralIdentity?: {
     readonly issuer: string;
     readonly clientId: string;
     readonly clientSecret: string;
+  };
+  readonly recoveryProviderRedirectUri?: string;
+  readonly recoveryProviders: {
+    readonly google?: { readonly clientId: string; readonly clientSecret: string };
+    readonly github?: { readonly clientId: string; readonly clientSecret: string };
   };
 }
 

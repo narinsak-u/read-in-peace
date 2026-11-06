@@ -14,7 +14,7 @@ const { flash } = useFlash();
 
 async function onSelect(plan: Plan) {
   if (!auth.signedIn) {
-    auth.openAuthModal(() => { void onSelect(plan); });
+    void auth.signInCentral();
     return;
   }
   if (plan.id === 'free') {

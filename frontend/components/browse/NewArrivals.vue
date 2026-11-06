@@ -26,7 +26,7 @@ const categories = [
 
 async function onBorrow(slug: string, bookId: string) {
   if (!auth.signedIn) {
-    auth.openAuthModal();
+    void auth.signInCentral();
     return;
   }
   try {

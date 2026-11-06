@@ -59,7 +59,7 @@ watch(
 
 async function onToggleLike() {
   if (!auth.signedIn) {
-    auth.openAuthModal();
+    void auth.signInCentral();
     return;
   }
   liked.value = !liked.value;

@@ -53,6 +53,28 @@ export class CoreConfigService implements AppConfig {
     this.auth = {
       baseUrl,
       trustedOrigins: [baseUrl],
+      recoveryRedirectUri: parsed.READING_RECOVERY_OIDC_REDIRECT_URI,
+      recoveryProviderRedirectUri: parsed.READING_RECOVERY_PROVIDER_REDIRECT_URI,
+      recoveryProviders: {
+        ...(parsed.READING_RECOVERY_GOOGLE_CLIENT_ID &&
+        parsed.READING_RECOVERY_GOOGLE_CLIENT_SECRET
+          ? {
+              google: {
+                clientId: parsed.READING_RECOVERY_GOOGLE_CLIENT_ID,
+                clientSecret: parsed.READING_RECOVERY_GOOGLE_CLIENT_SECRET,
+              },
+            }
+          : {}),
+        ...(parsed.READING_RECOVERY_GITHUB_CLIENT_ID &&
+        parsed.READING_RECOVERY_GITHUB_CLIENT_SECRET
+          ? {
+              github: {
+                clientId: parsed.READING_RECOVERY_GITHUB_CLIENT_ID,
+                clientSecret: parsed.READING_RECOVERY_GITHUB_CLIENT_SECRET,
+              },
+            }
+          : {}),
+      },
       secret: parsed.AUTH_SECRET,
       centralIdentity:
         parsed.CENTRAL_IDENTITY_ISSUER &&

@@ -442,20 +442,26 @@ Body: `{ text: string }`
 
 ## 9. Authentication
 
-### 9.1 Better Auth Setup
+### 9.1 Better Auth setup
 
 - Instance created at bootstrap in `src/iam/auth/better-auth.ts`
-- Drizzle adapter connected to the same PostgreSQL database
-- Email/password authentication enabled
-- Mounted on `/api/auth/*` in `main.ts` via `auth.handler → toNodeHandler`
+- Drizzle adapter retains local users, account links, sessions, and records
+- Email/password authentication is disabled
+- Central Identity is the only normal OAuth provider
+- Mounted on `/api/auth/*` in `main.ts` via `toNodeHandler`
 - Config: `baseURL` from `BETTER_AUTH_URL`, `trustedOrigins` from `CORS_ORIGINS`
 
-### 9.2 Auth Flow
+### 9.2 Sign-in and session
 
-1. **Sign up**: `POST /api/auth/sign-up` with `{ email, password, name }`
-2. **Sign in**: `POST /api/auth/sign-in` with `{ email, password }` → returns session cookie
-3. **Session check**: `GET /api/auth/session` returns `{ user, session }` or `null`
-4. **Sign out**: `POST /api/auth/sign-out` clears session
+1. The browser starts `POST /api/auth/sign-in/social` with provider `central-identity`.
+2. Better Auth uses OIDC discovery, state, PKCE, and token verification.
+3. The callback maps the validated issuer and subject to the existing account link.
+4. Only a successful callback creates the independent Application Session.
+5. `GET /api/auth/get-session` reads the local session; `POST /api/auth/sign-out` ends it.
+
+Local credential and social-provider sign-in requests cannot create sessions.
+Existing local credentials are accepted only by the separate recovery proof flow.
+Unknown subjects never bind by email; conflicting links fail closed.
 
 ### 9.3 Auth Guard
 

@@ -120,6 +120,13 @@ watch(
   },
   { immediate: true },
 );
+watch(
+  () => auth.sessionReady,
+  (ready) => {
+    if (ready && !auth.signedIn) void auth.signInCentral(route.fullPath);
+  },
+  { immediate: true },
+);
 
 onMounted(async () => {
   hydrated.value = true;
@@ -183,7 +190,7 @@ onMounted(async () => {
           <button
             :disabled="!hydrated"
             class="text-primary hover:underline"
-            @click="auth.openAuthModal(undefined, route.fullPath)"
+            @click="auth.signInCentral(route.fullPath)"
           >
             Sign in
           </button>

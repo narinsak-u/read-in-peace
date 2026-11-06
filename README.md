@@ -74,27 +74,49 @@ backend on `:3100`, frontend on `:3101`, and HTTPS gateway on `:8081`. The callb
 `https://reading-test.lvh.me:8081/api/auth/callback/central-identity`. It never
 loads `.env.production`, which remains live operator configuration.
 
-Browser smoke: sign into Central Identity via Book Bidding, then open
-Read in Peace and choose **Continue with Central Identity**. It should return
-to Reading without another password prompt and create an independent Reading
-session. When sign-in is requested from the protected library page, Read in
-Peace returns to that same local path and query after the callback; direct
-sign-in without a requested destination returns to the site origin. Sign out
-from Reading and confirm Book Bidding remains signed in.
+Browser smoke: sign in through Book Bidding's header, then open Read in Peace
+and select **Sign In**. The second relying party should return from Central
+Identity without another credential prompt and create its independent Reading
+session. Select **Sign In** in Reading to begin its own OIDC transaction.
+When sign-in starts from the library page, callback restores that same safe
+local path and query. Sign out from Reading and confirm Book Bidding remains
+signed in.
+Existing users with an active Application Session can link Central Identity from
+the profile menu. Users without a session use the reviewed recovery screen at
+`https://reading.lvh.me:8080/account/identity`. They independently prove their
+existing Reading account with its local password or its already-linked Google
+or GitHub account, then authenticate through Central Identity OIDC. The provider
+proof must match the provider subject already stored on that Reading user.
+Recovery only adds the unique Central Identity mapping; it creates no session,
+does not enable local login, and does not change the user ID or business data.
+After success, start ordinary sign-in through Central Identity.
 
-To keep an existing Reading profile and memberships, first sign in with its
-local credentials, open **Central Identity link** from the profile menu, and
-authenticate with Central Identity. Later OIDC sign-ins return to that same
-Reading user even when the two email addresses differ. Matching email alone
-never links accounts. If either proof is missing or an identity is already
-linked elsewhere, stop and request reviewed recovery instead of creating a
-replacement account.
+To enable the recovery callbacks, configure the separately provisioned Central
+Identity client with both the ordinary callback and
+`https://reading.lvh.me:8080/api/identity-recovery/callback`. Register
+`https://reading.lvh.me:8080/api/identity-recovery/provider/callback` in
+temporary Google/GitHub OAuth clients. Store their separate
+`READING_RECOVERY_GOOGLE_*` and `READING_RECOVERY_GITHUB_*` credentials only in
+encrypted backend settings. Then apply the schema:
 
-**Sign out of Read in Peace** ends only its Application Session; Book Bidding
-and the Central SSO Session remain active. **Manage Central Identity / sign out
-centrally** opens the provider page (`NUXT_PUBLIC_CENTRAL_IDENTITY_URL`), where
-**Sign out of Central Identity** ends only the Central SSO Session. Existing
-Application Sessions remain usable until separately ended or expired.
+```bash
+cd backend
+npm run db:migrate
+```
+
+For test-production, provision matching callback URLs on its isolated clients
+and use `https://reading-test.lvh.me:8081` instead. Production requires explicit
+operator-owned callback URLs and recovery-only Google/GitHub clients. Disable
+and revoke those temporary provider clients after the migration window. Never
+paste passwords, provider tokens, authorization codes, or client secrets into
+logs or support tickets. Matching email alone never links accounts; any
+conflicting identity mapping fails closed. Preserve database backups before
+migration and do not delete or merge Application Users.
+
+**Sign out of Read in Peace** ends only its Application Session. The Central
+SSO Session and Book Bidding's Application Session remain active. Ending the
+Central SSO Session does not invalidate existing Application Sessions; sign out
+from Central Identity using its own portal controls.
 For provider callbacks, Caddy trust, local client provisioning, and the
 three-host browser flow, follow the sibling provider's
 [Development SSO workflow](../book-auth-middleware/docs/local-oauth-sso.md).

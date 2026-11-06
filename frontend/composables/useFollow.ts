@@ -11,7 +11,7 @@ export function useFollow() {
     onUpdate: (result: { following: boolean; followerCount: number }) => void,
   ) {
     if (!auth.signedIn) {
-      auth.openAuthModal();
+      void auth.signInCentral();
       return;
     }
     if (auth.user?.id === targetUserId) {

@@ -11,6 +11,7 @@ import { CoreConfigService } from '../../core/config/config.provider';
 import { DATABASE } from '../../core/database/database.provider';
 
 export const AUTH = Symbol('AUTH');
+export type BetterAuthInstance = ReturnType<typeof betterAuth>;
 
 export const authProvider: Provider = {
   provide: AUTH,
@@ -39,11 +40,11 @@ export const authProvider: Provider = {
       : [];
     return betterAuth({
       database: drizzleAdapter(db, { provider: 'pg', schema }),
-      emailAndPassword: { enabled: true },
+      emailAndPassword: { enabled: false },
       account: { accountLinking: { disableImplicitLinking: true, allowDifferentEmails: true } },
-      plugins: oauth,
       trustedOrigins: [...config.auth.trustedOrigins],
       baseURL: config.auth.baseUrl,
+      plugins: oauth,
     });
   },
 };

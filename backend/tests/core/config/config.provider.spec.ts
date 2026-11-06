@@ -14,6 +14,8 @@ describe('CoreConfigService', () => {
     expect(config.server.port).toBe(3000);
     expect(config.server.corsOrigins).toEqual(['https://reading.lvh.me:8080']);
     expect(config.auth.baseUrl).toBe('https://reading.lvh.me:8080');
+    expect(config.auth.recoveryRedirectUri).toBeUndefined();
+    expect(config.auth.recoveryProviderRedirectUri).toBeUndefined();
     expect(config.frontend.url).toBe('https://reading.lvh.me:8080');
   });
 
@@ -26,12 +28,22 @@ describe('CoreConfigService', () => {
       CORS_ORIGINS: 'https://a.com, https://b.com',
       FRONTEND_URL: 'https://app.example.com',
       NODE_ENV: 'production',
+      LOG_LEVEL: 'debug',
       AUTH_SECRET: 'test-only-auth-secret-long-enough',
       CENTRAL_IDENTITY_ISSUER: 'https://identity.example.com/api/auth',
       CENTRAL_IDENTITY_CLIENT_ID: 'test-client',
       CENTRAL_IDENTITY_CLIENT_SECRET: 'test-secret',
-      LOG_LEVEL: 'debug',
+      READING_RECOVERY_OIDC_REDIRECT_URI: 'https://auth.example.com/api/identity-recovery/callback',
+      READING_RECOVERY_PROVIDER_REDIRECT_URI: 'https://auth.example.com/api/identity-recovery/provider/callback',
+      READING_RECOVERY_GOOGLE_CLIENT_ID: 'recovery-google-client',
+      READING_RECOVERY_GOOGLE_CLIENT_SECRET: 'recovery-google-secret',
+      READING_RECOVERY_GITHUB_CLIENT_ID: 'recovery-github-client',
+      READING_RECOVERY_GITHUB_CLIENT_SECRET: 'recovery-github-secret',
     });
+    expect(config.auth.recoveryRedirectUri).toBe('https://auth.example.com/api/identity-recovery/callback');
+    expect(config.auth.recoveryProviderRedirectUri).toBe('https://auth.example.com/api/identity-recovery/provider/callback');
+    expect(config.auth.recoveryProviders.google?.clientId).toBe('recovery-google-client');
+    expect(config.auth.recoveryProviders.github?.clientId).toBe('recovery-github-client');
     expect(config.server.port).toBe(5000);
     expect(config.auth.baseUrl).toBe('https://auth.example.com');
     expect(config.auth.trustedOrigins).toEqual(['https://auth.example.com']);
@@ -69,6 +81,12 @@ describe('CoreConfigService', () => {
       CENTRAL_IDENTITY_ISSUER: 'https://auth-test.127.0.0.1.nip.io:8081/api/auth',
       CENTRAL_IDENTITY_CLIENT_ID: 'test-client',
       CENTRAL_IDENTITY_CLIENT_SECRET: 'test-secret',
+      READING_RECOVERY_OIDC_REDIRECT_URI: 'https://reading-test.lvh.me:8081/api/identity-recovery/callback',
+      READING_RECOVERY_PROVIDER_REDIRECT_URI: 'https://reading-test.lvh.me:8081/api/identity-recovery/provider/callback',
+      READING_RECOVERY_GOOGLE_CLIENT_ID: 'test-recovery-google-client',
+      READING_RECOVERY_GOOGLE_CLIENT_SECRET: 'test-recovery-google-secret',
+      READING_RECOVERY_GITHUB_CLIENT_ID: 'test-recovery-github-client',
+      READING_RECOVERY_GITHUB_CLIENT_SECRET: 'test-recovery-github-secret',
     };
     expect(() => new CoreConfigService(testProductionEnv)).not.toThrow();
     expect(() => new CoreConfigService({
@@ -90,6 +108,23 @@ describe('CoreConfigService', () => {
       clientId: 'reading-client',
       clientSecret: 'reading-secret',
     });
+  });
+  it('does not require migration-only recovery configuration in production', () => {
+    const config = new CoreConfigService({
+      ...validEnv,
+      STRIPE_SECRET_KEY: 'sk_live_fixture',
+      NODE_ENV: 'production',
+      BETTER_AUTH_URL: 'https://reading.example.com',
+      FRONTEND_URL: 'https://reading.example.com',
+      CORS_ORIGINS: 'https://reading.example.com',
+      AUTH_SECRET: 'production-auth-secret-long-enough',
+      CENTRAL_IDENTITY_ISSUER: 'https://identity.example.com/api/auth',
+      CENTRAL_IDENTITY_CLIENT_ID: 'reading-client',
+      CENTRAL_IDENTITY_CLIENT_SECRET: 'reading-secret',
+    });
+    expect(config.auth.recoveryRedirectUri).toBeUndefined();
+    expect(config.auth.recoveryProviderRedirectUri).toBeUndefined();
+    expect(config.auth.recoveryProviders).toEqual({});
   });
 
   it('throws when DATABASE_URL is missing', () => {

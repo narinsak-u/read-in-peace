@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { shallowRef, watch } from 'vue';
-import { authClient, signIn, signUp, signOut } from '~/lib/auth-client';
+import { authClient, signOut } from '~/lib/auth-client';
 import { useFlash } from '~/composables/useFlash';
 
 export interface User {
@@ -10,14 +10,11 @@ export interface User {
 }
 
 export const useAuthStore = defineStore('auth', () => {
+  const { flash } = useFlash();
   const signedIn = shallowRef(false);
   const user = shallowRef<User | null>(null);
   const adminMode = shallowRef(false);
-  const loading = shallowRef(false);
-  const showAuthModal = ref(false);
-  const onAuthSuccess = shallowRef<(() => void) | null>(null);
-  const centralReturnTo = shallowRef<string | null>(null);
-  const { flash } = useFlash();
+  const sessionReady = shallowRef(false);
 
   const session = authClient.useSession();
 
@@ -29,63 +26,10 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = null;
       signedIn.value = false;
     }
+    sessionReady.value = Boolean(val && !val.isPending);
   }, { immediate: true });
 
-  function openAuthModal(onSuccess?: () => void, returnTo?: string) {
-    if (onSuccess) onAuthSuccess.value = onSuccess;
-    centralReturnTo.value = returnTo ?? null;
-    showAuthModal.value = true;
-  }
 
-  function closeAuthModal() {
-    showAuthModal.value = false;
-    onAuthSuccess.value = null;
-    centralReturnTo.value = null;
-  }
-
-  async function authSignIn(email: string, password: string) {
-    loading.value = true;
-    try {
-      const { data, error } = await signIn.email({ email, password });
-      if (error) throw error;
-      if (data?.user) {
-        user.value = data.user;
-        signedIn.value = true;
-        flash('Signed in successfully');
-        const callback = onAuthSuccess.value;
-        closeAuthModal();
-        callback?.();
-      }
-    } catch (err: any) {
-      signedIn.value = false;
-      user.value = null;
-      flash(err?.message || err?.data?.message || 'Failed to sign in');
-    } finally {
-      loading.value = false;
-    }
-  }
-
-  async function authSignUp(name: string, email: string, password: string) {
-    loading.value = true;
-    try {
-      const { data, error } = await signUp.email({ name, email, password });
-      if (error) throw error;
-      if (data?.user) {
-        user.value = data.user;
-        signedIn.value = true;
-        flash('Account created successfully');
-        const callback = onAuthSuccess.value;
-        closeAuthModal();
-        callback?.();
-      }
-    } catch (err: any) {
-      signedIn.value = false;
-      user.value = null;
-      flash(err?.message || err?.data?.message || 'Failed to create account');
-    } finally {
-      loading.value = false;
-    }
-  }
 
   async function authSignOut() {
     const { error } = await signOut();
@@ -97,14 +41,15 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null;
     flash('Signed out of Read in Peace. Your Central SSO Session and other Application Sessions remain active.');
   }
-  async function authSignInCentral() {
+  async function signInCentral(returnTo?: string) {
     const origin = window.location.origin;
-    const destination = safeReturnTo(centralReturnTo.value, origin);
+    const destination = safeReturnTo(returnTo ?? `${window.location.pathname}${window.location.search}${window.location.hash}`, origin);
     const { error } = await authClient.signIn.social({
       provider: 'central-identity',
       callbackURL: destination ? `${origin}${destination}` : origin,
+      errorCallbackURL: `${origin}/account/identity?error=login`,
     });
-    if (error) throw error;
+    if (error) flash(error.message || 'Central sign-in failed');
   }
 
 
@@ -116,15 +61,10 @@ export const useAuthStore = defineStore('auth', () => {
     signedIn: readonly(signedIn),
     user: readonly(user),
     adminMode: readonly(adminMode),
-    loading: readonly(loading),
-    showAuthModal,
-    signIn: authSignIn,
-    signUp: authSignUp,
-    signInCentral: authSignInCentral,
+    sessionReady: readonly(sessionReady),
+    signInCentral,
     signOut: authSignOut,
     toggleAdmin,
-    openAuthModal,
-    closeAuthModal,
   };
 });
 function safeReturnTo(destination: string | null, origin: string): string | null {
