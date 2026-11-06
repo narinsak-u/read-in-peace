@@ -22,30 +22,36 @@ cd ../backend && npm ci
 Root `npm run dev` starts PostgreSQL from `backend/docker-compose.yml` in its
 existing `backend` Compose project. It reuses the existing `pgdata` volume and
 `readinpeace` database, preserving local users and sessions. Nest runs on `:3000`
-and Nuxt on `:3001`. Caddy serves `https://reading.lvh.me:8080`; Nuxt proxies
-`/api/*` to the backend. The local Central Identity issuer is
-`https://auth.127.0.0.1.nip.io:8080/api/auth`, and the registered callback is
-`https://reading.lvh.me:8080/api/auth/callback/central-identity`.
+and Nuxt on `:3001`. The shared Central Identity Caddy gateway serves
+`https://reading.localhost:8080`; Nuxt proxies `/api/*` to the backend. The
+local Central Identity issuer is `https://auth.localhost:8080/api/auth`, and
+the registered callback is
+`https://reading.localhost:8080/api/auth/callback/central-identity`.
 
 Each application keeps its own encrypted env files and ignored `.env.keys`.
-Back up package key files outside the repository with restrictive permissions.
-Root env commands select one file for both packages, defaulting to development:
+Test-production uses a separate ignored `.env.test-production.keys` in each
+package. Back up package key files outside the repository with restrictive
+permissions. Root env commands select one file for both packages, defaulting to
+development:
 `ENV_FILE=.env.test-production npm run env:encrypt` or
-`ENV_FILE=.env.test-production npm run env:decrypt`. Each command runs dotenvx
-from each package directory and uses that package's private key. Live production
-files are touched only when `ENV_FILE=.env.production` is explicitly selected.
-Never commit `.env.keys` or plaintext env files.
+`ENV_FILE=.env.test-production npm run env:decrypt`. These commands use each
+package's `.env.test-production.keys` for test-production, and `.env.keys` for
+development or live production. Live production files are touched only when
+`ENV_FILE=.env.production` is explicitly selected. Never commit key files or
+plaintext env files.
 
 `npm run dev:prod` builds both applications, starts PostgreSQL from the root
 Compose files with its own volume on host `:5433`, waits for database health,
 runs test-production migrations, then starts both apps in production mode.
 It uses only `.env.test-production`, backend `:3100`, Nuxt preview `:3101`, and
-the isolated gateway origins `https://reading-test.lvh.me:8081` and
-`https://auth-test.127.0.0.1.nip.io:8081`. The backend guard accepts only Stripe
-test credentials and those isolated local origins in this mode. Keep
-`.env.production` reserved for live operator settings; this local command never
-loads it. Configure the Reading Central Identity test client callback as
-`https://reading-test.lvh.me:8081/api/auth/callback/central-identity` before
+the isolated origins `https://reading-test.localhost:8081` and
+`https://auth-test.localhost:8081`. Central Identity's isolated Caddy gateway
+serves `:8081`; this command starts only Reading services and its database. The
+backend guard accepts only Stripe test credentials and those isolated local
+origins in this mode. Keep `.env.production` reserved for live operator
+settings; this local command never loads it. Configure the Reading Central
+Identity test client callback as
+`https://reading-test.localhost:8081/api/auth/callback/central-identity` before
 testing SSO. Provider-console client provisioning is required.
 
 Tracked `.env.*.example` files are templates, not credentials. Configure and
@@ -83,7 +89,7 @@ Sign In → POST /api/auth/sign-in/social (provider: central-identity)
 ```
 
 The Relying Party callback is
-`https://reading.lvh.me:8080/api/auth/callback/central-identity`. Keep the
+`https://reading.localhost:8080/api/auth/callback/central-identity`. Keep the
 callback registered on the development Central Identity client.
 
 ### 1.2 Callback, account mapping, and session
@@ -113,12 +119,12 @@ sign-in option.
 1. Start the Central Identity development service, database, and HTTPS gateway.
 2. Start Read in Peace with `npm run dev`.
 3. Trust the development gateway certificate in the browser, then open
-   `https://reading.lvh.me:8080`.
+   `https://reading.localhost:8080`.
 4. Select Sign In from the header or mobile navigation. Confirm the browser
    enters the portal through the Central Identity authorization request.
 5. Complete Central Identity authentication. Confirm callback creates the local
    session and returns to the original same-origin page.
-6. Open `https://reading.lvh.me:8080/dashboard` while signed out. After local
+6. Open `https://reading.localhost:8080/dashboard` while signed out. After local
    session hydration, confirm OIDC starts automatically and callback returns to `/dashboard`.
 7. Confirm an unlinked existing account cannot sign in by email match and is
    directed to Reviewed Recovery.

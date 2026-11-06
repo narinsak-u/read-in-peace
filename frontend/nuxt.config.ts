@@ -1,11 +1,11 @@
-﻿import tailwindcss from "@tailwindcss/vite";
+import tailwindcss from "@tailwindcss/vite";
 
 const testProduction = process.env.TEST_PRODUCTION === "true";
 const siteUrl =
   process.env.NUXT_PUBLIC_SITE_URL ||
   (process.env.NODE_ENV === "production" && !testProduction
     ? undefined
-    : "https://reading.lvh.me");
+    : "https://reading.localhost:8080");
 const backendUrl =
   process.env.NUXT_PUBLIC_BACKEND_URL ||
   (process.env.NODE_ENV === "production" && !testProduction
@@ -22,7 +22,7 @@ if (
 
 if (
   testProduction &&
-  (siteUrl !== "https://reading-test.lvh.me:8081" ||
+  (siteUrl !== "https://reading-test.localhost:8081" ||
     backendUrl !== "http://localhost:3100")
 ) {
   throw new Error("Test-production frontend origins must use the isolated local HTTPS gateway.");
@@ -62,7 +62,7 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    server: { allowedHosts: ["reading.lvh.me", "reading-test.lvh.me"] },
+    server: { allowedHosts: ["reading.localhost", "reading-test.localhost"] },
   },
   app: {
     head: {

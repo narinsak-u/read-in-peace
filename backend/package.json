@@ -9,10 +9,10 @@
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\"",
     "start": "env -i PATH=\"$PATH\" HOME=\"$HOME\" NODE_EXTRA_CA_CERTS=\"${NODE_EXTRA_CA_CERTS-}\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- nest start",
-    "start:dev": "env -i PATH=\"$PATH\" HOME=\"$HOME\" NODE_EXTRA_CA_CERTS=\"${NODE_EXTRA_CA_CERTS-}\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- env PORT=3000 BETTER_AUTH_URL=https://reading.lvh.me:8080 FRONTEND_URL=https://reading.lvh.me:8080 CORS_ORIGINS=https://reading.lvh.me:8080 CENTRAL_IDENTITY_ISSUER=https://auth.127.0.0.1.nip.io:8080/api/auth nest start --watch",
+    "start:dev": "env -i PATH=\"$PATH\" HOME=\"$HOME\" NODE_EXTRA_CA_CERTS=\"${NODE_EXTRA_CA_CERTS-}\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- env PORT=3000 BETTER_AUTH_URL=https://reading.localhost:8080 FRONTEND_URL=https://reading.localhost:8080 CORS_ORIGINS=https://reading.localhost:8080 CENTRAL_IDENTITY_ISSUER=https://auth.localhost:8080/api/auth nest start --watch",
     "start:debug": "env -i PATH=\"$PATH\" HOME=\"$HOME\" NODE_EXTRA_CA_CERTS=\"${NODE_EXTRA_CA_CERTS-}\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- nest start --debug --watch",
     "start:prod": "env -i PATH=\"$PATH\" HOME=\"$HOME\" NODE_EXTRA_CA_CERTS=\"${NODE_EXTRA_CA_CERTS-}\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.production -- node dist/main",
-    "start:test-production": "env -i PATH=\"$PATH\" HOME=\"$HOME\" NODE_EXTRA_CA_CERTS=\"${NODE_EXTRA_CA_CERTS-}\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.test-production -- env NODE_ENV=production TEST_PRODUCTION=true PORT=3100 DATABASE_URL=postgres://postgres:postgres@localhost:5433/read_in_peace BETTER_AUTH_URL=https://reading-test.lvh.me:8081 FRONTEND_URL=https://reading-test.lvh.me:8081 CORS_ORIGINS=https://reading-test.lvh.me:8081 CENTRAL_IDENTITY_ISSUER=https://auth-test.127.0.0.1.nip.io:8081/api/auth node dist/main",
+    "start:test-production": "env -i PATH=\"$PATH\" HOME=\"$HOME\" NODE_EXTRA_CA_CERTS=\"${NODE_EXTRA_CA_CERTS-}\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.test-production --env-keys-file .env.test-production.keys -- env NODE_ENV=production TEST_PRODUCTION=true PORT=3100 DATABASE_URL=postgres://postgres:postgres@localhost:5433/read_in_peace BETTER_AUTH_URL=https://reading-test.localhost:8081 FRONTEND_URL=https://reading-test.localhost:8081 CORS_ORIGINS=https://reading-test.localhost:8081 CENTRAL_IDENTITY_ISSUER=https://auth-test.localhost:8081/api/auth node dist/src/main",
     "lint": "eslint \"{src,apps,libs,tests}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -20,7 +20,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:migrate": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- drizzle-kit migrate",
-    "db:migrate:test-production": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.test-production -- env NODE_ENV=production TEST_PRODUCTION=true DATABASE_URL=postgres://postgres:postgres@localhost:5433/read_in_peace drizzle-kit migrate",
+    "db:migrate:test-production": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.test-production --env-keys-file .env.test-production.keys -- env NODE_ENV=production TEST_PRODUCTION=true DATABASE_URL=postgres://postgres:postgres@localhost:5433/read_in_peace drizzle-kit migrate",
     "db:seed": "env -i PATH=\"$PATH\" HOME=\"$HOME\" ../node_modules/.bin/dotenvx run --strict --overload -f .env.development -- ts-node src/core/database/seed.ts"
   },
   "dependencies": {

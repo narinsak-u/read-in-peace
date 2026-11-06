@@ -10,7 +10,7 @@ import type {
   TransactionsStripeConfig,
 } from './config.types';
 
-const FALLBACK_BASE_URL = 'https://reading.lvh.me:8080';
+const FALLBACK_BASE_URL = 'https://reading.localhost:8080';
 
 /**
  * @explaination

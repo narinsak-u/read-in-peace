@@ -36,12 +36,19 @@ cd frontend && npm ci
 cd ../backend && npm ci
 cd ..
 
-# Start Central Caddy first; export its root.crt as described in the Central README.
+# Start Central Caddy first; trust its development root in the browser and Node.
+# Export its public root.crt as described in the Central README. Never trust an
+# unconfirmed root or copy the CA private key.
 NODE_EXTRA_CA_CERTS="$(realpath ../book-auth-middleware/central-identity-root.crt)" npm run dev
 ```
 
-The HTTPS browser origin is `https://reading.lvh.me:8080` through the Central
-Identity Caddy proxy. Trust Caddy's local root certificate before testing.
+The HTTPS browser origin is `https://reading.localhost:8080` through the Central
+Identity Caddy proxy. WSL name resolution may differ from the Windows browser;
+test the real browser separately. If it cannot resolve them, map
+`auth.localhost`, `bidding.localhost`, and `reading.localhost` to `127.0.0.1`
+in the host OS resolver. Export Caddy's current public `root.crt` and verify it
+matches the running gateway, then trust it in the browser and Node. Never copy
+the CA private key.
 Nest needs the absolute `NODE_EXTRA_CA_CERTS` path to fetch Central's OIDC
 discovery document from either subpackage directory.
 Root startup reuses `backend/docker-compose.yml` and its existing `pgdata`
@@ -62,17 +69,41 @@ files are templates. Each package decrypts only its settings with its own
 ignored `.env.keys`; back up both keys outside the repository. Keep the
 operator-issued `CENTRAL_IDENTITY_CLIENT_ID` and
 `CENTRAL_IDENTITY_CLIENT_SECRET` in encrypted backend settings. The issuer is
-`https://auth.127.0.0.1.nip.io:8080`; the registered callback is
-`https://reading.lvh.me:8080/api/auth/callback/central-identity`.
+`https://auth.localhost:8080/api/auth`; the registered callback is
+`https://reading.localhost:8080/api/auth/callback/central-identity`.
 
-For production-mode local proof, configure and encrypt each package's
-`.env.test-production` using its `.env.test-production.example`. Use separate
-local credentials, test Stripe keys, and a provisioned test Central Identity
-client. `npm run dev:prod` builds and starts both apps with `NODE_ENV=production`,
-applies migrations only to its isolated database on host `:5433`, then runs the
-backend on `:3100`, frontend on `:3101`, and HTTPS gateway on `:8081`. The callback is
-`https://reading-test.lvh.me:8081/api/auth/callback/central-identity`. It never
-loads `.env.production`, which remains live operator configuration.
+For production-mode local proof, configure each package's `.env.test-production`
+using its `.env.test-production.example` and a separate ignored
+`.env.test-production.keys` key file. Use separate local credentials, test
+Stripe keys, and a provisioned test Central Identity client. `npm run dev:prod`
+builds and starts both Reading apps with `NODE_ENV=production`, applies
+migrations only to its isolated database on host `:5433`, then runs the backend
+on `:3100` and frontend on `:3101`. The command does not start an HTTPS gateway:
+Central Identity's isolated Caddy serves `:8081` and routes to these Reading
+services. The Reading browser origin is `https://reading-test.localhost:8081`,
+with issuer `https://auth-test.localhost:8081/api/auth`; register
+`https://reading-test.localhost:8081/api/auth/callback/central-identity` on the
+isolated Central Identity client.
+
+If these test-production names do not resolve to loopback, add this line to
+`/etc/hosts` in WSL and `C:\Windows\System32\drivers\etc\hosts` in Windows
+(edit as Administrator):
+
+```text
+127.0.0.1 auth-test.localhost bidding-test.localhost reading-test.localhost
+```
+
+Verify them in WSL with
+`getent ahostsv4 auth-test.localhost bidding-test.localhost reading-test.localhost`
+and in Windows PowerShell:
+
+```powershell
+'auth-test.localhost','bidding-test.localhost','reading-test.localhost' | ForEach-Object { "$_ $([System.Net.Dns]::GetHostAddresses($_) -join ',')" }
+```
+
+Each result must include `127.0.0.1`. Check both environments and the browser
+host. Start fresh Reading sessions and update saved links after cutover. The
+command never loads `.env.production`, which remains live operator configuration.
 
 Browser smoke: sign in through Book Bidding's header, then open Read in Peace
 and select **Sign In**. The second relying party should return from Central
@@ -83,19 +114,23 @@ local path and query. Sign out from Reading and confirm Book Bidding remains
 signed in.
 Existing users with an active Application Session can link Central Identity from
 the profile menu. Users without a session use the reviewed recovery screen at
-`https://reading.lvh.me:8080/account/identity`. They independently prove their
+`https://reading.localhost:8080/account/identity`. They independently prove their
 existing Reading account with its local password or its already-linked Google
 or GitHub account, then authenticate through Central Identity OIDC. The provider
-proof must match the provider subject already stored on that Reading user.
+proof must match the provider subject already stored on that Reading user. Use a
+fresh browser session and newly issued sign-in, recovery, verification, and reset
+links after changing origins; old host-only sessions and emailed links do not
+transfer to the new origin.
 Recovery only adds the unique Central Identity mapping; it creates no session,
 does not enable local login, and does not change the user ID or business data.
 After success, start ordinary sign-in through Central Identity.
 
 To enable the recovery callbacks, configure the separately provisioned Central
 Identity client with both the ordinary callback and
-`https://reading.lvh.me:8080/api/identity-recovery/callback`. Register
-`https://reading.lvh.me:8080/api/identity-recovery/provider/callback` in
-temporary Google/GitHub OAuth clients. Store their separate
+`https://reading.localhost:8080/api/identity-recovery/callback`. Register
+`https://reading.localhost:8080/api/identity-recovery/provider/callback` in
+temporary Google/GitHub OAuth clients. Update each external provider's allowed
+callback origins in its operator console. Store their separate
 `READING_RECOVERY_GOOGLE_*` and `READING_RECOVERY_GITHUB_*` credentials only in
 encrypted backend settings. Then apply the schema:
 
@@ -104,13 +139,21 @@ cd backend
 npm run db:migrate
 ```
 
-For test-production, provision matching callback URLs on its isolated clients
-and use `https://reading-test.lvh.me:8081` instead. Production requires explicit
-operator-owned callback URLs and recovery-only Google/GitHub clients. Disable
-and revoke those temporary provider clients after the migration window. Never
-paste passwords, provider tokens, authorization codes, or client secrets into
-logs or support tickets. Matching email alone never links accounts; any
-conflicting identity mapping fails closed. Preserve database backups before
+For test-production recovery, register
+`https://reading-test.localhost:8081/api/identity-recovery/callback` on the
+isolated Central Identity client and
+`https://reading-test.localhost:8081/api/identity-recovery/provider/callback`
+on temporary Google/GitHub OAuth clients. Export the test-production Caddy root
+certificate and trust it separately from development; set `NODE_EXTRA_CA_CERTS`
+to its absolute path for Node, and trust only that root in the browser before
+opening the HTTPS origin. Check discovery at
+`https://auth-test.localhost:8081/api/auth/.well-known/openid-configuration`;
+its `issuer` must equal `https://auth-test.localhost:8081/api/auth`. Production
+requires explicit operator-owned callback URLs and recovery-only Google/GitHub
+clients. Disable and revoke those temporary provider clients after the migration
+window. Never paste passwords, provider tokens, authorization codes, or client
+secrets into logs or support tickets. Matching email alone never links accounts;
+any conflicting identity mapping fails closed. Preserve database backups before
 migration and do not delete or merge Application Users.
 
 **Sign out of Read in Peace** ends only its Application Session. The Central
@@ -175,8 +218,10 @@ npm run build           # Production build
 
 Use encrypted `backend/.env.development` and `frontend/.env.development` for
 local development. From the repository root, run `npm run env:decrypt` before
-editing and `npm run env:encrypt` before staging. Keep each package's `.env.keys`
-private and outside Git. Tracked `.env.*.example` files are templates only.
+editing and `npm run env:encrypt` before staging. For test-production, create a
+separate ignored `.env.test-production.keys` in each package and select
+`ENV_FILE=.env.test-production` for these root commands. Keep key files private
+and outside Git. Tracked `.env.*.example` files are templates only.
 
 | Package | Key variables |
 |---------|--------------|
