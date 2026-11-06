@@ -49,9 +49,14 @@ export const envSchema = z.object({
     (env.TEST_PRODUCTION
       ? env.STRIPE_SECRET_KEY.startsWith('sk_test_') &&
         env.DATABASE_URL === 'postgres://postgres:postgres@localhost:5433/read_in_peace' &&
-        env.BETTER_AUTH_URL === 'https://reading-test.lvh.me:8081' &&
-        env.FRONTEND_URL === 'https://reading-test.lvh.me:8081' &&
-        env.CENTRAL_IDENTITY_ISSUER === 'https://auth-test.127.0.0.1.nip.io:8081/api/auth'
+        env.BETTER_AUTH_URL === 'https://reading-test.localhost:8081' &&
+        env.FRONTEND_URL === 'https://reading-test.localhost:8081' &&
+        env.CORS_ORIGINS === 'https://reading-test.localhost:8081' &&
+        env.CENTRAL_IDENTITY_ISSUER === 'https://auth-test.localhost:8081/api/auth' &&
+        env.READING_RECOVERY_OIDC_REDIRECT_URI ===
+          'https://reading-test.localhost:8081/api/identity-recovery/callback' &&
+        env.READING_RECOVERY_PROVIDER_REDIRECT_URI ===
+          'https://reading-test.localhost:8081/api/identity-recovery/provider/callback'
       : !env.STRIPE_SECRET_KEY.startsWith('sk_test_')),
   'Production requires operator-provided database, auth, payment, and Central Identity settings.',
 ).refine(

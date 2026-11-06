@@ -1,4 +1,4 @@
-﻿import tailwindcss from "@tailwindcss/vite";
+import tailwindcss from "@tailwindcss/vite";
 
 const testProduction = process.env.TEST_PRODUCTION === "true";
 const siteUrl =
@@ -22,7 +22,7 @@ if (
 
 if (
   testProduction &&
-  (siteUrl !== "https://reading-test.lvh.me:8081" ||
+  (siteUrl !== "https://reading-test.localhost:8081" ||
     backendUrl !== "http://localhost:3100")
 ) {
   throw new Error("Test-production frontend origins must use the isolated local HTTPS gateway.");
@@ -62,7 +62,7 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    server: { allowedHosts: ["reading.localhost", "reading-test.lvh.me"] },
+    server: { allowedHosts: ["reading.localhost", "reading-test.localhost"] },
   },
   app: {
     head: {

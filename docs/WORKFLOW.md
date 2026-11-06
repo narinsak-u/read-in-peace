@@ -28,13 +28,16 @@ and Nuxt on `:3001`. Caddy serves `https://reading.lvh.me:8080`; Nuxt proxies
 `https://reading.lvh.me:8080/api/auth/callback/central-identity`.
 
 Each application keeps its own encrypted env files and ignored `.env.keys`.
-Back up package key files outside the repository with restrictive permissions.
-Root env commands select one file for both packages, defaulting to development:
+Test-production uses a separate ignored `.env.test-production.keys` in each
+package. Back up package key files outside the repository with restrictive
+permissions. Root env commands select one file for both packages, defaulting to
+development:
 `ENV_FILE=.env.test-production npm run env:encrypt` or
-`ENV_FILE=.env.test-production npm run env:decrypt`. Each command runs dotenvx
-from each package directory and uses that package's private key. Live production
-files are touched only when `ENV_FILE=.env.production` is explicitly selected.
-Never commit `.env.keys` or plaintext env files.
+`ENV_FILE=.env.test-production npm run env:decrypt`. These commands use each
+package's `.env.test-production.keys` for test-production, and `.env.keys` for
+development or live production. Live production files are touched only when
+`ENV_FILE=.env.production` is explicitly selected. Never commit key files or
+plaintext env files.
 
 `npm run dev:prod` builds both applications, starts PostgreSQL from the root
 Compose files with its own volume on host `:5433`, waits for database health,
