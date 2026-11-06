@@ -76,15 +76,34 @@ For production-mode local proof, configure each package's `.env.test-production`
 using its `.env.test-production.example` and a separate ignored
 `.env.test-production.keys` key file. Use separate local credentials, test
 Stripe keys, and a provisioned test Central Identity client. `npm run dev:prod`
-builds and starts both apps with `NODE_ENV=production`,
-applies migrations only to its isolated database on host `:5433`, then runs the
-backend on `:3100`, frontend on `:3101`, and its loopback-only HTTPS gateway on
-`:8081`. The Reading browser origin is `https://reading-test.localhost:8081`,
+builds and starts both Reading apps with `NODE_ENV=production`, applies
+migrations only to its isolated database on host `:5433`, then runs the backend
+on `:3100` and frontend on `:3101`. The command does not start an HTTPS gateway:
+Central Identity's isolated Caddy serves `:8081` and routes to these Reading
+services. The Reading browser origin is `https://reading-test.localhost:8081`,
 with issuer `https://auth-test.localhost:8081/api/auth`; register
 `https://reading-test.localhost:8081/api/auth/callback/central-identity` on the
-isolated Central Identity client. `*.localhost` resolves to `127.0.0.1`; start
-fresh Reading sessions and update saved links after cutover. It never loads
-`.env.production`, which remains live operator configuration.
+isolated Central Identity client.
+
+If these test-production names do not resolve to loopback, add this line to
+`/etc/hosts` in WSL and `C:\Windows\System32\drivers\etc\hosts` in Windows
+(edit as Administrator):
+
+```text
+127.0.0.1 auth-test.localhost bidding-test.localhost reading-test.localhost
+```
+
+Verify them in WSL with
+`getent ahostsv4 auth-test.localhost bidding-test.localhost reading-test.localhost`
+and in Windows PowerShell:
+
+```powershell
+'auth-test.localhost','bidding-test.localhost','reading-test.localhost' | ForEach-Object { "$_ $([System.Net.Dns]::GetHostAddresses($_) -join ',')" }
+```
+
+Each result must include `127.0.0.1`. Check both environments and the browser
+host. Start fresh Reading sessions and update saved links after cutover. The
+command never loads `.env.production`, which remains live operator configuration.
 
 Browser smoke: sign in through Book Bidding's header, then open Read in Peace
 and select **Sign In**. The second relying party should return from Central
