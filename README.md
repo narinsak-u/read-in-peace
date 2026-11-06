@@ -61,6 +61,18 @@ npm run db:migrate
 npm run db:seed
 ```
 
+## Independent production deployment
+
+Reading owns its Compose project and database; neutral `sso-edge` owns public Caddy and TLS. Before production use, record PostgreSQL version, exact existing `READING_DB_VOLUME`, users/content, clients, sessions, and a consistent backup; verify an isolated restore. Stop Reading writes and its old PostgreSQL container before mounting that same external volume. Compose refuses a missing volume. Never substitute a volume, run two PostgreSQL owners, seed production, or use `down -v`. Keep protected `.env.production` mode `0600`; never commit plaintext runtime settings. Provider's `docs/production-vm.md` and edge's README contain the complete gated cutover and rollback. DNS, TLS, SMTP, Vercel, backups, and browser SSO require operator verification.
+
+Synthetic standalone rehearsal, from this checkout, requires Docker and a reachable synthetic Central Identity issuer:
+
+```sh
+CENTRAL_IDENTITY_ISSUER='<synthetic-issuer>' scripts/production-compose-smoke.sh
+```
+
+The smoke uses a disposable Reading volume and real PostgreSQL container, never an operator volume.
+
 ## Central Identity local proof
 
 Use the encrypted `backend/.env.development` and `frontend/.env.development`
