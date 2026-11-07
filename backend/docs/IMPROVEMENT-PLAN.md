@@ -2,6 +2,9 @@
 
 Generated from a multi-axis code review (correctness, readability, architecture, security, performance) and codebase architecture analysis.
 
+**Status:** Historical review with mixed completion. Verify each recommendation
+against current code before treating it as active work.
+
 ## Table of Contents
 
 1. [Phase 1: Critical Fixes](#phase-1-critical-fixes)

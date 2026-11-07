@@ -6,13 +6,13 @@ Your quiet corner of the internet to discover, borrow, buy, and discuss books �
 
 ## ✨ What you can do
 
-- **📖 Borrow & Return** — Grab books from the library for 7–30 days depending on your plan. Return them when you're done.
+- **📖 Borrow & Return** — Borrow books for 14 days. Return them when you're done.
 - **🛒 Buy & Keep** — Fall in love with a book? Purchase it and build your personal collection.
 - **💬 Direct Messages** — Chat with other readers in real time via the collapsible chat modal (Facebook/Twitter style), powered by Socket.IO.
 - **📝 Reader Feed** — Share reviews, rate books, reply to posts, and join the conversation.
 - **👤 Profiles & Follows** — Visit reader profiles with a radar chart of reading stats. Follow your favorite reviewers.
 - **🎟️ Membership Plans** — Free (15 items), Curator ($5/mo, 25 items), and Archivist ($10/mo, 50 items) tiers — each with escalating perks.
-- **🏷️ Smart Discounts** — Automatic savings via a 3-stage discount pipeline: quantity tiers (up to 30% off), category bonuses, and $100 thresholds.
+- **🏷️ Smart Discounts** — Automatic savings via quantity tiers, category bonuses, $100 thresholds, and membership-plan discounts.
 - **🛍️ Client-side Cart** — Cart persists across sessions and merges with your account on sign-in. Live discount previews as you shop.
 - **💳 Stripe Checkout** — Secure payments for purchases and subscriptions via Stripe Checkout Sessions.
 - **🌙 Dark Mode** — Respects your system preference with a `.dark` class toggle.
@@ -184,7 +184,7 @@ read-in-peace/
 │   ├── components/    # Vue components (chat/, profile/, social/, reviews/, browse/, auth/, ui/)
 │   ├── composables/   # useChat*, useConversations, useProfile, useFollow, useFeed, etc.
 │   ├── pages/         # File-based routing
-│   ├── stores/        # Pinia (auth, cart, chat)
+│   ├── stores/        # Pinia (auth, cart, book status, membership, chat)
 │   ├── types/         # TypeScript interfaces
 │   └── utils/         # Feed, comment, discount helpers
 ├── backend/           # NestJS API (port 3000; test-production :3100)
@@ -194,10 +194,10 @@ read-in-peace/
 │       ├── books/     # Book catalog, borrow/purchase
 │       ├── social/    # Feed posts, comments, likes
 │       ├── membership/# Plans, subscriptions, borrow limits
-│       ├── transactions/ # Checkout, Stripe integration
+│       ├── transactions/ # Loans, checkout, purchase confirmation
 │       ├── iam/       # Authentication, authorization guards
 │       └── core/      # Database, config, logging
-└── docs/              # Specs and implementation plans
+└── docs/              # Current workflow and active review/design notes
 ```
 
 ## ⚙️ Commands

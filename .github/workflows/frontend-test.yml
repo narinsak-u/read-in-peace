@@ -2,12 +2,12 @@ name: Frontend Tests
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-test.yml'
   push:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-test.yml'

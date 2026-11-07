@@ -1,0 +1,33 @@
+name: Tooling Tests
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tests/env-hook.test.mjs'
+      - '.github/workflows/tooling-test.yml'
+  push:
+    branches: [main, dev]
+    paths:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'tests/env-hook.test.mjs'
+      - '.github/workflows/tooling-test.yml'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - run: npm ci
+      - run: npm run test:env

@@ -195,135 +195,24 @@ Toast: "Signed out"
 
 ### 2.1 Initial Load
 
-```
-User navigates to /feed
-  │
-  ▼
-feed.vue (thin container) mounts
-  │  uses useShelf() composable
-  │
-  ▼
-composables/useShelf.ts → onMounted()
-  │  Promise.all([
-  │    booksStore.fetchTrending(),
-  │    booksStore.fetchBooks(1, 12),
-  │  ])
-  │
-  ▼
-stores/books.ts:
-  │  fetchTrending() → $fetch("/api/books/trending")
-  │  fetchBooks(1, 12) → $fetch("/api/books?page=1&limit=12")
-  │
-  ▼
-server/api/[...].ts → proxyRequest to http://localhost:3000
-  │
-  ▼
-NestJS BooksController:
-  │  @Get("api/books/trending") → BooksService.getTrending()
-  │    SELECT books.*, likeCount, commentCount, avgRating
-  │    ORDER BY avg rating DESC, LIMIT 3
-  │
-  │  @Get("api/books") → BooksService.findAll(1, 12)
-  │    SELECT books.* with subquery aggregates
-  │    WHERE (no category filter)
-  │    ORDER BY createdAt DESC, LIMIT 12 OFFSET 0
-  │
-  ▼
-Response: { data: BookWithMeta[], meta: { page, limit, total, totalPages } }
-  │
-  ▼
-books store sets:
-  │  trending.value = res  (for TrendingSection)
-  │  books.value = res.data  (for BookShelf grid)
-  │  meta.value = res.meta  (for pagination)
-  │
-  ▼
-useShelf categories derivation:
-  │  categories.value = ["All", ...new Set(books.map(b => b.category))]
-  │  e.g. ["All", "Fiction", "How-to", "Manga"]
-  │
-  ▼
-Template renders:
-  │  <TrendingSection :trending="booksStore.trending" />
-  │  <BookShelf
-  │     :books="booksStore.books"
-  │     :categories="categories"
-  │     :activeCategory="activeCategory"
-  │     :page="page"
-  │     :totalPages="totalPages"
-  │     :adminMode="auth.adminMode"
-  │     @edit="handleEdit" @add-book="handleAddBook"
-  │     @category-change="setCategory" @page-change="setPage"
-  │  />
+`/feed` renders the loan, new-arrival, and reader-feed sections. `NewArrivals`
+uses `useBooks({ query })`, which fetches page 1 with 8 books immediately.
+
+```text
+/feed → NewArrivals → useBooks → GET /api/books?page=1&limit=8
+  → Nuxt API proxy → BooksController → BooksService → PostgreSQL
+  ← paginated books and metadata
 ```
 
-### 2.2 Category Filter
+The response is mapped to frontend book models. `useBooks` exposes the current
+page, metadata, loading state, and filtered result.
 
-```
-User clicks category button (e.g. "How-to") in BookShelf
-  │
-  ▼
-BookShelf emits "categoryChange" with the category name
-  │
-  ▼
-feed.vue calls setCategory(cat)
-  │
-  ▼
-composables/useShelf.ts → setCategory(cat)
-  │  activeCategory.value = cat
-  │  page.value = 1  (resets to first page)
-  │
-  ▼
-watch([page, activeCategory]) fires
-  │  calls booksStore.fetchBooks(1, 12, "How-to")
-  │
-  ▼
-GET /api/books?page=1&limit=12&category=How-to
-  │
-  ▼
-BooksService.findAll(1, 12, "How-to")
-  │  WHERE category = "How-to"
-  │  Returns filtered data + new meta
-  │
-  ▼
-books store updates books.value
-  │  BookShelf re-renders with filtered books
-```
+### 2.2 Category, Search, and Pagination
 
-### 2.3 Pagination
-
-```
-User clicks page button (e.g. page 3)
-  │
-  ▼
-BookShelf emits "pageChange" with page number
-  │
-  ▼
-feed.vue calls setPage(3)
-  │
-  ▼
-composables/useShelf.ts → setPage(p)
-  │  page.value = 3
-  │
-  ▼
-watch([page, activeCategory]) fires
-  │  cancelled flag prevents stale responses
-  │  calls booksStore.fetchBooks(3, 12, activeCategory)
-  │
-  ▼
-GET /api/books?page=3&limit=12
-  │  (with category if active)
-  │
-  ▼
-BooksService.findAll(3, 12)
-  │  LIMIT 12 OFFSET 24
-  │  Returns page 3 data
-  │
-  ▼
-books store updates books.value
-  │  BookShelf re-renders grid with new page
-  │  Pagination buttons highlight current page
-```
+`NewArrivals` supplies a fixed category list. Category changes update the
+`useBooks` category ref; page or category changes trigger another API request.
+Search filters the current page in the browser. Pagination updates the page ref
+and clamps it to the available range.
 
 ---
 
@@ -331,357 +220,95 @@ books store updates books.value
 
 ### 3.1 View Book Detail
 
-```
-User clicks a book card (from feed, trending, or dashboard)
-  │
-  ▼
-NuxtLink navigates to /book/:id
-  │
-  ▼
-pages/book/[id].vue (thin container) mounts
-  │  uses useBookDetail(id) composable
-  │
-  ▼
-composables/useBookDetail.ts → onMounted()
-  │
-  ├─ book.value = await booksStore.fetchBook(id)
-  │    GET /api/books/:id → BooksService.findOne(id)
-  │    SELECT book with subquery aggregates (likeCount, commentCount, avgRating)
-  │    Returns BookWithMeta
-  │
-  ├─ comments.value = await booksStore.fetchComments(id)
-  │    GET /api/books/:id/comments → CommentsController.findAll(id)
-  │    SELECT comments with JOIN on user (name, image)
-  │    ORDER BY createdAt DESC
-  │
-  └─ If signed in:
-       Promise.all([
-         dashboard.fetchBorrows(),       → GET /api/user/borrows
-         booksStore.fetchLikeStatus(id), → GET /api/books/:id/like
-         booksStore.fetchUserRating(id), → GET /api/books/:id/rate
-       ])
-  │
-  ▼
-Template renders 2-column grid:
-  │
-  ├─ Left (sticky): cover image
-  │
-  └─ Right (scrollable):
-       ├─ <BookDetails :book="book" />
-       │    author, title, price, avg rating, stock badge, synopsis
-       ├─ <BookActions :book :hasBorrowed @borrow />
-       │    Buy button → cartStore.addItem(book) (hidden if stock ≤ 1)
-       │    Borrow button (disabled if unavailable, out of stock, or already borrowed)
-       ├─ Social row: Like button, Comment toggle, <BookShare />
-       ├─ <BookRating /> with 5 stars
-       └─ <BookComments :comments :signedIn :showCommentForm />
-            (comment form hidden until MessageSquare is clicked)
+`/book/:id` fetches the book through Nuxt's API proxy and maps the response to
+the frontend book model. The page renders `BookHero`, `BookBorrowCard`, and
+`BookReviews`.
+
+```text
+/book/:id → pages/book/[id].vue → GET /api/books/:id
+  → Nuxt API proxy → BooksController → BooksService → database
 ```
 
-### 3.2 Like / Unlike
+### 3.2 Publish a Review
 
-```
-User clicks heart button (not signed in)
-  │
-  ▼
-composables/useBookDetail → handleLike()
-  │  calls booksStore.toggleLike(id)
-  │
-  ▼
-stores/books.ts → toggleLike()
-  │  POST /api/books/:id/like
-  │
-  ▼
-NestJS LikesController → LikesService.toggle(bookId, userId)
-  │  AuthGuard validates session from cookie
-  │  CurrentUser decorator extracts user.id
-  │
-  ▼
-LikesService:
-  │  1. SELECT existing like for (bookId, userId)
-  │  2. If exists → DELETE like (unlike)
-  │     If not → INSERT like
-  │  3. SELECT COUNT(*) of likes for this book
-  │
-  ▼
-Response: { liked: boolean, likeCount: number }
-  │
-  ▼
-books store updates liked.value[id] = res.liked
-  │
-  ▼
-Heart icon updates: fill, color (text-destructive if liked)
+`BookReviews` collects a star rating and review text. A signed-in reader submits
+`POST /api/books/:id/comments` with `{ text, rating }`. The backend stores the
+comment and rating together; the review list refreshes through its invalidation
+hook.
 
----
+### 3.3 Reply to or Like a Review
 
-User clicks heart button (not signed in):
-  │
-  ▼
-booksStore.toggleLike throws 401 from $fetch
-  │
-  ▼
-catch → toast.error("Please sign in to like a book")
-```
-
-### 3.3 Rate a Book
-
-```
-User clicks star (1-5) in BookRating component
-  │
-  ▼
-BookRating emits "rate" with star number
-  │
-  ▼
-composables/useBookDetail → handleRate(rating)
-  │  calls booksStore.rateBook(id, rating)
-  │
-  ▼
-POST /api/books/:id/rate  { rating: 4 }
-  │
-  ▼
-RatingsService.upsert(bookId, userId, 4)
-  │  Validates integer 1-5
-  │  INSERT ... ON CONFLICT (bookId, userId) DO UPDATE SET rating = 4
-  │  SELECT AVG(rating) for this book
-  │
-  ▼
-Response: { avgRating: 3.8, userRating: 4 }
-  │
-  ▼
-books store updates:
-  │  userRating.value[id] = 4
-  │  book.value.avgRating = refetched from API
-  │
-  ▼
-Star UI updates: stars up to userRating fill amber
-  │  Avg rating label updates
-```
-
-### 3.4 Comment
-
-```
-User clicks MessageSquare icon → comment form appears (showCommentForm = true)
-  │
-  ▼
-User types in textarea, clicks "Post comment"
-  │
-  ▼
-BookComments emits "submit" with trimmed text
-  │
-  ▼
-composables/useBookDetail → submitReview(text)
-  │  calls booksStore.createComment(id, text)
-  │
-  ▼
-POST /api/books/:id/comments  { text }
-  │
-  ▼
-CommentsService.create(bookId, userId, text)
-  │  AuthGuard validates session
-  │  Inserts comment row
-  │
-  ▼
-comments refetched: comments.value = booksStore.fetchComments(id)
-  │
-  ▼
-Comment list re-renders with new comment at top
-```
-
-### 3.5 Share
-
-```
-User clicks Share2 icon
-  │
-  ▼
-BookShare.vue → showShare = true
-  │
-  ▼
-SocialShare popup appears (Facebook, X, LinkedIn, Reddit, Threads, WhatsApp)
-  │  Uses @stefanobartoletti/nuxt-social-share module
-  │  Dynamic baseUrl from runtimeConfig or env
-  │
-  ▼
-User clicks a network → opens share dialog/URL
-  │  Popup closes (SocialShare @click handler)
-```
-
----
+Replies use the same comments endpoint with `parentId`. Review likes use
+`POST` or `DELETE /api/books/:id/comments/:commentId/like`. The review
+composable updates likes optimistically and restores the previous state if the
+request fails.
 
 ## 4. Borrow
 
-### 4.1 Borrow a Book
+### 4.1 Borrow and Return
 
-```
-User clicks "Borrow" button on BookActions (book detail) or BookCard (feed/dashboard)
-  │
-  ▼
-Frontend guards (before API call):
-  │
-  ├─ If hasBorrowed: toast("You have already borrowed this book") → return
-  │
-  ├─ If !book.isAvailable: toast("Book is currently not available") → return
-  │
-  └─ If not signed in: toast.error("Please sign in to borrow a book") → return
-  │
-  ▼
-dashboard.borrowBook(id)
-  │
-  ▼
-POST /api/books/:id/borrow
-  │
-  ▼
-TransactionsService.borrow(bookId, userId)
-  │  1. Get book (check exists, isAvailable)
-  │  2. Check no active borrow (same user, same book, returnedAt IS NULL)
-  │     → ConflictException("Book already borrowed") if exists
-  │  3. Calculate remaining = inStock - 1
-  │  4. UPDATE books SET inStock = remaining, isAvailable = (remaining > 1)
-  │  5. INSERT into borrows (bookId, userId, borrowedAt)
-  │
-  ▼
-Response: { id, bookId, userId, borrowedAt }
-  │
-  ▼
-dashboard store refetches borrows (dashboard.fetchBorrows())
-  │
-  ▼
-Toast: "Book borrowed"
-  │
-  ▼
-BookCard variant switches if on dashboard
-  │  hasBorrowed flag updates for borrow button state
+Book-detail and feed actions call `useBookStatusStore`. It sends
+`POST /api/books/:id/borrow` or `/return` through the Nuxt API proxy.
+
+```text
+Borrow action
+  → TransactionsController
+  → BorrowsService.borrow()
+  → transaction locks the book, checks availability, duplicate loans,
+    and membership limit
+  → records a 14-day loan and updates stock
+
+Return action
+  → TransactionsController
+  → BorrowsService.returnBook()
+  → restores stock and marks the loan returned
 ```
 
-### 4.2 Return a Book
+The UI refreshes borrow state and displays the result. Backend errors preserve
+stock and loan consistency through the transaction boundary.
 
-```
-User clicks "Return Book" on BookCard(variant="borrowed") in dashboard
-  │
-  ▼
-BookCard @click → dashboard.returnBook(book.id)
-  │
-  ▼
-POST /api/books/:id/return
-  │
-  ▼
-TransactionsService.returnBook(bookId, userId)
-  │  1. Find active borrow (bookId, userId, returnedAt IS NULL)
-  │     → BadRequestException if none found
-  │  2. UPDATE books SET inStock = inStock + 1, isAvailable = true
-  │  3. UPDATE borrows SET returnedAt = NOW()
-  │
-  ▼
-Response: { id, bookId, userId, borrowedAt, returnedAt }
-  │
-  ▼
-dashboard store refetches borrows
-  │  BookCard with variant="borrowed" disappears from list
-  │
-  ▼
-Toast: "Book returned"
-```
+### 4.2 Dashboard Loans and Purchases
 
-### 4.3 View Borrows in Dashboard
+`/dashboard` loads loans with `useBorrows()` and purchases with
+`usePurchases()`. The backend exposes `GET /api/user/borrows` and
+`GET /api/user/purchases`; the loan list is paginated.
 
-```
-User navigates to /dashboard
-  │
-  ▼
-pages/dashboard.vue mounts
-  │  Reads ?tab=borrowed from query (default)
-  │
-  ▼
-onMounted:
-  │  Promise.all([
-  │    dashboard.fetchBorrows(),
-  │    dashboard.fetchPurchases(),
-  │  ])
-  │
-  ▼
-stores/dashboard.ts:
-  │  fetchBorrows() → GET /api/user/borrows
-  │  fetchPurchases() → GET /api/user/purchases
-  │
-  ▼
-TransactionsService.getUserBorrows(userId)
-  │  SELECT borrows.*, books.*
-  │  FROM borrows INNER JOIN books
-  │  WHERE userId = ? AND returnedAt IS NULL
-  │  ORDER BY borrowedAt DESC
-  │
-  ▼
-Template renders:
-  │  Tab bar: "Borrowed (N)" | "Purchased (N)"
-  │  BookCard grid with variant="borrowed" tab
-  │  Each card shows "Return Book" button
-```
 
 ---
 
 ## 5. Cart & Checkout
 
-A client-side cart (localStorage-persisted) replaces the old single-item Stripe purchase.
-Discounts are computed client-side for display and re-verified server-side at checkout.
+The client-side cart persists through localStorage. It previews discounts; the
+backend recalculates the authoritative total when creating the Stripe Checkout
+Session.
 
 ### 5.1 Add to Cart
 
 ```
-User clicks "Buy Now — $XX.XX" button (BookCard or BookActions)
+User adds a book to the cart from BookCard or BookBorrowCard
   │
   ▼
-BookCard / BookActions → cartStore.addItem({
-  bookId, title, author, cover, price, category
+BookCard or BookBorrowCard → cart.addItem({
+  id, title, author, cover, price, category, stock
 })
   │
   ▼
 stores/cart.ts → addItem(book)
   │
-  ├─ Duplicate (bookId already in items):
-  │    toast.info("This book is already in your cart") → return
-  │
-  └─ New item:
-       items.value = [...items.value, book]
-       drawerOpen.value = true  (auto-opens drawer)
+  ├─ Existing item: increment quantity up to current stock
+  └─ New item: add with quantity 1
   │
   ▼
-watch(items) → localStorage.setItem("read-in-peace-cart", JSON.stringify(items))
-  │  Cart survives page reloads via localStorage
-```
-
-### 5.2 Checkout Drawer
-
-```
-CartIcon (navbar, with item count badge) + "Proceed to Checkout" triggers
-  │
+Pinia persistence stores the cart under "read-in-peace-cart"
+  │  Cart survives page reloads
   ▼
-CheckoutDrawer slides in from right (TranslateX animation, Teleported to body)
-  │
-  ├─ Header: "Cart (N items)" + close button
-  │
-  ├─ Empty state:
-  │    ShoppingBag icon + "Your cart is empty" + "Browse books and click Buy to add them"
-  │
-  └─ With items:
-       ├─ For each item:
-       │    Cover thumb (48×64, NuxtLink to /book/:id)
-       │    Title, author, category, price, Remove button
-       │
-       ├─ Discount breakdown (via useDiscount/computeDiscount composable):
-       │    computed(() => computeDiscount(cartStore.items))
-       │    Pipeline: Subtotal → Qty Tier → Cat Bonus → Every $100 → Total
-       │    ┌─────────────────────────────────────┐
-       │    │ Order Summary                        │
-       │    │ Subtotal (3 items)          $37.00   │
-       │    │ − 20% bundle discount       −$7.40   │
-       │    │ − Category bonus            −$3.70   │
-       │    │ − Every $100 discount        $0.00   │
-       │    │ ───────────────────────────────────  │
-       │    │ Total                       $25.90   │
-       │    └─────────────────────────────────────┘
-       │
-       └─ "Proceed to Checkout — $25.90" button
-            (disabled when cart isEmpty)
 ```
+
+### 5.2 Cart Page
+
+The navbar cart link opens `/cart`. The page shows each item, quantity controls,
+removal, subtotal, and a discount breakdown. The preview includes the active
+membership-plan discount after bundle, category, and every-$100 discounts.
 
 ### 5.3 Initiate Checkout
 
@@ -692,9 +319,8 @@ User clicks "Proceed to Checkout"
 cartStore.checkout()
   │
   ├─ Not signed in:
-  │    drawerOpen.value = false
   │    auth.signInCentral() starts Central Identity OIDC
-  │    callback restores this page; user retries checkout
+  │    the cart persists across the redirect; user retries checkout
   │    return
   │
   └─ Signed in:
@@ -703,30 +329,17 @@ cartStore.checkout()
        POST /api/cart/checkout  { bookIds: string[] }
        │
        ▼
-       TransactionsService.createCartCheckoutSession(bookIds, userId)
-       │  1. Fetch all books from DB
-       │  2. Validate all exist + inStock > 1
-       │  3. Compute discount: applyDiscounts(books)
-       │     → Pure function exported from transactions.service.ts
+       CheckoutService.forCart(bookIds, userId)
+       │  1. Fetch and validate books and available stock
+       │  2. Load the user's membership plan
+       │  3. Compute discounts with applyDiscounts() from transactions/domain/pricing.ts
        │     Works in cents (Stripe convention):
        │
-       │     a. Quantity Tier:
-       │        1 item  → 0%
-       │        2 items → 10% off subtotal
-       │        3 items → 20% off subtotal
-       │        4+      → 30% off subtotal (max)
-       │
-       │     b. Category Bonus:
-       │        For each category with ≥2 items:
-       │        discount += original category subtotal × 0.10
-       │        Applied to running total after tier discount
-       │
-       │     c. Every $100:
-       │        floor(runningTotalInCents / 10000) × 100
-       │        = $1 off per $100 of remaining total
-       │
-       │     d. Clamp final to ≥ $0
-       │
+       │     a. Quantity tier: 2 books = 10%, 3 = 20%, 4+ = 30%
+       │     b. Category bonus: 10% for each category with at least 2 books
+       │     c. Every $100: $1 off each full $100 of the running total
+       │     d. Membership plan discount follows the other stages
+       │     e. Clamp final total to at least $0
        │  4. Create Stripe Checkout Session:
        │     - mode: "payment"
        │     - line_item: "Read in Peace — N books" at computed total
@@ -754,7 +367,7 @@ pages/dashboard.vue → onMounted()
 dashboard.confirmPurchase(sessionId)
   │
   ▼
-TransactionsService.confirmPurchase(sessionId, userId)
+PurchaseConfirmationService.confirm(sessionId, userId)
   │  1. Retrieve Stripe Checkout Session
   │  2. Verify payment_status === "paid"
   │  3. Verify metadata.userId matches current user
@@ -773,7 +386,7 @@ TransactionsService.confirmPurchase(sessionId, userId)
        Same as old flow with WHERE filter per-bookId
   │
   ▼
-cartStore.clear()  ← clears in-memory items; watch() persists empty to localStorage
+cartStore.clear()  ← Pinia persistence stores the empty cart
 Toast: "Purchase complete!"
 dashboard.fetchPurchases() refetches
   │
@@ -795,10 +408,10 @@ On failure:
 
 | Event | Effect on cart |
 |---|---|
-| User adds item | `items.value` appends; `watch` persists to localStorage |
-| User removes item | `items.value` filters; `watch` persists to localStorage |
-| Page reload (client) | `plugins/cart-persist.client.ts` → `cartStore.hydrateFromStorage()` reads localStorage |
-| Auth required (guest checkout) | Drawer closes → Central Identity OIDC → callback restores cart page; user retries checkout |
+| User adds or changes items | Pinia persistence stores changes under `read-in-peace-cart` |
+| User removes item | Pinia persistence stores the updated cart |
+| Page reload | Pinia persistence restores the cart from localStorage |
+| Auth required (guest checkout) | Central Identity sign-in; persisted cart remains available after callback |
 | Stripe cancel (user returns) | Cart preserved (no clear happens) |
 | Purchase confirmed | `cartStore.clear()` called from `dashboard.vue` after `confirmPurchase` |
 | Sign out | Cart persists (stays in localStorage; not connected to auth state) |
@@ -806,186 +419,51 @@ On failure:
 ### 6.2 Discount Pipeline
 
 ```
-Subtotal  →  Quantity Tier  →  Category Bonus  →  Every $100  →  Final Price
+Subtotal → Quantity Tier → Category Bonus → Every $100 → Membership Plan → Final Price
 ```
 
-Each stage receives the running total from the previous stage. Final price clamped ≥ $0.
+Each stage receives the running total from the previous stage. Final price is
+clamped to $0 or higher.
 
 | Stage | Condition | Discount formula |
 |---|---|---|
-| **Quantity Tier** | 2 items | 10% off subtotal |
-| | 3 items | 20% off subtotal |
-| | 4+ items | 30% off subtotal (max) |
-| | 1 item | 0% |
-| **Category Bonus** | Each category with ≥2 items | `+ originalCategorySubtotal × 0.10` (on original prices, not post-tier) |
-| **Every $100** | Running total ≥ $100 | `floor(runningTotalInCents / 10000) × 100` cents |
+| **Quantity Tier** | 2/3/4+ items | 10%/20%/30% off subtotal |
+| **Category Bonus** | Each category with ≥2 items | 10% of original category subtotal |
+| **Every $100** | Running total ≥ $100 | $1 for each full $100 |
+| **Membership Plan** | Paid plan | Plan percentage off the post-pipeline total |
 
 ### 6.3 Discount Computation Runs On Both Sides
 
-**Frontend** (`composables/useDiscount.ts`):
-- `computeDiscount(items: CartItem[]) → DiscountBreakdown`
-- Used live in CheckoutDrawer via `computed(() => computeDiscount(cartStore.items))`
-- Previews discounts before checkout
+**Frontend** (`utils/discount.ts`):
+- `computeDiscount(items, planDiscountPercent)` previews the cart page breakdown.
 
-**Backend** (`transactions.service.ts`):
-- `applyDiscounts(books: {price, category}[]) → DiscountResult` (exported pure function)
-- Re-verifies during `POST /api/cart/checkout` (authoritative source)
+**Backend** (`transactions/domain/pricing.ts`):
+- `applyDiscounts(books, planDiscountPercent)` runs in `CheckoutService` and
+  calculates the authoritative amount for Stripe Checkout.
 
 ### 6.4 Worked Example
 
-Cart: Book A (Fiction, $20) + Book B (Fiction, $15) + Book C (Science, $30) + Book D (Science, $25)
+With the free plan, cart prices $20, $15, $30, and $25:
 
 | Step | Calculation | Running total |
 |---|---|---|
 | Subtotal | 20 + 15 + 30 + 25 | $90.00 |
 | Qty tier (4 items → 30%) | −$27.00 | $63.00 |
-| Cat bonus (Fiction $35×10%) | −$3.50 | $59.50 |
-| Cat bonus (Science $55×10%) | −$5.50 | $54.00 |
-| Every $100 (floor(54/100)×$1) | −$0.00 | **$54.00** |
+| Category bonus (Fiction $35 × 10%) | −$3.50 | $59.50 |
+| Category bonus (Science $55 × 10%) | −$5.50 | $54.00 |
+| Every $100; free plan | $0 | **$54.00** |
 
 ---
 
-## 7. Admin Operations
 
-### 6.1 Toggle Admin Mode
+## 7. Data Flow Architecture
 
-```
-User clicks the shield toggle in Navbar profile dropdown
-  │
-  ▼
-stores/auth.ts → toggleAdmin()
-  │  adminMode.value = !adminMode.value
-  │
-  ▼
-UI reacts:
-  │  AdminFab appears (bottom-right "Add New Book" button)
-  │  BookCard shows edit (pencil) and delete (trash) icons on hover
-  │  BookShelf shows "+ New Book" button
-  │  Feed page "+ New Book" button appears above shelf
-```
-
-### 6.2 Create Book
-
-```
-Admin clicks "+ New Book" (AdminFab, BookShelf, or feed header)
-  │
-  ▼
-feed.vue sets showBookForm = true, editingBook = null
-  │
-  ▼
-BookFormModal.vue (Teleported to body)
-  │  Form fields: title, author, price, cover URL, synopsis, category, trending
-  │  Uses reactive() for form state
-  │
-  ▼
-Admin fills form, clicks "Create Book"
-  │
-  ▼
-BookFormModal emits "saved"
-  │
-  ▼
-booksStore.createBook(form)
-  │
-  ▼
-POST /api/books
-  │  AuthGuard validates session
-  │
-  ▼
-BooksService.create(data, userId)
-  │  INSERT INTO books (title, author, price, cover, synopsis, category, trending, createdBy)
-  │
-  ▼
-Response: created book
-  │
-  ▼
-Toast: "Book created"
-  │  Modal closes
-  │  Feed refetches current page
-  │  New book appears in grid
-```
-
-### 6.3 Edit Book
-
-```
-Admin hovers a BookCard → pencil icon appears → clicks it
-  │
-  ▼
-BookCard emits "edit" with the book
-  │
-  ▼
-feed.vue → handleEdit(book)
-  │  editingBook.value = book
-  │  showBookForm.value = true
-  │
-  ▼
-BookFormModal pre-fills with existing book data
-  │
-  ▼
-Admin modifies fields, clicks "Save Changes"
-  │
-  ▼
-booksStore.updateBook(id, form)
-  │
-  ▼
-PUT /api/books/:id
-  │  AuthGuard validates session
-  │
-  ▼
-BooksService.update(id, data, userId)
-  │  Verifies ownership (createdBy === userId)
-  │  → ForbiddenException if not owner
-  │  UPDATE books SET ... WHERE id = ?
-  │
-  ▼
-Toast: "Book updated"
-  │  Modal closes
-  │  Feed refetches
-```
-
-### 6.4 Delete Book
-
-```
-Admin hovers BookCard → trash icon appears → clicks it
-  │
-  ▼
-BookCard → handleDelete()
-  │  confirm("Delete this book?")
-  │
-  ▼
-booksStore.deleteBook(id)
-  │
-  ▼
-DELETE /api/books/:id
-  │
-  ▼
-BooksService.remove(id, userId)
-  │  Verifies ownership
-  │  DELETE FROM books WHERE id = ?
-  │  (CASCADE deletes likes, comments, ratings, borrows, purchases)
-  │
-  ▼
-Toast: "Book deleted"
-  │  Card disappears from grid
-```
-
----
-
-## 8. Data Flow Architecture
-
-### Request Lifecycle (typical authenticated request)
-
-```
-1. User action in component (e.g. @click="handleLike")
-2. Page handler → composable method → store method
-3. Store calls $fetch("/api/books/:id/like", { method: "POST" })
-4. Nuxt server: server/api/[...].ts catches /api/*
-5. h3 proxyRequest forwards to http://localhost:3000/api/books/:id/like
-6. NestJS routing: BooksController → LikesController
-7. AuthGuard: extracts cookie from headers, calls auth.api.getSession()
-   → 401 if no valid session
-8. CurrentUser decorator: attaches user.id to request
-9. Service method: performs DB operations via Drizzle ORM
-10. Response flows back: controller → proxy → store → component → UI
+```text
+Component → page handler → composable or Pinia store
+  → same-origin /api request → Nuxt server API proxy
+  → NestJS controller → application service
+  → repository contract → Drizzle/PostgreSQL
+  ← response returns through the same layers to the UI
 ```
 
 ```
@@ -1013,7 +491,7 @@ Backend throws (examples):
   │  NotFoundException("Book not found")       → 404
   │  UnauthorizedException()                   → 401
   │  ForbiddenException("Not your book")       → 403
-  │  ConflictException("Already borrowed")     → 409
+  │  BadRequestException("Book already borrowed") → 400
   │  BadRequestException("Invalid rating")     → 400
   │
   ▼
@@ -1033,7 +511,7 @@ Store catches:
 
 ---
 
-## 9. Stock / Inventory Model
+## 8. Stock / Inventory Model
 
 | Condition | Buy button | Borrow button | Stock badge |
 |---|---|---|---|

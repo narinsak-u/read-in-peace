@@ -13,50 +13,17 @@ The repo enforces `@Global()` only where it is genuinely justified
 
 ```
 backend/src/
-├── main.ts                        # Bootstrap: CORS, ValidationPipe, AllExceptionsFilter, /api/auth
-├── app.module.ts                  # Root module — composes core/ + iam/ + every feature
-├── app.controller.ts              # GET / health check
-├── app.service.ts
-│
-├── core/                          # Cross-cutting platform (no business logic)
-│   ├── config/                    #   CoreConfigService (Zod-validated env)
-│   ├── database/                  #   Drizzle client + schema (DATABASE token)
-│   ├── http/                      #   AllExceptionsFilter
-│   ├── logger/                    #   nestjs-pino wiring
-│   └── shared/                    #   CLS request context
-│
-├── iam/                           # Identity & access (no feature coupling)
-│   ├── auth/                      #   AuthGuard / OptionalAuthGuard / CurrentUser
-│   └── authorization/             #   Policy / @Policies / PoliciesGuard
-│
-├── books/                         # Feature: books + comments + likes + ratings
-│   ├── domain/                    #   Book, Comment, Like/Rating/Paginated contracts
-│   ├── application/               #   BooksService, CommentsService
-│   ├── infrastructure/            #   Drizzle repos, in-memory fake
-│   ├── authorization/             #   EditBookPolicy, DeleteBookPolicy, DeleteCommentPolicy
-│   ├── presentation/              #   controllers, DTOs
-│   └── books.module.ts
-│
-├── transactions/                  # Feature: borrow, cart checkout, purchase confirmation
-│   ├── domain/                    #   pricing.ts (pure), Borrow/Purchase contracts
-│   ├── application/               #   BorrowsService, CheckoutService, PurchaseConfirmationService
-│   ├── infrastructure/            #   Drizzle repos, Stripe provider
-│   ├── presentation/              #   TransactionsController
-│   └── transactions.module.ts
-│
-├── social/                        # Feature: reader feed (posts, likes, replies)
-│   ├── domain/ | application/ | infrastructure/ | presentation/ | social.module.ts
-│
-├── membership/                    # Feature: subscription plans, Stripe subscriptions
-    ├── domain/                    #   MembershipRow, PLAN_CONFIG, repository contract
-    ├── application/               #   MembershipService, StripeWebhookService
-    ├── infrastructure/            #   DrizzleMembershipRepository
-    ├── presentation/              #   MembershipController
-    └── membership.module.ts
+├── main.ts                 # HTTP bootstrap, validation, CORS, and exception handling
+├── app.module.ts           # Root module
+├── core/                   # Shared config, database, HTTP, logging, request context
+├── iam/                    # Authentication and authorization
+├── books/                  # Catalog, comments, likes, ratings
+├── chat/                   # Direct messages
+├── profiles/               # Reader profiles and follows
+├── social/                 # Reader feed and posts
+├── transactions/           # Borrowing, checkout, purchase confirmation
+└── membership/             # Plans, subscriptions, borrow limits
 ```
-
----
-
 ## Per-feature layout
 
 Every feature module uses the same four-layer shape. The layers reflect the
@@ -168,35 +135,27 @@ authorization. It does not know what a "book" or a "comment" is.
 
 ### `transactions/`
 - **Controller:** `TransactionsController`.
-- **Use cases:**
-  - `BorrowsService` — borrow with `SELECT ... FOR UPDATE` row lock
-    (14-day due), return, paginated history.
-  - `CheckoutService` — Stripe Checkout session creation for single
-    book + cart. The cart path runs `applyDiscounts(items)` from
-    `transactions/domain/pricing.ts` and packs the book IDs into
-    Stripe metadata.
-  - `PurchaseConfirmationService` — verifies the Stripe session
-    (`payment_status === 'paid'` and `metadata.userId` matches),
-    records purchases atomically (single + batch), decrements stock.
-- **Domain:** `pricing.ts` is a pure function with zero framework
-  dependencies — the only place business math is computed.
-- **Infrastructure:** Drizzle borrow/purchase repos and the shared
-  `stripeProvider` (one Stripe client per app, configured from
-  `CoreConfigService`).
-- **Imports:** `BooksModule` (for `BookRepository`, `BookReadModel`).
+- **Use cases:** `BorrowsService` handles borrowing, returning, and borrow history;
+  `CheckoutService` creates single-book and cart Stripe sessions and applies
+  the membership-aware discount pipeline; `PurchaseConfirmationService`
+  verifies paid sessions and records purchases.
+- **Imports:** `BooksModule` for book data and `MembershipModule` for plan state.
 
 ### `social/`
 - **Controller:** `SocialController` (`/api/feed`).
-- **Use case:** `SocialService` — feed, post CRUD, like toggle, replies.
+- **Use case:** `SocialService` manages the reader feed, posts, likes, and replies.
+
+### `chat/`
+- **Use case:** `ChatService` and `ChatGateway` manage authenticated direct messages.
+
+### `profiles/`
+- Reader profiles and follow workflows.
 
 ### `membership/`
-- **Controller:** `MembershipController` (`/api/membership/me`, `/api/membership/cancel`, etc.).
-- **Use cases:**
-  - `MembershipService` — lazy-assigns free plan, tracks subscription lifecycle (checkout, cancel, reactivate), enforces borrow limits per plan tier.
-  - `StripeWebhookService` — processes `checkout.session.completed`, `invoice.paid`, `customer.subscription.updated`, `customer.subscription.deleted` events to sync Stripe with local state.
-- **Domain:** `PLAN_CONFIG` map in `domain/plans.ts` defines three tiers: free (15 items), curator (25 items, $5/mo), archivist (50 items, $10/mo). Item limit gates the borrow flow via `enforceBorrowLimit()`.
-- **Infrastructure:** `DrizzleMembershipRepository` with atomic upsert on the `user_id` unique constraint.
-- **Imports:** `TransactionsModule` (for `Stripe` provider).
+- **Controller:** `MembershipController`.
+- **Use cases:** `MembershipService` manages plans and borrow limits;
+  `StripeWebhookService` synchronizes subscriptions and purchase events.
+- **Domain:** `PLAN_CONFIG` defines free, curator, and archivist tiers.
 
 ---
 

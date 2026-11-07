@@ -10,12 +10,12 @@ Consumed by agentic coding tools. Read this before writing or editing code.
 - `frontend/` — Nuxt 3 (SSR), Vue 3 Composition API, Pinia, Tailwind CSS v4, shadcn-vue
 - `backend/` — NestJS v11 (Express platform), Better Auth, Drizzle ORM, PostgreSQL
 
-Feature modules in backend: `books/`, `transactions/`, `social/`, `membership/`.
+- Feature modules in backend: `books/`, `transactions/`, `social/`, `membership/`, `chat/`, and `profiles/`.
 
 ## Commands
 
 ### Frontend
-- `npm run dev` — Nuxt dev server on `:3001`; root public origin is `https://reading.lvh.me:8080`
+- `npm run dev` — Nuxt dev server on `:3001`; browser origin is `https://reading.localhost:8080` through Central Identity's local Caddy gateway
 - `npm run build` — `nuxt build`
 - `npm run lint` — ESLint with `@nuxt/eslint` flat config
 - `npm run test` — Vitest (not Jest)
@@ -96,10 +96,10 @@ npm run db:seed
 - Backend API prefix: `/api/`. Stripe webhooks at `/api/stripe/webhook` (raw body preserved via `rawBody: true` in `main.ts`).
 - Database: PostgreSQL via `docker-compose.yml`, Drizzle ORM, Better Auth Drizzle adapter. Schema in `src/core/database/schema.ts` (16 tables). Migrations in `src/core/database/migrations/`.
 - Payments: Stripe Checkout Sessions (payment mode for purchases, subscription mode for membership). Webhook events processed by `StripeWebhookService` in `membership/application/`.
-- Cart: client-side Pinia store (`stores/cart.ts`) with localStorage persistence via `watch(items, persist, { deep: true })`. Discount pipeline (`utils/discount.ts`): quantity tier → category bonus → every $100.
+- Cart: client-side Pinia store (`stores/cart.ts`) persisted to localStorage. Discount pipeline (`utils/discount.ts`): quantity tier → category bonus → every $100 → membership-plan discount.
 - Auth: `better-auth/vue` provides `useSession()`. Auth store watches it with `immediate: true`. Exposes `signedIn`, `user`, `adminMode` (client-side only).
 - Plans: free (15 items), curator ($5/mo, 25 items), archivist ($10/mo, 50 items). Borrow limit enforced by `MembershipService.enforceBorrowLimit()`.
-- No commit conventions or CI/CD configured.
+- GitHub Actions runs root environment-hook tests plus backend Jest and frontend Vitest tests on pull requests and pushes to `main` or `dev` when their package, test, or workflow changes. No deployment workflow is configured.
 
 ## After editing code
 

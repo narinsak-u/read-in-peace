@@ -7,15 +7,14 @@
 3. [Book Comments](#3-book-comments)
 4. [Borrowing & Returning](#4-borrowing--returning)
 5. [Purchase (Stripe Checkout)](#5-purchase-stripe-checkout)
-6. [Cart Checkout with Discounts](#6-cart-checkout-with-discounts)
-7. [Purchase Confirmation](#7-purchase-confirmation)
-8. [Membership & Subscription](#7-membership--subscription)
-9. [Social Feed](#8-social-feed)
-10. [Authentication](#9-authentication)
-11. [Authorization (Policies)](#10-authorization-policies)
-12. [Error Handling](#11-error-handling)
-13. [Database Architecture](#12-database-architecture)
-14. [Config & Environment](#13-config--environment)
+6. [Purchase Confirmation](#6-purchase-confirmation)
+7. [Membership & Subscription](#7-membership--subscription)
+8. [Social Feed](#8-social-feed)
+9. [Authentication](#9-authentication)
+10. [Authorization (Policies)](#10-authorization-policies)
+11. [Error Handling](#11-error-handling)
+12. [Database Architecture](#12-database-architecture)
+13. [Config & Environment](#13-config--environment)
 
 ---
 
@@ -242,10 +241,11 @@ Body: `{ bookIds: string[] }`
 4. `BookRepository.findPricingForPurchase(bookIds)` fetches all books' pricing
 5. Throws `NotFoundException` if any book is missing
 6. Throws `BadRequestException` if any book has `inStock <= 1`
-7. Runs the **discount pipeline** (`applyDiscounts` in `transactions/domain/pricing.ts`):
-   - **Quantity Tier**: 2 books = 10%, 3 books = 20%, 4+ books = 30% off subtotal
-   - **Category Bonus**: If 2+ books in same category, 10% off that category's subtotal
-   - **Every $100 Discount**: $1 off for every full $100 in running total
+7. Runs `applyDiscounts` in `transactions/domain/pricing.ts` with the user's membership-plan percentage:
+   - Quantity tier: 2 books = 10%, 3 = 20%, 4+ = 30% off subtotal
+   - Category bonus: 10% of each qualifying category's original subtotal
+   - Every $100: $1 off each full $100 of the running total
+   - Membership plan discount applies after those stages
 8. Calls `stripe.checkout.sessions.create()`:
    - `mode: 'payment'`
    - Single `line_item` with computed `unit_amount` = total after all discounts
