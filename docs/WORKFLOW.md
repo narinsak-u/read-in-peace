@@ -22,11 +22,11 @@ cd ../backend && npm ci
 Root `npm run dev` starts PostgreSQL from `backend/docker-compose.yml` in its
 existing `backend` Compose project. It reuses the existing `pgdata` volume and
 `readinpeace` database, preserving local users and sessions. Nest runs on `:3000`
-and Nuxt on `:3001`. The shared Central Identity Caddy gateway serves
-`https://reading.localhost:8080`; Nuxt proxies `/api/*` to the backend. The
-local Central Identity issuer is `https://auth.localhost:8080/api/auth`, and
-the registered callback is
-`https://reading.localhost:8080/api/auth/callback/central-identity`.
+and Nuxt on `:3001`. Open Reading at `http://localhost:3001`; Nuxt owns and
+proxies browser `/api/*` requests to Nest. Central Identity remains at
+`https://auth.localhost:8080/api/auth`; register
+`http://localhost:3001/api/auth/callback/central-identity` as the development
+callback.
 
 Each application keeps its own encrypted env files and ignored `.env.keys`.
 Test-production uses a separate ignored `.env.test-production.keys` in each
@@ -89,8 +89,8 @@ Sign In → POST /api/auth/sign-in/social (provider: central-identity)
 ```
 
 The Relying Party callback is
-`https://reading.localhost:8080/api/auth/callback/central-identity`. Keep the
-callback registered on the development Central Identity client.
+`http://localhost:3001/api/auth/callback/central-identity`. Keep the callback
+registered on the development Central Identity client.
 
 ### 1.2 Callback, account mapping, and session
 
@@ -116,16 +116,15 @@ sign-in option.
 
 ### 1.4 Development browser check
 
-1. Start the Central Identity development service, database, and HTTPS gateway.
+1. Start the Central Identity development service and database.
 2. Start Read in Peace with `npm run dev`.
-3. Trust the development gateway certificate in the browser, then open
-   `https://reading.localhost:8080`.
+3. Open `http://localhost:3001`.
 4. Select Sign In from the header or mobile navigation. Confirm the browser
    enters the portal through the Central Identity authorization request.
 5. Complete Central Identity authentication. Confirm callback creates the local
-   session and returns to the original same-origin page.
-6. Open `https://reading.localhost:8080/dashboard` while signed out. After local
-   session hydration, confirm OIDC starts automatically and callback returns to `/dashboard`.
+   session and returns to the original safe same-origin page.
+6. Open `http://localhost:3001/dashboard` while signed out. After local session
+   hydration, confirm OIDC starts automatically and callback returns to `/dashboard`.
 7. Confirm an unlinked existing account cannot sign in by email match and is
    directed to Reviewed Recovery.
 8. Tamper with OIDC state, issuer, token, authorization code, and return target.

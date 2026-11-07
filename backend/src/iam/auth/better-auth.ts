@@ -44,6 +44,10 @@ export const authProvider: Provider = {
       account: { accountLinking: { disableImplicitLinking: true, allowDifferentEmails: true } },
       trustedOrigins: [...config.auth.trustedOrigins],
       baseURL: config.auth.baseUrl,
+      advanced: {
+        cookiePrefix:
+          config.auth.baseUrl === 'http://localhost:3001' ? 'reading' : 'better-auth',
+      },
       plugins: oauth,
     });
   },

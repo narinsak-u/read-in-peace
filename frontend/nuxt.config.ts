@@ -5,7 +5,7 @@ const siteUrl =
   process.env.NUXT_PUBLIC_SITE_URL ||
   (process.env.NODE_ENV === "production" && !testProduction
     ? undefined
-    : "https://reading.localhost:8080");
+    : "http://localhost:3001");
 const backendUrl =
   process.env.NUXT_PUBLIC_BACKEND_URL ||
   (process.env.NODE_ENV === "production" && !testProduction
@@ -62,7 +62,7 @@ export default defineNuxtConfig({
   },
   vite: {
     plugins: [tailwindcss()],
-    server: { allowedHosts: ["reading.localhost", "reading-test.localhost"] },
+    server: { allowedHosts: ["localhost", "reading.localhost", "reading-test.localhost"] },
   },
   app: {
     head: {

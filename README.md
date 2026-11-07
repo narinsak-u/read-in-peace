@@ -35,22 +35,20 @@ npm install
 cd frontend && npm ci
 cd ../backend && npm ci
 cd ..
-
-# Start Central Caddy first; trust its development root in the browser and Node.
-# Export its public root.crt as described in the Central README. Never trust an
-# unconfirmed root or copy the CA private key.
 NODE_EXTRA_CA_CERTS="$(realpath ../book-auth-middleware/central-identity-root.crt)" npm run dev
 ```
 
-The HTTPS browser origin is `https://reading.localhost:8080` through the Central
-Identity Caddy proxy. WSL name resolution may differ from the Windows browser;
-test the real browser separately. If it cannot resolve them, map
-`auth.localhost`, `bidding.localhost`, and `reading.localhost` to `127.0.0.1`
-in the host OS resolver. Export Caddy's current public `root.crt` and verify it
-matches the running gateway, then trust it in the browser and Node. Never copy
-the CA private key.
-Nest needs the absolute `NODE_EXTRA_CA_CERTS` path to fetch Central's OIDC
-discovery document from either subpackage directory.
+Start Central Identity on `https://auth.localhost:8080`, trust its public root
+certificate in the browser and Node, then run the local apps. `npm run dev`
+starts both apps. Reading's browser origin is `http://localhost:3001`; Nuxt serves
+the frontend and proxies its `/api/*` requests to NestJS at `http://localhost:3000`.
+Central Identity alone uses HTTPS. Never copy its CA private key.
+
+The Reading OIDC issuer is `https://auth.localhost:8080/api/auth`; register
+`http://localhost:3001/api/auth/callback/central-identity` on its client.
+Nest needs the absolute Central Identity root certificate path in
+`NODE_EXTRA_CA_CERTS` to fetch the issuer's discovery document from either
+subpackage directory.
 Root startup reuses `backend/docker-compose.yml` and its existing `pgdata`
 volume; it does not create or reset the app's local database. Run migrations
 and seed only when needed:
@@ -81,8 +79,8 @@ files are templates. Each package decrypts only its settings with its own
 ignored `.env.keys`; back up both keys outside the repository. Keep the
 operator-issued `CENTRAL_IDENTITY_CLIENT_ID` and
 `CENTRAL_IDENTITY_CLIENT_SECRET` in encrypted backend settings. The issuer is
-`https://auth.localhost:8080/api/auth`; the registered callback is
-`https://reading.localhost:8080/api/auth/callback/central-identity`.
+`https://auth.localhost:8080/api/auth`; the registered development callback is
+`http://localhost:3001/api/auth/callback/central-identity`.
 
 For production-mode local proof, configure each package's `.env.test-production`
 using its `.env.test-production.example` and a separate ignored
@@ -124,23 +122,26 @@ session. Select **Sign In** in Reading to begin its own OIDC transaction.
 When sign-in starts from the library page, callback restores that same safe
 local path and query. Sign out from Reading and confirm Book Bidding remains
 signed in.
+Reading uses its own `reading` Better Auth cookie prefix, separate from other
+localhost applications. HTTP development cookies are not marked Secure;
+production HTTPS cookies remain Secure.
 Existing users with an active Application Session can link Central Identity from
 the profile menu. Users without a session use the reviewed recovery screen at
-`https://reading.localhost:8080/account/identity`. They independently prove their
-existing Reading account with its local password or its already-linked Google
-or GitHub account, then authenticate through Central Identity OIDC. The provider
-proof must match the provider subject already stored on that Reading user. Use a
-fresh browser session and newly issued sign-in, recovery, verification, and reset
-links after changing origins; old host-only sessions and emailed links do not
-transfer to the new origin.
+`http://localhost:3001/account/identity`.
+They independently prove their existing Reading account with its local password
+or its already-linked Google or GitHub account, then authenticate through
+Central Identity OIDC. The provider proof must match the provider subject already
+stored on that Reading user. Use a fresh browser session and newly issued
+sign-in, recovery, verification, and reset links after changing origins;
+old host-only sessions and emailed links do not transfer to the new origin.
 Recovery only adds the unique Central Identity mapping; it creates no session,
 does not enable local login, and does not change the user ID or business data.
 After success, start ordinary sign-in through Central Identity.
 
 To enable the recovery callbacks, configure the separately provisioned Central
 Identity client with both the ordinary callback and
-`https://reading.localhost:8080/api/identity-recovery/callback`. Register
-`https://reading.localhost:8080/api/identity-recovery/provider/callback` in
+`http://localhost:3001/api/identity-recovery/callback`. Register
+`http://localhost:3001/api/identity-recovery/provider/callback` in
 temporary Google/GitHub OAuth clients. Update each external provider's allowed
 callback origins in its operator console. Store their separate
 `READING_RECOVERY_GOOGLE_*` and `READING_RECOVERY_GITHUB_*` credentials only in

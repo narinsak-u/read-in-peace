@@ -15,7 +15,7 @@ Consumed by agentic coding tools. Read this before writing or editing code.
 ## Commands
 
 ### Frontend
-- `npm run dev` — Nuxt dev server on `:3001`; browser origin is `https://reading.localhost:8080` through Central Identity's local Caddy gateway
+- `npm run dev` — Nuxt dev server on `:3001`; browser origin is `http://localhost:3001`, with `/api/*` proxied to Nest
 - `npm run build` — `nuxt build`
 - `npm run lint` — ESLint with `@nuxt/eslint` flat config
 - `npm run test` — Vitest (not Jest)

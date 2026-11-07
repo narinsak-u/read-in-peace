@@ -136,8 +136,14 @@ Each feature follows the same four-layer pattern:
 - `POST /api/feed/:id/reply` — add reply (auth)
 
 ### Auth
+The local Nuxt frontend at `http://localhost:3001` owns the browser-facing
+`/api/*` routes and proxies them to this backend at `http://localhost:3000`.
+Use the frontend origin for Better Auth and Central Identity callback URLs.
 - `GET/POST /api/auth/*` — Better Auth session and Central Identity OIDC routes.
   Local credential signup/sign-in is disabled.
+
+Reading uses the `reading` Better Auth cookie prefix so its localhost session
+does not collide with another application's cookies on shared `localhost`.
 
 ## Module dependency graph
 

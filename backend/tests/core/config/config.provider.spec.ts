@@ -12,11 +12,11 @@ describe('CoreConfigService', () => {
     expect(config.db.url).toBe('postgres://test:test@localhost:5432/test');
     expect(config.stripe.secretKey).toBe('sk_test_xxx');
     expect(config.server.port).toBe(3000);
-    expect(config.server.corsOrigins).toEqual(['https://reading.localhost:8080']);
-    expect(config.auth.baseUrl).toBe('https://reading.localhost:8080');
+    expect(config.server.corsOrigins).toEqual(['http://localhost:3001']);
+    expect(config.auth.baseUrl).toBe('http://localhost:3001');
     expect(config.auth.recoveryRedirectUri).toBeUndefined();
     expect(config.auth.recoveryProviderRedirectUri).toBeUndefined();
-    expect(config.frontend.url).toBe('https://reading.localhost:8080');
+    expect(config.frontend.url).toBe('http://localhost:3001');
   });
 
   it('respects explicit overrides', () => {
