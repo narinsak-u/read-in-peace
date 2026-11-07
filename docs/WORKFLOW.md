@@ -19,8 +19,14 @@ cd frontend && npm ci
 cd ../backend && npm ci
 ```
 
-Root `npm run dev` starts PostgreSQL from `backend/docker-compose.yml` in its
-existing `backend` Compose project. It reuses the existing `pgdata` volume and
+Before root `npm run dev`, start Central Identity with `bun run dev:setup`; it
+exports the public root certificate to
+`../book-auth-middleware/central-identity-root.crt`. Root startup resolves that
+certificate to an absolute path for Nest, which needs it to fetch the issuer's
+discovery document. Set `NODE_EXTRA_CA_CERTS` to use an explicit CA path instead.
+If the default or override is missing or unreadable, startup stops with guidance.
+Root startup starts PostgreSQL from `backend/docker-compose.yml` in its existing
+`backend` Compose project. It reuses the existing `pgdata` volume and
 `readinpeace` database, preserving local users and sessions. Nest runs on `:3000`
 and Nuxt on `:3001`. Open Reading at `http://localhost:3001`; Nuxt owns and
 proxies browser `/api/*` requests to Nest. Central Identity remains at

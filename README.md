@@ -35,20 +35,24 @@ npm install
 cd frontend && npm ci
 cd ../backend && npm ci
 cd ..
-NODE_EXTRA_CA_CERTS="$(realpath ../book-auth-middleware/central-identity-root.crt)" npm run dev
+npm run dev
 ```
 
-Start Central Identity on `https://auth.localhost:8080`, trust its public root
-certificate in the browser and Node, then run the local apps. `npm run dev`
-starts both apps. Reading's browser origin is `http://localhost:3001`; Nuxt serves
-the frontend and proxies its `/api/*` requests to NestJS at `http://localhost:3000`.
-Central Identity alone uses HTTPS. Never copy its CA private key.
+Start Central Identity with `bun run dev:setup`, which exports the public root
+certificate at `../book-auth-middleware/central-identity-root.crt`. Then run
+`npm run dev`; Reading resolves that certificate to an absolute path and passes it
+to Nest. Set `NODE_EXTRA_CA_CERTS` to override the certificate path. A missing or
+unreadable certificate stops startup with setup guidance. Trust the Central
+Identity root in the browser. Reading's browser origin is `http://localhost:3001`;
+Nuxt serves the frontend and proxies its `/api/*` requests to NestJS at
+`http://localhost:3000`. Central Identity alone uses HTTPS. Never copy its CA
+private key.
 
 The Reading OIDC issuer is `https://auth.localhost:8080/api/auth`; register
 `http://localhost:3001/api/auth/callback/central-identity` on its client.
 Nest needs the absolute Central Identity root certificate path in
 `NODE_EXTRA_CA_CERTS` to fetch the issuer's discovery document from either
-subpackage directory.
+subpackage directory. Test-production retains its own CA configuration.
 Root startup reuses `backend/docker-compose.yml` and its existing `pgdata`
 volume; it does not create or reset the app's local database. Run migrations
 and seed only when needed:
