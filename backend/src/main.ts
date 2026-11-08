@@ -49,7 +49,11 @@ async function bootstrap() {
   // the Socket.IO protocol the client uses).
   app.useWebSocketAdapter(new IoAdapter(app));
 
-  await app.listen(config.server.port);
+  if (config.server.nodeEnv === 'production') {
+    await app.listen(config.server.port);
+  } else {
+    await app.listen(config.server.port, '127.0.0.1');
+  }
   app
     .get(PinoNestLogger)
     .log(

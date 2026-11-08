@@ -47,7 +47,7 @@ export default defineNuxtConfig({
     baseUrl: siteUrl,
   },
   devServer: {
-    host: "0.0.0.0",
+    host: "127.0.0.1",
     port: Number(process.env.NUXT_PORT || 3001),
   },
   runtimeConfig: {

@@ -19,20 +19,19 @@ cd frontend && npm ci
 cd ../backend && npm ci
 ```
 
-Before root `npm run dev`, start Central Identity with `bun run dev:setup`; it
-exports the public root certificate to
-`../book-auth-middleware/central-identity-root.crt`. Root startup resolves that
-certificate to an absolute path for Nest, which needs it to fetch the issuer's
-discovery document. Set `NODE_EXTRA_CA_CERTS` to use an explicit CA path instead.
-If the default or override is missing or unreadable, startup stops with guidance.
-Root startup starts PostgreSQL from `backend/docker-compose.yml` in its existing
-`backend` Compose project. It reuses the existing `pgdata` volume and
-`readinpeace` database, preserving local users and sessions. Nest runs on `:3000`
-and Nuxt on `:3001`. Open Reading at `http://localhost:3001`; Nuxt owns and
-proxies browser `/api/*` requests to Nest. Central Identity remains at
-`https://auth.localhost:8080/api/auth`; register
-`http://localhost:3001/api/auth/callback/central-identity` as the development
-callback.
+Before root `npm run dev`, start Central Identity with `bun run dev`.
+Ordinary Reading development needs no CA export or trust, DNS entry, or
+`NODE_EXTRA_CA_CERTS`. Central Identity's portal and issuer use
+`http://localhost:8080`. Reading's frontend uses `http://localhost:3001`, and
+Nest runs on `:3000`; both bind only to loopback. Nuxt proxies browser
+`/api/*` requests to its own backend. Register
+`http://localhost:3001/api/auth/callback/central-identity` on the development
+Central Identity client. Root startup starts PostgreSQL from
+`backend/docker-compose.yml` in its existing `backend` Compose project. It
+reuses the existing `pgdata` volume and `readinpeace` database, preserving
+local users and sessions. Use Central email/password sign-in. Google and GitHub
+callbacks remain deferred and unverified for this local HTTP flow; do not rely
+on them.
 
 Each application keeps its own encrypted env files and ignored `.env.keys`.
 Test-production uses a separate ignored `.env.test-production.keys` in each

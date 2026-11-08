@@ -3,12 +3,11 @@
   "private": true,
   "scripts": {
     "prepare": "husky",
-    "dev": "set -e; NODE_EXTRA_CA_CERTS=$(scripts/dev-ca.sh); export NODE_EXTRA_CA_CERTS; docker compose -p backend -f backend/docker-compose.yml up -d --wait && (npm --prefix backend run start:dev & backend=$!; npm --prefix frontend run dev & frontend=$!; trap 'kill \"$backend\" \"$frontend\" 2>/dev/null || true' INT TERM EXIT; wait)",
+    "dev": "docker compose -p backend -f backend/docker-compose.yml up -d --wait && (npm --prefix backend run start:dev & backend=$!; npm --prefix frontend run dev & frontend=$!; trap 'kill \"$backend\" \"$frontend\" 2>/dev/null || true' INT TERM EXIT; wait)",
     "dev:prod": "npm --prefix frontend run build:test-production && npm --prefix backend run build && docker compose -p read-in-peace-test-production -f compose.yaml -f compose.test-production.yaml up -d --wait && npm --prefix backend run db:migrate:test-production && (npm --prefix backend run start:test-production & backend=$!; npm --prefix frontend run preview:test-production & frontend=$!; trap 'kill \"$backend\" \"$frontend\" 2>/dev/null || true' INT TERM EXIT; wait)",
     "env:encrypt": "set -e; file=${ENV_FILE:-.env.development}; case \"$file\" in .env.development|.env.test-production|.env.production) ;; *) echo \"Unsupported env file: $file\" >&2; exit 2 ;; esac; keys_file=; if [ \"$file\" = .env.test-production ]; then keys_file=.env.test-production.keys; fi; for package in frontend backend; do (cd \"$package\" && if [ -n \"$keys_file\" ]; then ../node_modules/.bin/dotenvx encrypt -f \"$file\" --env-keys-file \"$keys_file\"; else ../node_modules/.bin/dotenvx encrypt -f \"$file\"; fi); done",
     "env:decrypt": "set -e; file=${ENV_FILE:-.env.development}; case \"$file\" in .env.development|.env.test-production|.env.production) ;; *) echo \"Unsupported env file: $file\" >&2; exit 2 ;; esac; keys_file=; if [ \"$file\" = .env.test-production ]; then keys_file=.env.test-production.keys; fi; for package in frontend backend; do (cd \"$package\" && if [ -n \"$keys_file\" ]; then ../node_modules/.bin/dotenvx decrypt -f \"$file\" --env-keys-file \"$keys_file\"; else ../node_modules/.bin/dotenvx decrypt -f \"$file\"; fi); done",
-    "test:env": "node --test tests/env-hook.test.mjs",
-    "test:dev-ca": "node --test tests/dev-ca.test.mjs"
+    "test:env": "node --test tests/env-hook.test.mjs"
   },
   "devDependencies": {
     "@dotenvx/dotenvx": "2.38.2",
