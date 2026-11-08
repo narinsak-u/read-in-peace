@@ -54,7 +54,8 @@ export class CoreConfigService implements AppConfig {
       baseUrl,
       trustedOrigins: [...new Set([baseUrl, parsed.FRONTEND_URL ?? baseUrl])],
       recoveryRedirectUri: parsed.READING_RECOVERY_OIDC_REDIRECT_URI,
-      recoveryProviderRedirectUri: parsed.READING_RECOVERY_PROVIDER_REDIRECT_URI,
+      recoveryProviderRedirectUri:
+        parsed.READING_RECOVERY_PROVIDER_REDIRECT_URI,
       recoveryProviders: {
         ...(parsed.READING_RECOVERY_GOOGLE_CLIENT_ID &&
         parsed.READING_RECOVERY_GOOGLE_CLIENT_SECRET

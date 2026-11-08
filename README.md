@@ -35,23 +35,23 @@ npm install
 cd frontend && npm ci
 cd ../backend && npm ci
 cd ..
-NODE_EXTRA_CA_CERTS="$(realpath ../book-auth-middleware/central-identity-root.crt)" npm run dev
+npm run dev
 ```
 
-Start Central Identity on `https://auth.localhost:8080`, trust its public root
-certificate in the browser and Node, then run the local apps. `npm run dev`
-starts both apps. Reading's browser origin is `http://localhost:3001`; Nuxt serves
-the frontend and proxies its `/api/*` requests to NestJS at `http://localhost:3000`.
-Central Identity alone uses HTTPS. Never copy its CA private key.
-
-The Reading OIDC issuer is `https://auth.localhost:8080/api/auth`; register
-`http://localhost:3001/api/auth/callback/central-identity` on its client.
-Nest needs the absolute Central Identity root certificate path in
-`NODE_EXTRA_CA_CERTS` to fetch the issuer's discovery document from either
-subpackage directory.
-Root startup reuses `backend/docker-compose.yml` and its existing `pgdata`
-volume; it does not create or reset the app's local database. Run migrations
-and seed only when needed:
+Start Central Identity with `bun run dev`. Ordinary Reading development
+needs no Central Identity CA export, browser CA trust, DNS entry, or
+`NODE_EXTRA_CA_CERTS`. Central Identity's portal and issuer use
+`http://localhost:8080`; Reading's browser origin stays
+`http://localhost:3001`, with Nuxt proxying its `/api/*` requests to Nest at
+`http://localhost:3000`. Both Reading services bind only to loopback.
+Use Central email/password sign-in. Google and GitHub callbacks remain deferred
+and unverified for this local HTTP flow; do not rely on them.
+Application API requests go to Reading, not through
+Central Identity. Register
+`http://localhost:3001/api/auth/callback/central-identity` on the development
+client. Root startup reuses `backend/docker-compose.yml` and its existing
+`pgdata` volume; it does not create or reset the app's local database. Run
+migrations and seed only when needed:
 
 ```bash
 cd backend
@@ -78,8 +78,9 @@ files, not plaintext `.env` files. The matching `.env.development.example`
 files are templates. Each package decrypts only its settings with its own
 ignored `.env.keys`; back up both keys outside the repository. Keep the
 operator-issued `CENTRAL_IDENTITY_CLIENT_ID` and
-`CENTRAL_IDENTITY_CLIENT_SECRET` in encrypted backend settings. The issuer is
-`https://auth.localhost:8080/api/auth`; the registered development callback is
+`CENTRAL_IDENTITY_CLIENT_SECRET` in encrypted backend settings. Central
+Identity's portal and issuer use `http://localhost:8080`; Reading's browser
+origin and registered development callback use `http://localhost:3001`:
 `http://localhost:3001/api/auth/callback/central-identity`.
 
 For production-mode local proof, configure each package's `.env.test-production`
@@ -131,9 +132,9 @@ the profile menu. Users without a session use the reviewed recovery screen at
 They independently prove their existing Reading account with its local password
 or its already-linked Google or GitHub account, then authenticate through
 Central Identity OIDC. The provider proof must match the provider subject already
-stored on that Reading user. Use a fresh browser session and newly issued
-sign-in, recovery, verification, and reset links after changing origins;
-old host-only sessions and emailed links do not transfer to the new origin.
+stored on that Reading user.
+Reading's host-only session cookie remains available on its `localhost` origin;
+startup does not clear its session or database.
 Recovery only adds the unique Central Identity mapping; it creates no session,
 does not enable local login, and does not change the user ID or business data.
 After success, start ordinary sign-in through Central Identity.
